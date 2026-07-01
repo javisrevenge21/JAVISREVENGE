@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kirk</title>
+<style>
+html, body { height: 100%; margin: 0; }
+body {
+color: #fff;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+background: linear-gradient(-45deg, #000000, #0a0a0a, #1a1a1a, #000000, #111111);
+background-size: 400% 400%;
+animation: gradientShift 12s ease infinite;
+padding: 24px;
+box-sizing: border-box;
+}
+@keyframes gradientShift {
+0% { background-position: 0% 50%; }
+50% { background-position: 100% 50%; }
+100% { background-position: 0% 50%; }
+}
+h1 {
+font-weight: 700;
+letter-spacing: 0.05em;
+font-size: 2.5rem;
+margin: 0 0 24px 0;
+text-align: center;
+}
+video {
+max-width: 90%;
+max-height: 75vh;
+border-radius: 8px;
+box-shadow: 0 0 40px rgba(255,255,255,0.1);
+}
+</style>
+</head>
+<body>
+<h1>Revenge is here</h1>
+<video controls autoplay muted loop playsinline>
+<source src="kirk.mov" type="video/quicktime" />
+<source src="kirk.mp4" type="video/mp4" />
+Your browser does not support the video tag.
+</video>
+</body>
+</html>
