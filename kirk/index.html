@@ -32,15 +32,25 @@ margin: 0 0 24px 0;
 text-align: center;
 }
 video {
-max-width: 90%;
+width: 100%;
+max-width: 500px;
 max-height: 75vh;
 border-radius: 8px;
 box-shadow: 0 0 40px rgba(255,255,255,0.1);
+background: #000;
 }
 </style>
 </head>
 <body>
 <h1>Revenge is here</h1>
-<video src="kirk.mp4" controls autoplay muted loop playsinline></video>
+<video id="vid" src="kirk.mp4#t=0.1" controls autoplay muted loop playsinline preload="auto"></video>
+<script>
+const v = document.getElementById('vid');
+v.addEventListener('loadeddata', function () {
+if (v.currentTime === 0) { try { v.currentTime = 0.1; } catch (e) {} }
+const p = v.play();
+if (p && p.catch) { p.catch(function () {}); }
+});
+</script>
 </body>
 </html>
