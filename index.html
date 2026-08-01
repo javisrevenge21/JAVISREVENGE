@@ -3,69 +3,191 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#000000" />
 <title>Coming Soon</title>
 <style>
-html, body { height: 100%; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; background: #000; overflow: hidden; }
 body {
 color: #fff;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 display: flex;
 align-items: center;
 justify-content: center;
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-overflow: hidden;
-background: linear-gradient(-45deg, #000000, #0a0a0a, #1a1a1a, #000000, #111111);
-background-size: 400% 400%;
-animation: gradientShift 12s ease infinite;
 }
-@keyframes gradientShift {
-0% { background-position: 0% 50%; }
-50% { background-position: 100% 50%; }
-100% { background-position: 0% 50%; }
-}
-h1 {
-font-weight: 600;
-letter-spacing: 0.05em;
-font-size: 2.5rem;
-z-index: 1;
-animation: pulse 3s ease-in-out infinite;
-}
-@keyframes pulse {
-0%, 100% { opacity: 1; }
-50% { opacity: 0.5; }
-}
-.stars {
+#bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.glow {
 position: fixed;
-top: 0; left: 0;
-width: 100%; height: 100%;
+left: 50%; top: 50%;
+transform: translate(-50%, -50%);
+width: min(95vw, 950px);
+height: min(95vw, 950px);
+background: radial-gradient(circle, rgba(125,95,255,0.13) 0%, rgba(0,0,0,0) 66%);
 pointer-events: none;
+z-index: 1;
+animation: breathe 9s ease-in-out infinite;
 }
-.star {
-position: absolute;
-width: 2px; height: 2px;
-background: #fff;
-border-radius: 50%;
-opacity: 0.6;
-animation: twinkle 4s infinite ease-in-out;
+@keyframes breathe {
+0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+50% { opacity: 1; transform: translate(-50%, -50%) scale(1.09); }
 }
-@keyframes twinkle {
-0%, 100% { opacity: 0.1; }
-50% { opacity: 0.9; }
+.wrap { position: relative; z-index: 2; text-align: center; padding: 24px; }
+h1 {
+font-size: clamp(1.9rem, 7vw, 4.25rem);
+font-weight: 600;
+letter-spacing: 0.08em;
+display: inline-flex;
+align-items: center;
+gap: 0.35em;
+white-space: nowrap;
+text-shadow: 0 0 30px rgba(165,145,255,0.35), 0 0 90px rgba(90,60,220,0.22);
+animation: fadeUp 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.lock { display: inline-block; font-size: 0.82em; animation: lockFloat 4.5s ease-in-out infinite; }
+@keyframes lockFloat {
+0%, 100% { transform: translateY(0) rotate(0deg); }
+25% { transform: translateY(-0.09em) rotate(-5deg); }
+75% { transform: translateY(0.05em) rotate(5deg); }
+}
+@keyframes fadeUp {
+from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
+to { opacity: 1; transform: none; filter: none; }
+}
+.rule {
+width: 0;
+height: 1px;
+margin: 24px auto 0;
+background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+animation: grow 2.2s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+@keyframes grow { to { width: min(320px, 70vw); } }
+@media (prefers-reduced-motion: reduce) {
+.glow, .lock, h1, .rule { animation: none !important; }
+h1 { opacity: 1; }
+.rule { width: min(320px, 70vw); }
 }
 </style>
 </head>
 <body>
-<div class="stars" id="stars"></div>
-<h1>Coming Soon</h1>
+<canvas id="bg"></canvas>
+<div class="glow"></div>
+<div class="wrap">
+<h1>Coming Soon <span class="lock" role="img" aria-label="locked">&#128274;</span></h1>
+<div class="rule"></div>
+</div>
 <script>
-const stars = document.getElementById('stars');
-for (let i = 0; i < 80; i++) {
-const s = document.createElement('div');
-s.className = 'star';
-s.style.left = Math.random() * 100 + '%';
-s.style.top = Math.random() * 100 + '%';
-s.style.animationDelay = Math.random() * 4 + 's';
-stars.appendChild(s);
+(function () {
+var c = document.getElementById('bg');
+var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var FALLBACK = 'radial-gradient(ellipse at 50% 40%, #14112c 0%, #06050f 45%, #000000 100%)';
+
+if (!gl) { document.body.style.background = FALLBACK; return; }
+
+var vs = 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }';
+
+var fs = [
+'precision highp float;',
+'uniform vec2 u_res;',
+'uniform float u_time;',
+'float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }',
+'float noise(vec2 p) {',
+'  vec2 i = floor(p), f = fract(p);',
+'  vec2 u = f * f * (3.0 - 2.0 * f);',
+'  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),',
+'             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);',
+'}',
+'float fbm(vec2 p) {',
+'  float v = 0.0, a = 0.5;',
+'  mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
+'  for (int i = 0; i < 6; i++) { v += a * noise(p); p = m * p; a *= 0.5; }',
+'  return v;',
+'}',
+'void main() {',
+'  vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / min(u_res.x, u_res.y);',
+'  float t = u_time * 0.06;',
+'  vec2 p = uv * 1.6;',
+'  vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(5.2, 1.3) - t * 0.5));',
+'  vec2 r = vec2(fbm(p + 3.0 * q + vec2(1.7, 9.2) + t * 0.7),',
+'                fbm(p + 3.0 * q + vec2(8.3, 2.8) - t * 0.6));',
+'  float f = fbm(p + 3.0 * r);',
+'  vec3 col = vec3(0.0);',
+'  col = mix(col, vec3(0.05, 0.05, 0.14), clamp(f * f * 2.4, 0.0, 1.0));',
+'  col = mix(col, vec3(0.28, 0.12, 0.55), clamp(length(q) * 0.75, 0.0, 1.0) * 0.55);',
+'  col = mix(col, vec3(0.02, 0.30, 0.34), clamp(r.x * 0.85, 0.0, 1.0) * 0.30);',
+'  col += vec3(0.85, 0.88, 1.0) * pow(clamp(f, 0.0, 1.0), 7.0) * 0.5;',
+'  float d = length(uv * vec2(1.0, 1.15));',
+'  col *= smoothstep(1.15, 0.12, d);',
+'  col *= 0.86 + 0.14 * sin(u_time * 0.25);',
+'  col += (hash(gl_FragCoord.xy + fract(u_time)) - 0.5) * 0.025;',
+'  gl_FragColor = vec4(max(col, 0.0), 1.0);',
+'}'
+].join('\n');
+
+function compile(type, src) {
+var s = gl.createShader(type);
+gl.shaderSource(s, src);
+gl.compileShader(s);
+return s;
 }
+
+var prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+document.body.style.background = FALLBACK;
+return;
+}
+gl.useProgram(prog);
+
+var buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+var loc = gl.getAttribLocation(prog, 'p');
+gl.enableVertexAttribArray(loc);
+gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+var uRes = gl.getUniformLocation(prog, 'u_res');
+var uTime = gl.getUniformLocation(prog, 'u_time');
+
+function resize() {
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+c.width = Math.floor(window.innerWidth * dpr);
+c.height = Math.floor(window.innerHeight * dpr);
+gl.viewport(0, 0, c.width, c.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function draw(t) {
+gl.uniform2f(uRes, c.width, c.height);
+gl.uniform1f(uTime, t);
+gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+if (reduced) { draw(14.0); return; }
+
+var t0 = performance.now();
+var elapsed = 0;
+var raf = null;
+
+function frame(now) {
+elapsed = (now - t0) / 1000;
+draw(elapsed);
+raf = requestAnimationFrame(frame);
+}
+raf = requestAnimationFrame(frame);
+
+document.addEventListener('visibilitychange', function () {
+if (document.hidden) {
+if (raf) { cancelAnimationFrame(raf); raf = null; }
+} else if (!raf) {
+t0 = performance.now() - elapsed * 1000;
+raf = requestAnimationFrame(frame);
+}
+});
+})();
 </script>
 </body>
 </html>
