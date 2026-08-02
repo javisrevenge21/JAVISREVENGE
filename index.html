@@ -20,7 +20,7 @@ left: 50%; top: 50%;
 transform: translate(-50%, -50%);
 width: min(95vw, 950px);
 height: min(95vw, 950px);
-background: radial-gradient(circle, rgba(120,95,255,0.10) 0%, rgba(0,0,0,0) 66%);
+background: radial-gradient(circle, rgba(255,255,255,0.045) 0%, rgba(0,0,0,0) 66%);
 pointer-events: none;
 z-index: 1;
 animation: breathe 9s ease-in-out infinite;
@@ -43,7 +43,7 @@ padding: 48px 24px;
 h1 {
 font-weight: 600;
 letter-spacing: 0.08em;
-text-shadow: 0 0 30px rgba(165,145,255,0.35), 0 0 90px rgba(90,60,220,0.22);
+text-shadow: 0 0 30px rgba(255,255,255,0.28), 0 0 90px rgba(255,255,255,0.12);
 }
 .gate-title {
 font-size: clamp(1.7rem, 6vw, 3rem);
@@ -92,9 +92,9 @@ transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
 }
 input[type="password"]::placeholder { color: rgba(255,255,255,0.35); }
 input[type="password"]:focus {
-border-color: rgba(150,120,255,0.6);
-background: rgba(255,255,255,0.07);
-box-shadow: 0 0 0 4px rgba(120,90,255,0.12);
+border-color: rgba(255,255,255,0.5);
+background: rgba(255,255,255,0.08);
+box-shadow: 0 0 0 4px rgba(255,255,255,0.07);
 }
 button {
 padding: 14px 22px;
@@ -102,14 +102,14 @@ font-size: 1rem;
 font-family: inherit;
 font-weight: 600;
 letter-spacing: 0.04em;
-color: #0a0a12;
+color: #0a0a0a;
 background: #fff;
 border: 0;
 border-radius: 10px;
 cursor: pointer;
 transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
-button:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(160,140,255,0.28); }
+button:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(255,255,255,0.18); }
 button:active { transform: translateY(0); }
 .err {
 margin-top: 16px;
@@ -158,16 +158,32 @@ text-transform: uppercase;
 color: rgba(255,255,255,0.45);
 margin-bottom: 12px;
 }
-#xmount { min-height: 60px; }
+.xstatus {
+padding: 8px 2px 2px;
+font-size: 0.9rem;
+letter-spacing: 0.03em;
+color: rgba(255,255,255,0.4);
+}
+.xstatus.hidden { display: none; }
 .xfallback {
 display: block;
-padding: 16px 4px 6px;
-color: #cbb8ff;
-text-decoration: none;
+margin-top: 4px;
+padding: 14px 16px;
+text-align: center;
 font-size: 0.95rem;
-letter-spacing: 0.03em;
+letter-spacing: 0.04em;
+color: rgba(255,255,255,0.88);
+text-decoration: none;
+background: rgba(255,255,255,0.04);
+border: 1px solid rgba(255,255,255,0.14);
+border-radius: 10px;
+transition: color 0.25s, border-color 0.25s, background 0.25s;
 }
-.xfallback:hover { color: #fff; }
+.xfallback:hover {
+color: #fff;
+background: rgba(255,255,255,0.08);
+border-color: rgba(255,255,255,0.4);
+}
 .xfallback.hidden { display: none; }
 .kirk {
 display: block;
@@ -187,9 +203,9 @@ animation: fadeUp 1.2s 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 .kirk:hover {
 color: #fff;
-background: rgba(255,255,255,0.06);
-border-color: rgba(160,130,255,0.55);
-box-shadow: 0 10px 34px rgba(120,90,255,0.22);
+background: rgba(255,255,255,0.07);
+border-color: rgba(255,255,255,0.45);
+box-shadow: 0 10px 34px rgba(255,255,255,0.12);
 transform: translateY(-2px);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -219,10 +235,9 @@ transform: translateY(-2px);
 <p class="sub">Welcome.</p>
 <section class="card">
 <p class="card-label">Latest on X</p>
-<div id="xmount">
-<a class="twitter-timeline" data-theme="dark" data-chrome="noheader nofooter noborders transparent" data-tweet-limit="1" data-height="420" href="https://twitter.com/javisrevenge">Posts by @javisrevenge</a>
-</div>
-<a class="xfallback hidden" id="xfallback" href="https://x.com/javisrevenge" target="_blank" rel="noopener">Open @javisrevenge on X &rsaquo;</a>
+<div id="xmount"></div>
+<p class="xstatus" id="xstatus">Loading latest post&hellip;</p>
+<a class="xfallback hidden" id="xfallback" href="https://x.com/javisrevenge" target="_blank" rel="noopener">View @javisrevenge on X &rsaquo;</a>
 </section>
 <a class="kirk" href="/kirk">KIRK</a>
 </div>
@@ -238,6 +253,20 @@ var pw = document.getElementById('pw');
 var err = document.getElementById('err');
 var xLoaded = false;
 
+function showFallback() {
+var st = document.getElementById('xstatus');
+if (st) { st.classList.add('hidden'); }
+var fb = document.getElementById('xfallback');
+if (fb) { fb.classList.remove('hidden'); }
+}
+
+function checkRendered() {
+var mount = document.getElementById('xmount');
+var frame = mount ? mount.querySelector('iframe') : null;
+if (!frame || frame.offsetHeight < 60) { showFallback(); }
+else { var st = document.getElementById('xstatus'); if (st) { st.classList.add('hidden'); } }
+}
+
 function loadX() {
 if (xLoaded) { return; }
 xLoaded = true;
@@ -245,13 +274,21 @@ var s = document.createElement('script');
 s.async = true;
 s.charset = 'utf-8';
 s.src = 'https://platform.twitter.com/widgets.js';
-document.body.appendChild(s);
-setTimeout(function () {
-var mount = document.getElementById('xmount');
-if (mount && !mount.querySelector('iframe')) {
-document.getElementById('xfallback').classList.remove('hidden');
+s.onerror = showFallback;
+s.onload = function () {
+if (!window.twttr || !window.twttr.widgets || !window.twttr.widgets.createTimeline) {
+showFallback();
+return;
 }
-}, 7000);
+window.twttr.widgets.createTimeline(
+{ sourceType: 'profile', screenName: 'javisrevenge' },
+document.getElementById('xmount'),
+{ theme: 'dark', chrome: 'noheader nofooter noborders transparent', tweetLimit: 1, height: 420, dnt: true }
+).then(function () { setTimeout(checkRendered, 1200); },
+function () { showFallback(); });
+};
+document.body.appendChild(s);
+setTimeout(checkRendered, 9000);
 }
 
 function unlock(skipStore) {
@@ -265,10 +302,9 @@ loadX();
 
 form.addEventListener('submit', function (e) {
 e.preventDefault();
-var val = pw.value;
 var expected = '';
 try { expected = atob(KEY); } catch (e2) { expected = ''; }
-if (val === expected) {
+if (pw.value === expected) {
 err.classList.remove('show');
 unlock(false);
 } else {
@@ -294,7 +330,7 @@ else { pw.focus(); }
 var c = document.getElementById('bg');
 var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
 var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-var FALLBACK = 'radial-gradient(ellipse at 50% 40%, #0b0a1a 0%, #05040d 45%, #000000 100%)';
+var FALLBACK = 'radial-gradient(ellipse at 50% 40%, #0d0d0f 0%, #050505 45%, #000000 100%)';
 
 if (!gl) { document.body.style.background = FALLBACK; return; }
 
@@ -326,13 +362,13 @@ var fs = [
 '                fbm(p + 3.0 * q + vec2(8.3, 2.8) - t * 0.6));',
 '  float f = fbm(p + 3.0 * r);',
 '  vec3 col = vec3(0.0);',
-'  col = mix(col, vec3(0.05, 0.05, 0.13), clamp(f * f * 2.4, 0.0, 1.0));',
-'  col = mix(col, vec3(0.26, 0.11, 0.52), clamp(length(q) * 0.75, 0.0, 1.0) * 0.48);',
-'  col = mix(col, vec3(0.02, 0.26, 0.30), clamp(r.x * 0.85, 0.0, 1.0) * 0.26);',
-'  col += vec3(0.85, 0.88, 1.0) * pow(clamp(f, 0.0, 1.0), 7.5) * 0.50;',
+'  col = mix(col, vec3(0.06, 0.06, 0.07), clamp(f * f * 2.4, 0.0, 1.0));',
+'  col = mix(col, vec3(0.36, 0.36, 0.39), clamp(length(q) * 0.75, 0.0, 1.0) * 0.48);',
+'  col = mix(col, vec3(0.10, 0.11, 0.12), clamp(r.x * 0.85, 0.0, 1.0) * 0.26);',
+'  col += vec3(0.90, 0.92, 1.00) * pow(clamp(f, 0.0, 1.0), 7.5) * 0.46;',
 '  float d = length(uv * vec2(1.0, 1.15));',
 '  col *= smoothstep(1.12, 0.04, d);',
-'  col = col * col * 2.5;',
+'  col = col * col * 2.6;',
 '  col *= 0.90 + 0.10 * sin(u_time * 0.25);',
 '  col += (hash(gl_FragCoord.xy + fract(u_time)) - 0.5) * 0.02;',
 '  gl_FragColor = vec4(max(col, 0.0), 1.0);',
