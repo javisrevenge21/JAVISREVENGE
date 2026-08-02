@@ -140,54 +140,9 @@ letter-spacing: 0.06em;
 color: rgba(255,255,255,0.62);
 animation: fadeUp 1.2s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.card {
-margin-top: 34px;
-padding: 18px;
-background: rgba(255,255,255,0.04);
-border: 1px solid rgba(255,255,255,0.12);
-border-radius: 16px;
-backdrop-filter: blur(10px);
--webkit-backdrop-filter: blur(10px);
-text-align: left;
-animation: fadeUp 1.2s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-.card-label {
-font-size: 0.72rem;
-letter-spacing: 0.22em;
-text-transform: uppercase;
-color: rgba(255,255,255,0.45);
-margin-bottom: 12px;
-}
-.xstatus {
-padding: 8px 2px 2px;
-font-size: 0.9rem;
-letter-spacing: 0.03em;
-color: rgba(255,255,255,0.4);
-}
-.xstatus.hidden { display: none; }
-.xfallback {
+.tile {
 display: block;
-margin-top: 4px;
-padding: 14px 16px;
-text-align: center;
-font-size: 0.95rem;
-letter-spacing: 0.04em;
-color: rgba(255,255,255,0.88);
-text-decoration: none;
-background: rgba(255,255,255,0.04);
-border: 1px solid rgba(255,255,255,0.14);
-border-radius: 10px;
-transition: color 0.25s, border-color 0.25s, background 0.25s;
-}
-.xfallback:hover {
-color: #fff;
-background: rgba(255,255,255,0.08);
-border-color: rgba(255,255,255,0.4);
-}
-.xfallback.hidden { display: none; }
-.kirk {
-display: block;
-margin: 18px auto 0;
+margin: 16px auto 0;
 padding: 18px;
 font-size: 1.05rem;
 font-weight: 700;
@@ -199,17 +154,19 @@ background: rgba(255,255,255,0.03);
 border: 1px solid rgba(255,255,255,0.14);
 border-radius: 14px;
 transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s, color 0.25s, background 0.25s;
-animation: fadeUp 1.2s 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.kirk:hover {
+.tile:first-of-type { margin-top: 36px; }
+.tile:hover {
 color: #fff;
 background: rgba(255,255,255,0.07);
 border-color: rgba(255,255,255,0.45);
 box-shadow: 0 10px 34px rgba(255,255,255,0.12);
 transform: translateY(-2px);
 }
+.tile-blog { animation: fadeUp 1.2s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.tile-kirk { animation: fadeUp 1.2s 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 @media (prefers-reduced-motion: reduce) {
-.glow, .lock, .gate-title, .gate-form, .brand, .rule, .sub, .card, .kirk { animation: none !important; }
+.glow, .lock, .gate-title, .gate-form, .brand, .rule, .sub, .tile { animation: none !important; }
 }
 </style>
 </head>
@@ -233,13 +190,8 @@ transform: translateY(-2px);
 <h1 class="brand">JAVISREVENGE</h1>
 <div class="rule"></div>
 <p class="sub">Welcome.</p>
-<section class="card">
-<p class="card-label">Latest on X</p>
-<div id="xmount"></div>
-<p class="xstatus" id="xstatus">Loading latest post&hellip;</p>
-<a class="xfallback hidden" id="xfallback" href="https://x.com/javisrevenge" target="_blank" rel="noopener">View @javisrevenge on X &rsaquo;</a>
-</section>
-<a class="kirk" href="/kirk">KIRK</a>
+<a class="tile tile-blog" href="/blog">BLOG</a>
+<a class="tile tile-kirk" href="/kirk">KIRK</a>
 </div>
 </main>
 
@@ -251,55 +203,6 @@ var welcome = document.getElementById('welcome');
 var form = document.getElementById('gateForm');
 var pw = document.getElementById('pw');
 var err = document.getElementById('err');
-var xLoaded = false;
-
-var LATEST_FALLBACK = '2083752475958694176';
-
-function hideStatus() {
-var st = document.getElementById('xstatus');
-if (st) { st.classList.add('hidden'); }
-}
-
-function showFallback() {
-hideStatus();
-var fb = document.getElementById('xfallback');
-if (fb) { fb.classList.remove('hidden'); }
-}
-
-function mountTweet(id) {
-window.twttr.widgets.createTweet(
-id,
-document.getElementById('xmount'),
-{ theme: 'dark', align: 'center', dnt: true, conversation: 'none' }
-).then(function (el) {
-if (el) { hideStatus(); } else { showFallback(); }
-}, showFallback);
-}
-
-function loadX() {
-if (xLoaded) { return; }
-xLoaded = true;
-var s = document.createElement('script');
-s.async = true;
-s.charset = 'utf-8';
-s.src = 'https://platform.twitter.com/widgets.js';
-s.onerror = showFallback;
-s.onload = function () {
-if (!window.twttr || !window.twttr.widgets || !window.twttr.widgets.createTweet) {
-showFallback();
-return;
-}
-fetch('/api/latest-post')
-.then(function (r) { return r.json(); })
-.then(function (d) { mountTweet(d && d.id ? d.id : LATEST_FALLBACK); })
-.catch(function () { mountTweet(LATEST_FALLBACK); });
-};
-document.body.appendChild(s);
-setTimeout(function () {
-var mount = document.getElementById('xmount');
-if (!mount || !mount.querySelector('iframe')) { showFallback(); }
-}, 12000);
-}
 
 function unlock(skipStore) {
 if (!skipStore) {
@@ -307,7 +210,6 @@ try { sessionStorage.setItem('jr_unlocked', '1'); } catch (e) {}
 }
 gate.classList.add('hidden');
 welcome.classList.remove('hidden');
-loadX();
 }
 
 form.addEventListener('submit', function (e) {
