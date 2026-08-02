@@ -253,18 +253,27 @@ var pw = document.getElementById('pw');
 var err = document.getElementById('err');
 var xLoaded = false;
 
-function showFallback() {
+var LATEST_FALLBACK = '2083752475958694176';
+
+function hideStatus() {
 var st = document.getElementById('xstatus');
 if (st) { st.classList.add('hidden'); }
+}
+
+function showFallback() {
+hideStatus();
 var fb = document.getElementById('xfallback');
 if (fb) { fb.classList.remove('hidden'); }
 }
 
-function checkRendered() {
-var mount = document.getElementById('xmount');
-var frame = mount ? mount.querySelector('iframe') : null;
-if (!frame || frame.offsetHeight < 60) { showFallback(); }
-else { var st = document.getElementById('xstatus'); if (st) { st.classList.add('hidden'); } }
+function mountTweet(id) {
+window.twttr.widgets.createTweet(
+id,
+document.getElementById('xmount'),
+{ theme: 'dark', align: 'center', dnt: true, conversation: 'none' }
+).then(function (el) {
+if (el) { hideStatus(); } else { showFallback(); }
+}, showFallback);
 }
 
 function loadX() {
@@ -276,19 +285,20 @@ s.charset = 'utf-8';
 s.src = 'https://platform.twitter.com/widgets.js';
 s.onerror = showFallback;
 s.onload = function () {
-if (!window.twttr || !window.twttr.widgets || !window.twttr.widgets.createTimeline) {
+if (!window.twttr || !window.twttr.widgets || !window.twttr.widgets.createTweet) {
 showFallback();
 return;
 }
-window.twttr.widgets.createTimeline(
-{ sourceType: 'profile', screenName: 'javisrevenge' },
-document.getElementById('xmount'),
-{ theme: 'dark', chrome: 'noheader nofooter noborders transparent', tweetLimit: 1, height: 420, dnt: true }
-).then(function () { setTimeout(checkRendered, 1200); },
-function () { showFallback(); });
+fetch('/api/latest-post')
+.then(function (r) { return r.json(); })
+.then(function (d) { mountTweet(d && d.id ? d.id : LATEST_FALLBACK); })
+.catch(function () { mountTweet(LATEST_FALLBACK); });
 };
 document.body.appendChild(s);
-setTimeout(checkRendered, 9000);
+setTimeout(function () {
+var mount = document.getElementById('xmount');
+if (!mount || !mount.querySelector('iframe')) { showFallback(); }
+}, 12000);
 }
 
 function unlock(skipStore) {
