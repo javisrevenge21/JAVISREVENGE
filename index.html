@@ -4,16 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#000000" />
-<title>Coming Soon</title>
+<title>JAVISREVENGE</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; background: #000; overflow: hidden; }
+html, body { min-height: 100%; background: #000; }
 body {
 color: #fff;
 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-display: flex;
-align-items: center;
-justify-content: center;
+overflow-x: hidden;
 }
 #bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
 .glow {
@@ -31,17 +29,29 @@ animation: breathe 9s ease-in-out infinite;
 0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.09); }
 }
-.wrap { position: relative; z-index: 2; text-align: center; padding: 24px; }
+.view {
+position: relative;
+z-index: 2;
+min-height: 100vh;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 48px 24px;
+}
+.view.hidden { display: none; }
+.wrap { width: 100%; max-width: 560px; text-align: center; }
 h1 {
-font-size: clamp(1.9rem, 7vw, 4.25rem);
 font-weight: 600;
 letter-spacing: 0.08em;
+text-shadow: 0 0 30px rgba(165,145,255,0.35), 0 0 90px rgba(90,60,220,0.22);
+}
+.gate-title {
+font-size: clamp(1.7rem, 6vw, 3rem);
 display: inline-flex;
 align-items: center;
 gap: 0.35em;
 white-space: nowrap;
-text-shadow: 0 0 30px rgba(165,145,255,0.35), 0 0 90px rgba(90,60,220,0.22);
-animation: fadeUp 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+animation: fadeUp 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 .lock { display: inline-block; font-size: 0.82em; animation: lockFloat 4.5s ease-in-out infinite; }
 @keyframes lockFloat {
@@ -53,28 +63,232 @@ animation: fadeUp 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
 to { opacity: 1; transform: none; filter: none; }
 }
-.rule {
-width: 0;
-height: 1px;
-margin: 24px auto 0;
-background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
-animation: grow 2.2s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+.gate-form {
+margin: 30px auto 0;
+display: flex;
+gap: 10px;
+max-width: 400px;
+animation: fadeUp 1.4s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-@keyframes grow { to { width: min(320px, 70vw); } }
+.gate-form.shake { animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes shake {
+10%, 90% { transform: translateX(-2px); }
+20%, 80% { transform: translateX(4px); }
+30%, 50%, 70% { transform: translateX(-7px); }
+40%, 60% { transform: translateX(7px); }
+}
+input[type="password"] {
+flex: 1;
+min-width: 0;
+padding: 14px 16px;
+font-size: 1rem;
+font-family: inherit;
+color: #fff;
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.16);
+border-radius: 10px;
+outline: none;
+transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+}
+input[type="password"]::placeholder { color: rgba(255,255,255,0.35); }
+input[type="password"]:focus {
+border-color: rgba(150,120,255,0.6);
+background: rgba(255,255,255,0.07);
+box-shadow: 0 0 0 4px rgba(120,90,255,0.12);
+}
+button {
+padding: 14px 22px;
+font-size: 1rem;
+font-family: inherit;
+font-weight: 600;
+letter-spacing: 0.04em;
+color: #0a0a12;
+background: #fff;
+border: 0;
+border-radius: 10px;
+cursor: pointer;
+transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+button:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(160,140,255,0.28); }
+button:active { transform: translateY(0); }
+.err {
+margin-top: 16px;
+min-height: 1.2em;
+font-size: 0.9rem;
+letter-spacing: 0.03em;
+color: #ff8b8b;
+opacity: 0;
+transition: opacity 0.25s;
+}
+.err.show { opacity: 1; }
+.brand {
+font-size: clamp(1.8rem, 8vw, 4rem);
+letter-spacing: 0.16em;
+animation: fadeUp 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.rule {
+width: min(320px, 70vw);
+height: 1px;
+margin: 22px auto 0;
+background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+animation: fadeUp 1.2s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.sub {
+margin-top: 18px;
+font-size: 1rem;
+letter-spacing: 0.06em;
+color: rgba(255,255,255,0.62);
+animation: fadeUp 1.2s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.card {
+margin-top: 34px;
+padding: 18px;
+background: rgba(255,255,255,0.04);
+border: 1px solid rgba(255,255,255,0.12);
+border-radius: 16px;
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+text-align: left;
+animation: fadeUp 1.2s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.card-label {
+font-size: 0.72rem;
+letter-spacing: 0.22em;
+text-transform: uppercase;
+color: rgba(255,255,255,0.45);
+margin-bottom: 12px;
+}
+#xmount { min-height: 60px; }
+.xfallback {
+display: block;
+padding: 16px 4px 6px;
+color: #cbb8ff;
+text-decoration: none;
+font-size: 0.95rem;
+letter-spacing: 0.03em;
+}
+.xfallback:hover { color: #fff; }
+.xfallback.hidden { display: none; }
+.kirk {
+display: block;
+margin: 18px auto 0;
+padding: 18px;
+font-size: 1.05rem;
+font-weight: 700;
+letter-spacing: 0.3em;
+text-align: center;
+color: rgba(255,255,255,0.9);
+text-decoration: none;
+background: rgba(255,255,255,0.03);
+border: 1px solid rgba(255,255,255,0.14);
+border-radius: 14px;
+transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s, color 0.25s, background 0.25s;
+animation: fadeUp 1.2s 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.kirk:hover {
+color: #fff;
+background: rgba(255,255,255,0.06);
+border-color: rgba(160,130,255,0.55);
+box-shadow: 0 10px 34px rgba(120,90,255,0.22);
+transform: translateY(-2px);
+}
 @media (prefers-reduced-motion: reduce) {
-.glow, .lock, h1, .rule { animation: none !important; }
-h1 { opacity: 1; }
-.rule { width: min(320px, 70vw); }
+.glow, .lock, .gate-title, .gate-form, .brand, .rule, .sub, .card, .kirk { animation: none !important; }
 }
 </style>
 </head>
 <body>
 <canvas id="bg"></canvas>
 <div class="glow"></div>
+
+<main id="gate" class="view">
 <div class="wrap">
-<h1>Coming Soon <span class="lock" role="img" aria-label="locked">&#128274;</span></h1>
-<div class="rule"></div>
+<h1 class="gate-title">Password <span class="lock" role="img" aria-label="locked">&#128274;</span></h1>
+<form id="gateForm" class="gate-form" autocomplete="off">
+<input id="pw" type="password" placeholder="Enter password" autocomplete="off" spellcheck="false" aria-label="Password" />
+<button type="submit">Unlock</button>
+</form>
+<p class="err" id="err" role="alert"></p>
 </div>
+</main>
+
+<main id="welcome" class="view hidden">
+<div class="wrap">
+<h1 class="brand">JAVISREVENGE</h1>
+<div class="rule"></div>
+<p class="sub">Welcome.</p>
+<section class="card">
+<p class="card-label">Latest on X</p>
+<div id="xmount">
+<a class="twitter-timeline" data-theme="dark" data-chrome="noheader nofooter noborders transparent" data-tweet-limit="1" data-height="420" href="https://twitter.com/javisrevenge">Posts by @javisrevenge</a>
+</div>
+<a class="xfallback hidden" id="xfallback" href="https://x.com/javisrevenge" target="_blank" rel="noopener">Open @javisrevenge on X &rsaquo;</a>
+</section>
+<a class="kirk" href="/kirk">KIRK</a>
+</div>
+</main>
+
+<script>
+(function () {
+var KEY = 'cmV2ZW5nZWlzY29taW5n';
+var gate = document.getElementById('gate');
+var welcome = document.getElementById('welcome');
+var form = document.getElementById('gateForm');
+var pw = document.getElementById('pw');
+var err = document.getElementById('err');
+var xLoaded = false;
+
+function loadX() {
+if (xLoaded) { return; }
+xLoaded = true;
+var s = document.createElement('script');
+s.async = true;
+s.charset = 'utf-8';
+s.src = 'https://platform.twitter.com/widgets.js';
+document.body.appendChild(s);
+setTimeout(function () {
+var mount = document.getElementById('xmount');
+if (mount && !mount.querySelector('iframe')) {
+document.getElementById('xfallback').classList.remove('hidden');
+}
+}, 7000);
+}
+
+function unlock(skipStore) {
+if (!skipStore) {
+try { sessionStorage.setItem('jr_unlocked', '1'); } catch (e) {}
+}
+gate.classList.add('hidden');
+welcome.classList.remove('hidden');
+loadX();
+}
+
+form.addEventListener('submit', function (e) {
+e.preventDefault();
+var val = pw.value;
+var expected = '';
+try { expected = atob(KEY); } catch (e2) { expected = ''; }
+if (val === expected) {
+err.classList.remove('show');
+unlock(false);
+} else {
+err.textContent = 'Incorrect password.';
+err.classList.add('show');
+form.classList.remove('shake');
+void form.offsetWidth;
+form.classList.add('shake');
+pw.value = '';
+pw.focus();
+}
+});
+
+try {
+if (sessionStorage.getItem('jr_unlocked') === '1') { unlock(true); }
+else { pw.focus(); }
+} catch (e3) { pw.focus(); }
+})();
+</script>
+
 <script>
 (function () {
 var c = document.getElementById('bg');
