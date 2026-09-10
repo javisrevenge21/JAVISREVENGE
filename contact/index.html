@@ -112,6 +112,7 @@ transition: transform 0.2s, box-shadow 0.2s;
 }
 button:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(255,255,255,0.18); }
 button:active { transform: translateY(0); }
+button:disabled { opacity: 0.55; cursor: default; transform: none; box-shadow: none; }
 .note {
 margin-top: 14px;
 font-size: 0.8rem;
@@ -149,6 +150,41 @@ color: #fff;
 background: rgba(255,255,255,0.07);
 border-color: rgba(255,255,255,0.4);
 }
+.tipHeading {
+font-size: 0.72rem;
+letter-spacing: 0.18em;
+text-transform: uppercase;
+color: rgba(255,255,255,0.45);
+margin-bottom: 10px;
+}
+input[type="file"] {
+width: 100%;
+padding: 12px 14px;
+font-size: 0.85rem;
+color: rgba(255,255,255,0.7);
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.16);
+border-radius: 10px;
+}
+.tipProgress {
+list-style: none;
+margin-top: 14px;
+}
+.tipProgress li {
+font-size: 0.82rem;
+color: rgba(255,255,255,0.55);
+margin-top: 6px;
+}
+.tipProgress li.done { color: #9fe8b5; }
+.tipProgress li.error { color: #ff8a8a; }
+.tipError {
+margin-top: 14px;
+font-size: 0.82rem;
+line-height: 1.5;
+color: #ff8a8a;
+text-align: center;
+display: none;
+}
 @media (prefers-reduced-motion: reduce) {
 .glow, h1, .rule, .card, .back { animation: none !important; }
 }
@@ -181,6 +217,25 @@ border-color: rgba(255,255,255,0.4);
 </form>
 <p class="sent" id="sent">Opening your email app&hellip;</p>
 <p class="note">This opens your email app with the message ready to send to javisrevenge@gmail.com.</p>
+</section>
+
+<section class="card">
+<h2 class="tipHeading">Anonymous tip</h2>
+<p class="note" style="margin-top: 0; text-align: left;">Send a message, photo, video, or file with no name attached. Nothing here is linked to you.</p>
+<form id="tipForm" autocomplete="off">
+<div class="field">
+<label for="tipMessage">Message (optional)</label>
+<textarea id="tipMessage" placeholder="What do you want to share?"></textarea>
+</div>
+<div class="field">
+<label for="tipFiles">Photos, video, or files (optional)</label>
+<input id="tipFiles" type="file" multiple />
+</div>
+<button type="submit" id="tipSubmit">SEND TIP ANONYMOUSLY</button>
+</form>
+<ul class="tipProgress" id="tipProgress"></ul>
+<p class="sent" id="tipSent">Tip sent. Thank you.</p>
+<p class="tipError" id="tipError"></p>
 </section>
 
 <a class="back" href="/">&lsaquo; BACK</a>
@@ -219,6 +274,95 @@ var href = 'mailto:' + TO +
 document.getElementById('sent').classList.add('show');
 window.location.href = href;
 });
+})();
+</script>
+
+<script type="module">
+(function () {
+var GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSeL0oOiNioIqunM8qbGy-Nuss3xllzjfg7Y2yTMPDCvBfAj6g/formResponse';
+var MESSAGE_ENTRY = 'entry.1122931233';
+
+var form = document.getElementById('tipForm');
+if (!form) { return; }
+
+var msgEl = document.getElementById('tipMessage');
+var filesEl = document.getElementById('tipFiles');
+var submitBtn = document.getElementById('tipSubmit');
+var progressEl = document.getElementById('tipProgress');
+var sentEl = document.getElementById('tipSent');
+var errorEl = document.getElementById('tipError');
+
+form.addEventListener('submit', function (e) {
+e.preventDefault();
+handleSubmit();
+});
+
+async function handleSubmit() {
+var message = msgEl.value.trim();
+var files = filesEl.files ? Array.prototype.slice.call(filesEl.files) : [];
+
+if (!message && files.length === 0) { return; }
+
+submitBtn.disabled = true;
+submitBtn.textContent = 'SENDING…';
+errorEl.style.display = 'none';
+errorEl.textContent = '';
+progressEl.innerHTML = '';
+sentEl.classList.remove('show');
+
+var hadError = false;
+
+if (message) {
+try {
+await fetch(GOOGLE_FORM_ACTION, {
+method: 'POST',
+mode: 'no-cors',
+headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+body: MESSAGE_ENTRY + '=' + encodeURIComponent(message)
+});
+} catch (err) {
+hadError = true;
+}
+}
+
+if (files.length > 0) {
+try {
+var mod = await import('https://esm.sh/@vercel/blob@2.8.0/client');
+for (var i = 0; i < files.length; i++) {
+var file = files[i];
+var li = document.createElement('li');
+li.textContent = file.name + ' — uploading…';
+progressEl.appendChild(li);
+try {
+await mod.upload('tips/' + Date.now() + '-' + file.name, file, {
+access: 'private',
+handleUploadUrl: '/api/tip-upload'
+});
+li.textContent = file.name + ' — sent';
+li.className = 'done';
+} catch (err) {
+li.textContent = file.name + ' — failed to send';
+li.className = 'error';
+hadError = true;
+}
+}
+} catch (err) {
+hadError = true;
+}
+}
+
+if (hadError) {
+errorEl.textContent = 'Part of your tip may not have gone through. Feel free to try again.';
+errorEl.style.display = 'block';
+} else {
+sentEl.classList.add('show');
+form.reset();
+progressEl.innerHTML = '';
+}
+
+submitBtn.disabled = false;
+submitBtn.textContent = 'SEND TIP ANONYMOUSLY';
+}
 })();
 </script>
 
@@ -270,8 +414,7 @@ var fs = [
 '  col += (hash(gl_FragCoord.xy + fract(u_time)) - 0.5) * 0.02;',
 '  gl_FragColor = vec4(max(col, 0.0), 1.0);',
 '}'
-].join('
-');
+].join('\n');
 
 function compile(type, src) {
 var s = gl.createShader(type);
