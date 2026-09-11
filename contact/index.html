@@ -38,7 +38,7 @@ align-items: center;
 justify-content: center;
 padding: 48px 24px;
 }
-.wrap { width: 100%; max-width: 560px; text-align: center; }
+.wrap { width: 100%; max-width: 980px; text-align: center; }
 h1 {
 font-size: clamp(1.8rem, 8vw, 3.6rem);
 font-weight: 600;
@@ -57,8 +57,18 @@ margin: 22px auto 0;
 background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
 animation: fadeUp 1.2s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.card {
+.cards {
 margin-top: 34px;
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 20px;
+align-items: start;
+}
+@media (max-width: 820px) {
+.cards { grid-template-columns: 1fr; gap: 16px; }
+}
+.card {
+margin-top: 0;
 padding: 22px;
 background: rgba(255,255,255,0.04);
 border: 1px solid rgba(255,255,255,0.12);
@@ -199,6 +209,7 @@ display: none;
 <h1>CONTACT</h1>
 <div class="rule"></div>
 
+<div class="cards">
 <section class="card">
 <form id="contactForm" autocomplete="off">
 <div class="field">
@@ -237,6 +248,7 @@ display: none;
 <p class="sent" id="tipSent">Tip sent. Thank you.</p>
 <p class="tipError" id="tipError"></p>
 </section>
+</div>
 
 <a class="back" href="/">&lsaquo; BACK</a>
 </div>
