@@ -39,22 +39,81 @@ align-items: center;
 justify-content: center;
 padding: 40px 24px;
 }
+.view.hidden { display: none !important; }
+.wrap { width: 100%; max-width: 560px; text-align: center; }
 h1 {
 font-weight: 700;
 letter-spacing: 0.05em;
 font-size: clamp(1.8rem, 6vw, 2.6rem);
-margin-bottom: 24px;
 text-align: center;
 text-shadow: 0 0 30px rgba(255,255,255,0.28), 0 0 90px rgba(255,255,255,0.12);
 animation: fadeUp 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.gate-title {
+display: inline-flex;
+align-items: center;
+gap: 0.35em;
+white-space: nowrap;
+font-weight: 600;
+}
+.lock { display: inline-block; font-size: 0.82em; animation: lockFloat 4.5s ease-in-out infinite; }
+@keyframes lockFloat {
+0%, 100% { transform: translateY(0) rotate(0deg); }
+25% { transform: translateY(-0.09em) rotate(-5deg); }
+75% { transform: translateY(0.05em) rotate(5deg); }
 }
 @keyframes fadeUp {
 from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
 to { opacity: 1; transform: none; filter: none; }
 }
-.wrap {
+.gate-form {
+margin: 30px auto 0;
+display: flex;
+gap: 10px;
+max-width: 400px;
+animation: fadeUp 1.4s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.gate-form.shake { animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes shake {
+10%, 90% { transform: translateX(-2px); }
+20%, 80% { transform: translateX(4px); }
+30%, 50%, 70% { transform: translateX(-7px); }
+40%, 60% { transform: translateX(7px); }
+}
+input[type="password"] {
+flex: 1; min-width: 0;
+padding: 14px 16px;
+font-size: 1rem; font-family: inherit; color: #fff;
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.16);
+border-radius: 10px; outline: none;
+transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+}
+input[type="password"]::placeholder { color: rgba(255,255,255,0.35); }
+input[type="password"]:focus {
+border-color: rgba(255,255,255,0.5);
+background: rgba(255,255,255,0.08);
+box-shadow: 0 0 0 4px rgba(255,255,255,0.07);
+}
+.unlock-btn {
+padding: 14px 22px;
+font-size: 1rem; font-family: inherit; font-weight: 600;
+letter-spacing: 0.04em; color: #0a0a0a; background: #fff;
+border: 0; border-radius: 10px; cursor: pointer;
+transition: transform 0.2s, box-shadow 0.2s;
+}
+.unlock-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(255,255,255,0.18); }
+.unlock-btn:active { transform: translateY(0) scale(0.98); }
+.err {
+margin-top: 16px; min-height: 1.2em;
+font-size: 0.9rem; letter-spacing: 0.03em; color: #ff8b8b;
+opacity: 0; transition: opacity 0.25s;
+}
+.err.show { opacity: 1; }
+.player {
 width: 100%;
 max-width: 640px;
+margin-top: 24px;
 animation: fadeUp 1.4s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 video {
@@ -86,7 +145,7 @@ background: rgba(255,255,255,0.07);
 border-color: rgba(255,255,255,0.4);
 }
 @media (prefers-reduced-motion: reduce) {
-.glow, h1, .wrap, .back { animation: none !important; }
+.glow, h1, .player, .back, .gate-form, .lock { animation: none !important; }
 }
 </style>
 </head>
@@ -94,17 +153,89 @@ border-color: rgba(255,255,255,0.4);
 <canvas id="bg"></canvas>
 <div class="glow"></div>
 
-<main class="view">
-<h1>Revenge is here</h1>
+<main id="kgate" class="view">
 <div class="wrap">
-<video controls autoplay muted loop playsinline preload="metadata">
-<source src="/kirk/kirk.mp4" type="video/mp4" />
-<source src="/kirk/kirk.mov" type="video/quicktime" />
+<h1 class="gate-title">Password <span class="lock" role="img" aria-label="locked">&#128274;</span></h1>
+<form id="kForm" class="gate-form" autocomplete="off">
+<input id="kpw" type="password" placeholder="Enter password" autocomplete="off" spellcheck="false" aria-label="Password" />
+<button class="unlock-btn" type="submit">Unlock</button>
+</form>
+<p class="err" id="kerr" role="alert"></p>
+</div>
+</main>
+
+<main id="kcontent" class="view hidden">
+<h1>Revenge is here</h1>
+<div class="player">
+<video id="kvid" controls autoplay muted loop playsinline preload="none">
 Your browser does not support the video tag.
 </video>
 </div>
 <a class="back" href="/">&lsaquo; BACK</a>
 </main>
+
+<script>
+(function () {
+var KEY = 'Ym9va2lyaw==';
+var STORE = 'jr_kirk_unlocked';
+var gate = document.getElementById('kgate');
+var content = document.getElementById('kcontent');
+var form = document.getElementById('kForm');
+var pw = document.getElementById('kpw');
+var err = document.getElementById('kerr');
+var vid = document.getElementById('kvid');
+var loaded = false;
+
+function mountVideo() {
+if (loaded || !vid) { return; }
+loaded = true;
+var sources = [
+{ src: '/kirk/kirk.mp4', type: 'video/mp4' },
+{ src: '/kirk/kirk.mov', type: 'video/quicktime' }
+];
+sources.forEach(function (s) {
+var el = document.createElement('source');
+el.src = s.src;
+el.type = s.type;
+vid.appendChild(el);
+});
+vid.setAttribute('preload', 'metadata');
+vid.load();
+}
+
+function unlock(skipStore) {
+if (!skipStore) {
+try { sessionStorage.setItem(STORE, '1'); } catch (e) {}
+}
+gate.classList.add('hidden');
+content.classList.remove('hidden');
+mountVideo();
+}
+
+form.addEventListener('submit', function (e) {
+e.preventDefault();
+var expected = '';
+try { expected = atob(KEY); } catch (e2) { expected = ''; }
+if (pw.value === expected) {
+err.classList.remove('show');
+unlock(false);
+} else {
+err.textContent = 'Incorrect password.';
+err.classList.add('show');
+form.classList.remove('shake');
+void form.offsetWidth;
+form.classList.add('shake');
+pw.value = '';
+pw.focus();
+}
+});
+
+try {
+if (sessionStorage.getItem(STORE) === '1') { unlock(true); }
+else { pw.focus(); }
+} catch (e3) { pw.focus(); }
+})();
+</script>
 
 <script>
 (function () {
@@ -154,7 +285,8 @@ var fs = [
 '  col += (hash(gl_FragCoord.xy + fract(u_time)) - 0.5) * 0.02;',
 '  gl_FragColor = vec4(max(col, 0.0), 1.0);',
 '}'
-].join('\n');
+].join('
+');
 
 function compile(type, src) {
 var s = gl.createShader(type);
