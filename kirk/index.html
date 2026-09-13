@@ -113,10 +113,14 @@ opacity: 0; transition: opacity 0.25s;
 .err.show { opacity: 1; }
 .player {
 width: 100%;
-max-width: 640px;
-margin-top: 24px;
+margin-top: 0;
 animation: fadeUp 1.4s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
+.content-grid { width:min(1180px,100%); margin-top:28px; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr); gap:24px; align-items:start; }
+.info-panel { padding:18px; border:1px solid rgba(255,255,255,.14); border-radius:14px; background:rgba(255,255,255,.035); text-align:left; animation:fadeUp 1.4s .3s cubic-bezier(.2,.7,.2,1) both; }
+.info-panel h2 { margin:0 0 14px; font-size:1rem; letter-spacing:.18em; text-transform:uppercase; }
+.pdf-frame { width:100%; height:min(68vh,720px); border:0; border-radius:8px; background:#fff; }
+.pdf-placeholder { min-height:260px; display:grid; place-items:center; padding:24px; border:1px dashed rgba(255,255,255,.22); border-radius:9px; color:rgba(255,255,255,.56); line-height:1.6; text-align:center; }
 video {
 width: 100%;
 height: auto;
@@ -148,6 +152,7 @@ border-color: rgba(255,255,255,0.4);
 @media (prefers-reduced-motion: reduce) {
 .glow, h1, .player, .back, .gate-form, .lock { animation: none !important; }
 }
+@media (max-width: 860px) { .content-grid { grid-template-columns:1fr; } .pdf-frame { height:70vh; } }
 </style>
 </head>
 <body>
@@ -167,10 +172,18 @@ border-color: rgba(255,255,255,0.4);
 
 <main id="kcontent" class="view hidden">
 <h1>Revenge is here</h1>
+<div class="content-grid">
 <div class="player">
-<video id="kvid" controls autoplay muted loop playsinline preload="none">
+<video id="kvid" controls autoplay muted loop playsinline preload="metadata">
+<source src="/kirk/kirk.mp4" type="video/mp4" />
+<source src="/kirk/kirk.mov" type="video/quicktime" />
 Your browser does not support the video tag.
 </video>
+</div>
+<section class="info-panel" aria-labelledby="information-title">
+<h2 id="information-title">Information</h2>
+<div id="pdfMount" class="pdf-placeholder">The Information PDF slot is ready. Add a file named <strong>information.pdf</strong> to the <strong>kirk</strong> folder.</div>
+</section>
 </div>
 <a class="back" href="/">&lsaquo; BACK</a>
 </main>
@@ -184,25 +197,6 @@ var content = document.getElementById('kcontent');
 var form = document.getElementById('kForm');
 var pw = document.getElementById('kpw');
 var err = document.getElementById('kerr');
-var vid = document.getElementById('kvid');
-var loaded = false;
-
-function mountVideo() {
-if (loaded || !vid) { return; }
-loaded = true;
-var sources = [
-{ src: '/kirk/kirk.mp4', type: 'video/mp4' },
-{ src: '/kirk/kirk.mov', type: 'video/quicktime' }
-];
-sources.forEach(function (s) {
-var el = document.createElement('source');
-el.src = s.src;
-el.type = s.type;
-vid.appendChild(el);
-});
-vid.setAttribute('preload', 'metadata');
-vid.load();
-}
 
 function unlock(skipStore) {
 if (!skipStore) {
@@ -210,7 +204,6 @@ try { sessionStorage.setItem(STORE, '1'); } catch (e) {}
 }
 gate.classList.add('hidden');
 content.classList.remove('hidden');
-mountVideo();
 }
 
 form.addEventListener('submit', function (e) {
@@ -235,6 +228,17 @@ try {
 if (sessionStorage.getItem(STORE) === '1') { unlock(true); }
 else { pw.focus(); }
 } catch (e3) { pw.focus(); }
+
+fetch('/kirk/information.pdf', { method: 'HEAD', credentials: 'same-origin' }).then(function (response) {
+if (!response.ok) { return; }
+var frame = document.createElement('iframe');
+frame.className = 'pdf-frame';
+frame.title = 'Information PDF';
+frame.src = '/kirk/information.pdf#view=FitH';
+var mount = document.getElementById('pdfMount');
+mount.className = '';
+mount.replaceChildren(frame);
+});
 })();
 </script>
 

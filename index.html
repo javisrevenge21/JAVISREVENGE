@@ -276,18 +276,7 @@ transition: opacity 0.35s, transform 0.35s;
 <canvas id="bg"></canvas>
 <div class="glow" id="glow"></div>
 
-<main id="gate" class="view">
-<div class="wrap">
-<h1 class="gate-title">Password <span class="lock" role="img" aria-label="locked">&#128274;</span></h1>
-<form id="gateForm" class="gate-form" autocomplete="off">
-<input id="pw" type="password" placeholder="Enter password" autocomplete="off" spellcheck="false" aria-label="Password" />
-<button class="unlock-btn" type="submit">Unlock</button>
-</form>
-<p class="err" id="err" role="alert"></p>
-</div>
-</main>
-
-<main id="welcome" class="view hidden">
+<main id="welcome" class="view">
 
 <section class="cover">
 <div class="stage">
@@ -315,7 +304,6 @@ transition: opacity 0.35s, transform 0.35s;
 </button>
 <div class="panel" id="opsPanel">
 <div class="panel-inner">
-<a class="subtile" href="/kirk" style="--j:0">KIRK</a>
 <p class="hint">More coming soon</p>
 </div>
 </div>
@@ -325,49 +313,6 @@ transition: opacity 0.35s, transform 0.35s;
 </section>
 
 </main>
-
-<script>
-(function () {
-var KEY = 'cmV2ZW5nZQ==';
-var gate = document.getElementById('gate');
-var welcome = document.getElementById('welcome');
-var form = document.getElementById('gateForm');
-var pw = document.getElementById('pw');
-var err = document.getElementById('err');
-
-function unlock(skipStore) {
-if (!skipStore) {
-try { sessionStorage.setItem('jr_unlocked', '1'); } catch (e) {}
-}
-gate.classList.add('hidden');
-welcome.classList.remove('hidden');
-window.dispatchEvent(new Event('jr:unlocked'));
-}
-
-form.addEventListener('submit', function (e) {
-e.preventDefault();
-var expected = '';
-try { expected = atob(KEY); } catch (e2) { expected = ''; }
-if (pw.value === expected) {
-err.classList.remove('show');
-unlock(false);
-} else {
-err.textContent = 'Incorrect password.';
-err.classList.add('show');
-form.classList.remove('shake');
-void form.offsetWidth;
-form.classList.add('shake');
-pw.value = '';
-pw.focus();
-}
-});
-
-try {
-if (sessionStorage.getItem('jr_unlocked') === '1') { unlock(true); }
-else { pw.focus(); }
-} catch (e3) { pw.focus(); }
-})();
-</script>
 
 <script>
 (function () {
@@ -580,5 +525,6 @@ raf = requestAnimationFrame(frame);
 });
 })();
 </script>
+<script src="/assets/site-ui.js"></script>
 </body>
 </html>

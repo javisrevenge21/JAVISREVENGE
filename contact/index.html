@@ -233,7 +233,7 @@ display: none;
 
 <section class="card">
 <h2 class="tipHeading">Anonymous tip</h2>
-<p class="note" style="margin-top: 0; text-align: left;">Send a message, photo, video, or file with no name attached. Nothing here is linked to you.</p>
+<p class="note" style="margin-top: 0; text-align: left;">Send a message, photo, video, or file without adding your name. Service providers may still process technical data; see the Privacy Notice.</p>
 <form id="tipForm" autocomplete="off">
 <div class="field">
 <label for="tipMessage">Message (optional)</label>
@@ -243,7 +243,7 @@ display: none;
 <label for="tipFiles">Photos, video, or files (optional)</label>
 <input id="tipFiles" type="file" multiple />
 </div>
-<button type="submit" id="tipSubmit">SEND TIP ANONYMOUSLY</button>
+<button type="submit" id="tipSubmit">SEND TIP</button>
 </form>
 <ul class="tipProgress" id="tipProgress"></ul>
 <p class="sent" id="tipSent">Tip sent. Thank you.</p>
@@ -258,13 +258,6 @@ display: none;
 <script>
 (function () {
 var TO = 'javisrevenge@gmail.com';
-
-try {
-if (sessionStorage.getItem('jr_unlocked') !== '1') {
-window.location.replace('/');
-return;
-}
-} catch (e) {}
 
 var form = document.getElementById('contactForm');
 
@@ -374,7 +367,7 @@ progressEl.innerHTML = '';
 }
 
 submitBtn.disabled = false;
-submitBtn.textContent = 'SEND TIP ANONYMOUSLY';
+submitBtn.textContent = 'SEND TIP';
 }
 })();
 </script>
@@ -494,5 +487,6 @@ raf = requestAnimationFrame(frame);
 });
 })();
 </script>
+<script src="/assets/site-ui.js"></script>
 </body>
 </html>

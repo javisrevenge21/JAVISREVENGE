@@ -5,7 +5,7 @@
 const SCREEN_NAME = 'javisrevenge';
 const FALLBACK_ID = '2083752475958694176';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=900');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
@@ -57,4 +57,4 @@ module.exports = async function handler(req, res) {
       error: String((err && err.message) || err)
     }));
   }
-};
+}

@@ -104,14 +104,6 @@ border-color: rgba(255,255,255,0.4);
 
 <script>
 (function () {
-try {
-if (sessionStorage.getItem('jr_unlocked') !== '1') { window.location.replace('/'); }
-} catch (e) {}
-})();
-</script>
-
-<script>
-(function () {
 var c = document.getElementById('bg');
 var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
 var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -225,5 +217,6 @@ raf = requestAnimationFrame(frame);
 });
 })();
 </script>
+<script src="/assets/site-ui.js"></script>
 </body>
 </html>

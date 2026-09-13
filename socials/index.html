@@ -131,6 +131,10 @@ color: #fff;
 background: rgba(255,255,255,0.07);
 border-color: rgba(255,255,255,0.4);
 }
+.consent { margin-top:26px; padding:16px; border:1px solid rgba(255,255,255,.14); border-radius:14px; color:rgba(255,255,255,.66); font-size:.86rem; line-height:1.55; }
+.consent-actions { display:flex; justify-content:center; gap:10px; margin-top:12px; flex-wrap:wrap; }
+.consent button { padding:10px 15px; border-radius:9px; border:1px solid rgba(255,255,255,.2); background:#fff; color:#080808; font:600 .82rem -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
+.consent button.secondary { background:transparent; color:#fff; }
 @media (prefers-reduced-motion: reduce) {
 .glow, h1, .rule, .card, .back { animation: none !important; }
 }
@@ -144,18 +148,19 @@ border-color: rgba(255,255,255,0.4);
 <div class="wrap">
 <h1>SOCIALS</h1>
 <div class="rule"></div>
+<div class="consent" id="socialConsent">X and Instagram content can send technical data to those companies. Social embeds are off until you choose to load them. <a href="/cookies">Learn more</a>.<div class="consent-actions"><button id="loadSocial" type="button">Load social content</button><button id="blockSocial" class="secondary" type="button">Keep it off</button></div></div>
 
 <section class="card">
 <p class="card-label">Latest on X</p>
 <div class="mount" id="xmount"></div>
-<p class="status" id="xstatus">Loading latest post&hellip;</p>
+<p class="status" id="xstatus">Social content is off.</p>
 <a class="fallback hidden" id="xfallback" href="https://x.com/javisrevenge" target="_blank" rel="noopener">View @javisrevenge on X &rsaquo;</a>
 </section>
 
 <section class="card card-ig">
 <p class="card-label">Latest on Instagram</p>
 <div class="mount" id="igmount"></div>
-<p class="status" id="igstatus">Loading latest post&hellip;</p>
+<p class="status" id="igstatus">Social content is off.</p>
 <a class="fallback hidden" id="igfallback" href="https://www.instagram.com/javisrevenge21/" target="_blank" rel="noopener">View @javisrevenge21 on Instagram &rsaquo;</a>
 </section>
 
@@ -171,13 +176,6 @@ var LATEST_FALLBACK = '2083752475958694176';
 // 'https://www.instagram.com/reel/ABCdef123/' or '.../p/ABCdef123/'
 // Leave empty and the card shows the profile link instead.
 var IG_POST_URL = '';
-
-try {
-if (sessionStorage.getItem('jr_unlocked') !== '1') {
-window.location.replace('/');
-return;
-}
-} catch (e) {}
 
 function hide(id) {
 var el = document.getElementById(id);
@@ -206,6 +204,13 @@ document.getElementById('xmount'),
 if (el) { hide('xstatus'); } else { xFallback(); }
 }, xFallback);
 }
+
+var loaded = false;
+function loadSocial() {
+if (loaded) { return; }
+loaded = true;
+document.getElementById('xstatus').textContent = 'Loading latest post…';
+document.getElementById('igstatus').textContent = 'Loading latest post…';
 
 var xs = document.createElement('script');
 xs.async = true;
@@ -257,6 +262,18 @@ setTimeout(function () {
 if (rendered('igmount')) { hide('igstatus'); } else { igFallback(); }
 }, 12000);
 }
+}
+
+document.getElementById('loadSocial').addEventListener('click', function () {
+try { localStorage.setItem('jr_social_embeds', 'on'); } catch (e) {}
+loadSocial();
+});
+document.getElementById('blockSocial').addEventListener('click', function () {
+try { localStorage.setItem('jr_social_embeds', 'off'); } catch (e) {}
+document.getElementById('xstatus').textContent = 'Social content will stay off.';
+document.getElementById('igstatus').textContent = 'Social content will stay off.';
+});
+try { if (localStorage.getItem('jr_social_embeds') === 'on') { loadSocial(); } } catch (e) {}
 })();
 </script>
 
@@ -375,5 +392,6 @@ raf = requestAnimationFrame(frame);
 });
 })();
 </script>
+<script src="/assets/site-ui.js"></script>
 </body>
 </html>
