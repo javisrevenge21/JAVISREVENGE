@@ -136,27 +136,8 @@ box-shadow: 0 0 60px rgba(255,255,255,0.08);
 background: #000;
 display: block;
 }
-.back {
-display: inline-block;
-margin-top: 22px;
-padding: 12px 20px;
-font-size: 0.9rem;
-letter-spacing: 0.16em;
-color: rgba(255,255,255,0.75);
-text-decoration: none;
-background: rgba(255,255,255,0.03);
-border: 1px solid rgba(255,255,255,0.14);
-border-radius: 10px;
-transition: color 0.25s, border-color 0.25s, background 0.25s;
-animation: fadeUp 1.4s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-.back:hover {
-color: #fff;
-background: rgba(255,255,255,0.07);
-border-color: rgba(255,255,255,0.4);
-}
 @media (prefers-reduced-motion: reduce) {
-.glow, h1, .player, .info-panel, .back, .gate-form, .lock { animation: none !important; }
+.glow, h1, .player, .info-panel, .gate-form, .lock { animation: none !important; }
 }
 @media (max-width: 860px) { .content-grid { grid-template-columns:1fr; } .pdf-frame { height:70vh; } }
 @media (max-width: 480px) { .image-gallery { grid-template-columns:1fr; } }
@@ -206,7 +187,6 @@ Your browser does not support the video tag. <a href="/kirk/kirk-additional.mp4"
 <div id="pdfMount" class="pdf-placeholder">The Information PDF slot is ready. Add a file named <strong>information.pdf</strong> to the <strong>kirk</strong> folder.</div>
 </section>
 </div>
-<a class="back" href="/">&lsaquo; BACK</a>
 </main>
 
 <script>
