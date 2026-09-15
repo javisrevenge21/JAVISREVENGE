@@ -47,7 +47,7 @@
   border-radius: 16px;
 }
 .signin-shell .card.legal .muted { margin: 0; }
-.signin-shell .error { margin-top: 18px; }
+.signin-shell .error { margin-top: 18px; } .signin-shell img.google { width: 20px; height: 20px; display: block; flex: none; }
 @media (prefers-reduced-motion: reduce) {
   .caret { animation: none; }
 }
@@ -63,8 +63,8 @@
 <p class="lede">Sign in or create an account with Google to enter. No password is created or stored by this website.</p>
 
 <div class="actions">
-<a class="button" id="signin" href="/api/auth/login"><span class="google">G</span>Sign in with Google</a>
-<a class="button secondary" id="signup" href="/api/auth/login?mode=signup"><span class="google">G</span>Sign up with Google</a>
+<a class="button" id="signin" href="/api/auth/login"><img class="google" src="https://developers.google.com/identity/images/g-logo.png" alt="" width="20" height="20">Sign in with Google</a>
+<a class="button secondary" id="signup" href="/api/auth/login?mode=signup"><img class="google" src="https://developers.google.com/identity/images/g-logo.png" alt="" width="20" height="20">Sign up with Google</a>
 </div>
 
 <section class="card legal">
