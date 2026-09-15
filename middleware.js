@@ -8,6 +8,9 @@ export const config = { runtime: 'nodejs', matcher: '/(.*)' };
 export default function middleware(request) {
   const url = new URL(request.url);
   const path = url.pathname;
+  if (path.startsWith('/kirk/')) {
+    return Response.redirect(new URL('/kirk', request.url), 307);
+  }
   if (path === '/kirk' || PUBLIC_EXACT.has(path) || PUBLIC_PREFIXES.some(prefix => path.startsWith(prefix))) return;
 
   const cookies = parseCookies(request.headers.get('cookie') || '');
