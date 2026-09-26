@@ -1,6 +1,6 @@
-import { getAccount } from '../../lib/accounts.js';
+import { getAccount, listAccounts } from '../../lib/accounts.js';
 import { isAdmin, requireSameOrigin, sessionFromRequest } from '../../lib/session.js';
-import { buildEmail, missingEmailEnv } from '../../lib/email.js';
+import { buildEmail, missingEmailEnv, sendBatch } from '../../lib/email.js';
 
 function cleanText(value, max) {
   return String(value || '').trim().slice(0, max);
@@ -12,6 +12,8 @@ export default async function handler(req, res) {
   if (!requireSameOrigin(req)) return res.status(403).json({ error: 'Invalid origin' });
   const session = sessionFromRequest(req);
   if (!isAdmin(session)) return res.status(403).json({ error: 'Admin access required' });
+
+  if (req.body?.all === true) return broadcast(req, res);
 
   const email = cleanText(req.body?.email, 320).toLowerCase();
   const subject = cleanText(req.body?.subject, 160);
@@ -34,4 +36,21 @@ export default async function handler(req, res) {
   const result = await response.json();
   if (!response.ok) return res.status(502).json({ error: result.message || 'Email provider rejected the message' });
   return res.status(200).json({ sent: true, id: result.id });
+}
+
+// "Email everyone": sends to every member who opted in. Lives in this file
+// because the Vercel Hobby plan allows at most 12 serverless functions.
+async function broadcast(req, res) {
+  const subject = cleanText(req.body?.subject, 160);
+  const message = cleanText(req.body?.message, 10000);
+  if (!subject || !message) return res.status(400).json({ error: 'Subject and message are required' });
+  const missing = missingEmailEnv();
+  if (missing.length) return res.status(503).json({ error: `Email is not configured (${missing.join(', ')})` });
+  const recipients = (await listAccounts()).filter(account => account.notifications === true);
+  if (!recipients.length) return res.status(409).json({ error: 'Nobody has email notifications turned on yet' });
+  const origin = `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
+  const emails = recipients.map(account => buildEmail({ to: account.email, subject, message, origin }));
+  const { sent, failures } = await sendBatch(emails);
+  if (!sent) return res.status(502).json({ error: failures[0] || 'Email provider rejected the message' });
+  return res.status(200).json({ sent, total: recipients.length, failures });
 }
