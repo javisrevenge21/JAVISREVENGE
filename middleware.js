@@ -8,7 +8,10 @@ export const config = { runtime: 'nodejs', matcher: '/(.*)' };
 export default function middleware(request) {
   const url = new URL(request.url);
   const path = url.pathname;
-  if (path === '/kirk' || PUBLIC_EXACT.has(path) || PUBLIC_PREFIXES.some(prefix => path.startsWith(prefix))) return;
+  if (path === '/kirk' || path.startsWith('/kirk/')) {
+    return new Response('Not Found', { status: 404 });
+  }
+  if (PUBLIC_EXACT.has(path) || PUBLIC_PREFIXES.some(prefix => path.startsWith(prefix))) return;
 
   const cookies = parseCookies(request.headers.get('cookie') || '');
   const session = verifySession(cookies[SESSION_COOKIE], process.env.SESSION_SECRET);
