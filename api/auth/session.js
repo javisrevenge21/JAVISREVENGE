@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     authenticated: true,
     user: { email: account.email, name: account.name, picture: account.picture },
     notifications: account.notifications === true,
+    notificationsAsked: account.notificationsAsked === true || account.notifications === true,
     admin: isAdmin(session)
   });
 }
