@@ -1,6 +1,7 @@
 import { getAccount, listAccounts } from '../../lib/accounts.js';
 import { isAdmin, requireSameOrigin, sessionFromRequest } from '../../lib/session.js';
 import { buildEmail, missingEmailEnv, sendBatch } from '../../lib/email.js';
+import { listWaitlist } from '../../lib/waitlist.js';
 
 function cleanText(value, max) {
   return String(value || '').trim().slice(0, max);
@@ -38,7 +39,7 @@ export default async function handler(req, res) {
   return res.status(200).json({ sent: true, id: result.id });
 }
 
-// "Email everyone": sends to every member who opted in. Lives in this file
+// "Email everyone": sends to every member who opted in (and, if asked, the PT2 waitlist). Lives in this file
 // because the Vercel Hobby plan allows at most 12 serverless functions.
 async function broadcast(req, res) {
   const subject = cleanText(req.body?.subject, 160);
@@ -46,10 +47,13 @@ async function broadcast(req, res) {
   if (!subject || !message) return res.status(400).json({ error: 'Subject and message are required' });
   const missing = missingEmailEnv();
   if (missing.length) return res.status(503).json({ error: `Email is not configured (${missing.join(', ')})` });
-  const recipients = (await listAccounts()).filter(account => account.notifications === true);
+  const members = (await listAccounts()).filter(account => account.notifications === true).map(account => account.email);
+  // Optional: also email everyone on the PT2 waitlist (deduplicated).
+  const waitlist = req.body?.includeWaitlist === true ? (await listWaitlist()).map(entry => entry.email) : [];
+  const recipients = [...new Set([...members, ...waitlist].map(email => email.trim().toLowerCase()))];
   if (!recipients.length) return res.status(409).json({ error: 'Nobody has email notifications turned on yet' });
   const origin = `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
-  const emails = recipients.map(account => buildEmail({ to: account.email, subject, message, origin }));
+  const emails = recipients.map(to => buildEmail({ to, subject, message, origin }));
   const { sent, failures } = await sendBatch(emails);
   if (!sent) return res.status(502).json({ error: failures[0] || 'Email provider rejected the message' });
   return res.status(200).json({ sent, total: recipients.length, failures });

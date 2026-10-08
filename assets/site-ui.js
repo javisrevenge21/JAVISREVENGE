@@ -1,4 +1,8 @@
 (function () {
+  // Pages that anyone can see load this script with a data-public attribute.
+  // There, signed-out visitors get a "Sign in" link instead of a redirect.
+  var script = document.currentScript;
+  var isPublic = !!(script && script.hasAttribute('data-public'));
   var style = document.createElement('style');
   style.textContent = [
     '.jr-account{position:fixed;z-index:50;top:16px;right:16px;display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(8,8,10,.82);border:1px solid rgba(255,255,255,.16);border-radius:999px;backdrop-filter:blur(14px);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff}',
@@ -11,6 +15,7 @@
     '.jr-optin-card h2{font-size:18px;letter-spacing:.08em;margin-bottom:10px}.jr-optin-card p{color:rgba(255,255,255,.72);margin-bottom:18px;word-break:break-word}',
     '.jr-optin-card button{display:block;width:100%;padding:12px;margin-top:10px;border-radius:10px;font:600 14px inherit;cursor:pointer;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff}',
     '.jr-optin-card button.yes{background:#fff;color:#000;border-color:#fff}',
+    '.jr-account.jr-guest{padding:9px 16px;letter-spacing:.14em;text-transform:uppercase;font-size:11px;font-weight:600}',
     '@media(max-width:600px){.jr-account-name{display:none}}'
   ].join('');
   document.head.appendChild(style);
@@ -31,7 +36,16 @@
       if (!data.notificationsAsked) askForNotifications(data.user.email);
     })
     .catch(function () {
-      window.location.replace('/signin?returnTo=' + encodeURIComponent(location.pathname + location.search));
+      var returnTo = encodeURIComponent(location.pathname + location.search);
+      if (!isPublic) {
+        window.location.replace('/signin?returnTo=' + returnTo);
+        return;
+      }
+      var bar = document.createElement('nav');
+      bar.className = 'jr-account jr-guest';
+      bar.setAttribute('aria-label', 'Account');
+      bar.innerHTML = '<a href="/signin?returnTo=' + returnTo + '">Sign in</a>';
+      document.body.appendChild(bar);
     });
 
   var footer = document.createElement('footer');
