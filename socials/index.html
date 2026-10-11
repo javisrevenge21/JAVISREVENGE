@@ -109,6 +109,7 @@ letter-spacing: 0.03em;
 color: rgba(255,255,255,0.4);
 }
 .status.hidden { display: none; }
+.status a { color:#fff; text-decoration:underline; }
 .fallback {
 display: block;
 margin-top: 4px;
@@ -241,7 +242,7 @@ background: radial-gradient(circle at 50% 30%, #1b1c1f, #000 70%);
 
 <script>
 (function () {
-var LATEST_FALLBACK = '2083752475958694176';
+var LATEST_FALLBACK = '2107929864095621344';
 
 // Optional: paste an Instagram post or reel permalink here to feature it
 // under the profile card (loads only after consent), e.g.
@@ -262,7 +263,15 @@ return !!(f && f.offsetHeight > 60);
 
 if (IG_POST_URL) { setStatus('igstatus', 'Load social content below to see the featured post.'); }
 
-function xFallback() { setStatus('xstatus', 'The latest post could not load. Tap the profile above to see it on X.'); }
+function xFallback() {
+if (rendered('xmount')) { return; }
+var e = el('xstatus'); if (!e) { return; }
+e.textContent = 'The latest post could not load here. ';
+var a = document.createElement('a');
+a.href = 'https://x.com/javisrevenge'; a.target = '_blank'; a.rel = 'noopener';
+a.textContent = 'See it on X @javisrevenge';
+e.appendChild(a); e.classList.remove('hidden');
+}
 function igFallback() { setStatus('igstatus', 'The featured post could not load. Tap the profile above to see it on Instagram.'); }
 
 function mountTweet(id) {
