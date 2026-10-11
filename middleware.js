@@ -1,6 +1,20 @@
 import { verifySession, parseCookies, SESSION_COOKIE } from './lib/session.js';
 
-const PUBLIC_EXACT = new Set(['/signin', '/signin/', '/privacy', '/privacy/', '/terms', '/terms/', '/cookies', '/cookies/', '/unsubscribe', '/unsubscribe/']);
+// Pages and files anyone can see without signing in. Everything else
+// (account, admin, contact/tips, shop, kirk, and the rest of /api) still
+// requires a valid Google sign-in session, exactly as before.
+const PUBLIC_EXACT = new Set([
+  // Sign-in flow and legal pages (already public)
+  '/signin', '/signin/', '/privacy', '/privacy/', '/terms', '/terms/', '/cookies', '/cookies/', '/unsubscribe', '/unsubscribe/',
+  // Discovery pages
+  '/', '/index.html',
+  '/socials', '/socials/', '/socials/index.html',
+  '/archives', '/archives/', '/archives/index.html',
+  // Crawlers
+  '/robots.txt', '/sitemap.xml',
+  // Public APIs: PT2 waitlist signup and the latest X post id used by /socials
+  '/api/waitlist', '/api/latest-post'
+]);
 const PUBLIC_PREFIXES = ['/assets/', '/api/auth/', '/api/unsubscribe', '/kirk/'];
 
 export const config = { runtime: 'nodejs', matcher: '/(.*)' };

@@ -1,4 +1,5 @@
 import { listAccounts } from '../../lib/accounts.js';
+import { countWaitlist } from '../../lib/waitlist.js';
 import { isAdmin, sessionFromRequest } from '../../lib/session.js';
 
 export default async function handler(req, res) {
@@ -12,5 +13,6 @@ export default async function handler(req, res) {
     createdAt: account.createdAt,
     lastSignInAt: account.lastSignInAt
   }));
-  return res.status(200).json({ users });
+  const waitlistCount = await countWaitlist().catch(() => null);
+  return res.status(200).json({ users, waitlistCount });
 }
