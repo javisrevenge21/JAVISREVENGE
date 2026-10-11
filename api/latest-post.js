@@ -36,8 +36,8 @@ async function fetchWithTimeout(url, opts, ms) {
 
 async function fromFxTwitter() {
   let lastErr = 'no attempt';
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt) { await sleep(400 * attempt); }
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt) { await sleep(300 * attempt); }
     try {
       const r = await fetchWithTimeout(
         'https://api.fxtwitter.com/2/profile/' + SCREEN_NAME + '/statuses',
