@@ -12,16 +12,15 @@ function request(path, cookie) {
   return new Request('https://www.javisrevenge.com' + path, { headers });
 }
 
-test('discovery pages, legal pages, crawler files and public APIs are open', () => {
-  for (const path of ['/', '/index.html', '/socials', '/socials/', '/archives', '/archives/',
-    '/privacy', '/terms', '/cookies', '/signin', '/unsubscribe', '/robots.txt', '/sitemap.xml',
-    '/assets/og-image.jpg', '/api/waitlist', '/api/latest-post', '/api/auth/login', '/api/unsubscribe']) {
+test('only sign-in, OAuth, assets, unsubscribe and crawler files are open', () => {
+  for (const path of ['/signin', '/unsubscribe', '/robots.txt', '/sitemap.xml',
+    '/assets/og-image.jpg', '/assets/beta-banner.js', '/assets/legal.css', '/api/auth/login', '/api/auth/callback', '/api/unsubscribe']) {
     assert.equal(middleware(request(path)), undefined, path);
   }
 });
 
-test('member pages still redirect signed-out visitors to sign in', () => {
-  for (const path of ['/account', '/admin', '/contact', '/shop', '/socials-extra', '/archives/secret']) {
+test('every other page redirects signed-out visitors to sign in', () => {
+  for (const path of ['/', '/index.html', '/socials', '/archives', '/privacy', '/terms', '/cookies', '/account', '/admin', '/contact', '/shop', '/archives/secret']) {
     const response = middleware(request(path + '?x=1'));
     assert.equal(response.status, 307, path);
     const location = new URL(response.headers.get('location'));
@@ -31,7 +30,7 @@ test('member pages still redirect signed-out visitors to sign in', () => {
 });
 
 test('member APIs still return 401 when signed out', async () => {
-  for (const path of ['/api/account', '/api/account/preferences', '/api/admin/users', '/api/admin/send', '/api/tip-upload']) {
+  for (const path of ['/api/account', '/api/account/preferences', '/api/admin/users', '/api/admin/send', '/api/tip-upload', '/api/waitlist', '/api/latest-post']) {
     const response = middleware(request(path));
     assert.equal(response.status, 401, path);
     assert.deepEqual(await response.json(), { error: 'Authentication required' });
