@@ -1,21 +1,13 @@
 import { verifySession, parseCookies, SESSION_COOKIE } from './lib/session.js';
 
-// Pages and files anyone can see without signing in. Everything else
-// (account, admin, contact/tips, shop, kirk, and the rest of /api) still
-// requires a valid Google sign-in session, exactly as before.
+// The whole site requires a valid Google sign-in session. Only these stay open:
+// the sign-in page, the Google OAuth flow, static assets the sign-in page needs
+// (CSS, banner, images), email unsubscribe (page + API), and crawler files.
 const PUBLIC_EXACT = new Set([
-  // Sign-in flow and legal pages (already public)
-  '/signin', '/signin/', '/privacy', '/privacy/', '/terms', '/terms/', '/cookies', '/cookies/', '/unsubscribe', '/unsubscribe/',
-  // Discovery pages
-  '/', '/index.html',
-  '/socials', '/socials/', '/socials/index.html',
-  '/archives', '/archives/', '/archives/index.html',
-  // Crawlers
-  '/robots.txt', '/sitemap.xml',
-  // Public APIs: PT2 waitlist signup and the latest X post id used by /socials
-  '/api/waitlist', '/api/latest-post'
+  '/signin', '/signin/', '/unsubscribe', '/unsubscribe/',
+  '/robots.txt', '/sitemap.xml'
 ]);
-const PUBLIC_PREFIXES = ['/assets/', '/api/auth/', '/api/unsubscribe', '/kirk/'];
+const PUBLIC_PREFIXES = ['/assets/', '/api/auth/', '/api/unsubscribe'];
 
 export const config = { runtime: 'nodejs', matcher: '/(.*)' };
 
