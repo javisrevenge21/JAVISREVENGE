@@ -1,2 +1,10 @@
 User-agent: *
-Disallow: /
+Allow: /$
+Allow: /signin
+Disallow: /api/
+Disallow: /account
+Disallow: /admin
+Disallow: /kirk
+Disallow: /unsubscribe
+
+Sitemap: https://www.javisrevenge.com/sitemap.xml
