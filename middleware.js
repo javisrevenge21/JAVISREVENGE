@@ -3,9 +3,10 @@ import { verifySession, parseCookies, SESSION_COOKIE } from './lib/session.js';
 // The whole site requires a valid Google sign-in session. Only these stay open:
 // the sign-in page, the Google OAuth flow, static assets the sign-in page needs
 // (CSS, banner, images), email unsubscribe (page + API), and crawler files.
+// '/' serves the landing page (brand + sign-in button only) so search engines get a 200.
 const PUBLIC_EXACT = new Set([
-  '/signin', '/signin/', '/unsubscribe', '/unsubscribe/',
-  '/robots.txt', '/sitemap.xml'
+  '/', '/signin', '/signin/', '/unsubscribe', '/unsubscribe/',
+  '/robots.txt', '/sitemap.xml', '/favicon.ico'
 ]);
 const PUBLIC_PREFIXES = ['/assets/', '/api/auth/', '/api/unsubscribe'];
 
