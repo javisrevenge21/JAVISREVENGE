@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="robots" content="noindex, nofollow" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#000000" />
@@ -282,7 +282,6 @@ transition: background 0.25s, color 0.25s, box-shadow 0.3s, opacity 0.25s;
 <p class="sub">PT1 a success (November 2021 - February 2024).&nbsp; PT2 coming soon.</p>
 </div>
 
-<div class="signin-cta reveal" id="signinCta"><a class="signin-btn" href="/signin">SIGN IN</a></div>
 
 <nav class="tiles">
 <a class="tile reveal d1" href="/socials"><span>SOCIALS</span></a>
@@ -316,7 +315,6 @@ var el = document.getElementById(id);
 if (el) { el.addEventListener('error', function () { el.style.display = 'none'; }); }
 });
 
-fetch('/api/auth/session', { credentials: 'same-origin' }).then(function (r) { if (r.ok) { var c = document.getElementById('signinCta'); if (c) c.hidden = true; } }).catch(function () {});
 
 var toggle = document.getElementById('moreToggle');
 var panel = document.getElementById('morePanel');
