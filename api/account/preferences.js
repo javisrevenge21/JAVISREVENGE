@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   // Claim: POST { username: "name" }. Re-issues the session so the site
   // stops asking for a username.
   if (typeof req.body?.username === 'string') {
-    const result = await claimUsername(session.email, req.body.username);
+    const result = await claimUsername(session.email, req.body.username, req.body.agree === true);
     if (result.error) return res.status(409).json({ error: result.error });
     res.setHeader('Set-Cookie', sessionCookie(createSession(result.account, process.env.SESSION_SECRET)));
     return res.status(200).json({ username: result.account.username });

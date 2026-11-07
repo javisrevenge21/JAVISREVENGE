@@ -134,8 +134,9 @@ textarea.bio { min-height: 90px; }
 <h2>Email</h2>
 <div class="row"><input id="notifications" type="checkbox"><label for="notifications" style="margin:0">Email me website updates. You can turn this off at any time.</label></div>
 <p class="status" id="status"></p>
+<h2>Your data</h2><p class="muted" style="margin-top:0">Download a copy of everything we store about you: your account, profile, posts, replies, saved posts and notifications.</p><a class="button secondary" href="/api/account?export=1" download>Download my data</a>
 <div class="actions"><a class="button secondary" href="/api/auth/logout">Sign out</a><button class="button danger" id="delete" type="button">Delete my account</button></div>
-<p class="muted">Deleting removes your account record and signs you out. Limited records may still be retained where legally required.</p>
+<p class="muted">Deleting your account permanently erases your profile, username, posts, uploads, replies, reactions and poll votes, and signs you out. This can't be undone.</p>
 </section>
 </main>
 
@@ -271,7 +272,7 @@ textarea.bio { min-height: 90px; }
       .finally(function () { box.disabled = false; });
   });
   $('delete').addEventListener('click', function () {
-    if (!confirm('Permanently delete your JAVISREVENGE account?')) return;
+    if (!confirm('Permanently delete your JAVISREVENGE account? Your profile, posts, uploads, replies, reactions and votes will be erased. This cannot be undone.')) return;
     fetch('/api/account', { method: 'DELETE' }).then(function (r) { return r.ok ? location.replace('/signin?deleted=1') : Promise.reject(); })
       .catch(function () { status.textContent = 'Could not delete the account.'; status.className = 'status error'; });
   });

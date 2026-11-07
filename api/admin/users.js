@@ -1,5 +1,5 @@
 import { listAccounts, getAccount, deleteAccount, banEmail, unbanEmail, listBans } from '../../lib/accounts.js';
-import { deletePostsBy } from '../../lib/wall.js';
+import { purgeMember } from '../../lib/wall.js';
 import { recentLog, hasAI } from '../../lib/moderation.js';
 import { countWaitlist } from '../../lib/waitlist.js';
 import { isAdmin, requireSameOrigin, sessionFromRequest } from '../../lib/session.js';
@@ -41,7 +41,8 @@ export default async function handler(req, res) {
   if (action !== 'remove' && action !== 'ban') return res.status(400).json({ error: 'Unknown action' });
 
   const account = await getAccount(email);
-  const posts = await deletePostsBy(email).catch(() => 0);
+  const purged = await purgeMember(email, account?.username).catch(() => ({ posts: 0 }));
+  const posts = purged.posts;
   if (account) await deleteAccount(email);
   if (action === 'ban') {
     await banEmail(email, { username: account?.username || '', name: account?.name || '', reason: String(req.body?.reason || '').slice(0, 200), by: session.email });

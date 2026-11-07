@@ -18,12 +18,14 @@
 <div class="handle" id="box"><span>@</span><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></div>
 <p class="rules">3 to 20 characters. Lowercase letters, numbers and underscores.</p>
 <p id="msg" aria-live="polite"></p>
+<label class="agree" style="display:flex;gap:10px;align-items:flex-start;margin:6px 0 0;color:rgba(255,255,255,.8);font-size:14px;line-height:1.5"><input type="checkbox" id="agree" style="width:18px;height:18px;margin-top:2px;flex:none"> <span>I am at least 13 years old, and I agree to the <a href="/terms" target="_blank">Terms of Use</a> and <a href="/privacy" target="_blank">Privacy Notice</a>.</span></label>
 <div class="actions"><button class="button" id="go" type="button" disabled>Claim username</button><a class="button secondary" href="/api/auth/logout">Sign out</a></div>
 </section></main>
 <script>
 (function () {
   var input = document.getElementById('u'), box = document.getElementById('box'), msg = document.getElementById('msg'), go = document.getElementById('go');
-  var timer, seq = 0;
+  var timer, seq = 0, lastOk = null;
+  document.getElementById('agree').addEventListener('change', function () { go.disabled = lastOk !== true || !this.checked; });
   var p = new URLSearchParams(location.search).get('returnTo');
   var returnTo = p && p.charAt(0) === '/' && p.slice(0, 2) !== '//' ? p : '/';
 
@@ -31,7 +33,7 @@
     box.className = 'handle ' + (ok === null ? '' : ok ? 'ok' : 'bad');
     msg.className = ok === null ? '' : ok ? 'ok' : 'bad';
     msg.textContent = text || '';
-    go.disabled = ok !== true;
+    go.disabled = ok !== true || !document.getElementById('agree').checked; lastOk = ok;
   }
 
   input.addEventListener('input', function () {
@@ -52,7 +54,7 @@
 
   go.addEventListener('click', function () {
     go.disabled = true; msg.className = ''; msg.textContent = 'Claiming…';
-    fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: input.value }) })
+    fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: input.value, agree: document.getElementById('agree').checked }) })
       .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error); return d; }); })
       .then(function (d) { show(true, 'You are @' + d.username + '. Welcome!'); setTimeout(function () { location.replace(returnTo); }, 700); })
       .catch(function (e) { show(false, e.message || 'Could not claim that username.'); });

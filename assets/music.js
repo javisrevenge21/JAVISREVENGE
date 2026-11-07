@@ -69,7 +69,7 @@
     '<div class="jr-c-top"><span class="jr-c-art">♪</span><span><small>NOW PLAYING</small><b>' + TRACK.title + '</b><span>' + TRACK.artist + ' feat. ' + TRACK.featuring + '</span></span><button type="button" class="jr-c-x" aria-label="Close">✕</button></div>' +
     '<dl><dt>Artist</dt><dd>' + TRACK.artist + '</dd><dt>Featuring</dt><dd>' + TRACK.featuring + '</dd><dt>Album</dt><dd>' + TRACK.album + ' (' + TRACK.year + ')</dd>' +
     '<dt>Producers</dt><dd>' + TRACK.producers + '</dd><dt>Label</dt><dd>' + TRACK.label + '</dd></dl>' +
-    '<p class="jr-c-note">All rights belong to the artists and rights holders. Used with permission.</p>' +
+    '<p class="jr-c-note">All rights belong to the artists and rights holders.</p>' +
     '<div class="jr-c-links"><a target="_blank" rel="noopener" href="https://open.spotify.com/search/' + qs + '">Spotify</a><a target="_blank" rel="noopener" href="https://music.apple.com/us/search?term=' + qs + '">Apple Music</a><a target="_blank" rel="noopener" href="https://music.youtube.com/search?q=' + qs + '">YouTube Music</a><a target="_blank" rel="noopener" href="https://tidal.com/search?q=' + qs + '">Tidal</a></div>';
   function toggleCard(open) { card.hidden = !open; info.setAttribute('aria-expanded', open ? 'true' : 'false'); }
   info.addEventListener('click', function (e) { e.stopPropagation(); toggleCard(card.hidden); });
