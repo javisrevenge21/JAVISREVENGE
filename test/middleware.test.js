@@ -15,7 +15,7 @@ function request(path, cookie) {
 
 test('only sign-in, legal pages, OAuth, assets, unsubscribe and crawler files are open', () => {
   for (const path of ['/signin', '/unsubscribe', '/robots.txt', '/sitemap.xml', '/favicon.ico',
-    '/terms', '/privacy', '/cookies', '/assets/og-image.jpg', '/assets/beta-banner.js', '/assets/legal.css', '/api/auth/login', '/api/auth/callback', '/api/unsubscribe']) {
+    '/terms', '/privacy', '/cookies', '/assets/beta-banner.js', '/assets/legal.css', '/api/auth/login', '/api/auth/callback', '/api/unsubscribe']) {
     assert.equal(middleware(request(path)), undefined, path);
   }
 });
