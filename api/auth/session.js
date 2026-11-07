@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (!account) return res.status(401).json({ authenticated: false });
   return res.status(200).json({
     authenticated: true,
-    user: { email: account.email, name: account.name, picture: account.picture },
+    user: { email: account.email, name: account.name, picture: account.picture, avatar: account.profile?.avatar || '', theme: account.profile?.theme || 'silver', title: account.profile?.title || '' },
     notifications: account.notifications === true,
     notificationsAsked: account.notificationsAsked === true || account.notifications === true,
     admin: isAdmin(session)

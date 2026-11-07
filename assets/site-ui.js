@@ -6,6 +6,7 @@
   var style = document.createElement('style');
   style.textContent = [
     '.jr-account{position:fixed;z-index:50;top:16px;right:16px;display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(8,8,10,.82);border:1px solid rgba(255,255,255,.16);border-radius:999px;backdrop-filter:blur(14px);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff}',
+    '.jr-emoji{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:17px}',
     '.jr-account img{width:30px;height:30px;border-radius:50%;object-fit:cover;background:#222}',
     '.jr-account a{color:#fff;text-decoration:none}.jr-account a:hover{text-decoration:underline}',
     '.jr-legal{position:relative;z-index:20;display:flex;justify-content:center;flex-wrap:wrap;gap:16px;padding:20px 18px 30px;font:12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:rgba(255,255,255,.55)}',
@@ -29,7 +30,13 @@
       var bar = document.createElement('nav');
       bar.className = 'jr-account';
       bar.setAttribute('aria-label', 'Account');
-      var picture = data.user.picture ? '<img src="' + escapeAttribute(data.user.picture) + '" alt="">' : '';
+      var THEMES = { silver: '200,205,214', red: '220,38,38', gold: '212,160,23', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12' };
+      var rgb = THEMES[data.user.theme] || THEMES.silver;
+      bar.style.borderColor = 'rgba(' + rgb + ',.6)';
+      bar.style.boxShadow = '0 0 22px rgba(' + rgb + ',.25)';
+      var picture = data.user.avatar
+        ? '<span class="jr-emoji" style="background:rgba(' + rgb + ',.3)">' + escapeHtml(data.user.avatar) + '</span>'
+        : (data.user.picture ? '<img src="' + escapeAttribute(data.user.picture) + '" alt="">' : '');
       var admin = data.admin ? '<a href="/admin">Admin</a><span aria-hidden="true">·</span>' : '';
       bar.innerHTML = picture + '<a class="jr-account-name" href="/account">' + escapeHtml(data.user.name) + '</a><span aria-hidden="true">·</span>' + admin + '<a href="/api/auth/logout">Sign out</a>';
       document.body.appendChild(bar);

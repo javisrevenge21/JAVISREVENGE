@@ -1,4 +1,4 @@
-import { deleteAccount, getAccount } from '../../lib/accounts.js';
+import { deleteAccount, getAccount, PROFILE_OPTIONS } from '../../lib/accounts.js';
 import { clearCookie, requireSameOrigin, sessionFromRequest, SESSION_COOKIE } from '../../lib/session.js';
 
 export default async function handler(req, res) {
@@ -14,7 +14,10 @@ export default async function handler(req, res) {
       picture: account.picture,
       notifications: account.notifications === true,
       createdAt: account.createdAt,
-      lastSignInAt: account.lastSignInAt
+      lastSignInAt: account.lastSignInAt,
+      providers: account.providers || ['google'],
+      profile: account.profile || {},
+      options: PROFILE_OPTIONS
     });
   }
 

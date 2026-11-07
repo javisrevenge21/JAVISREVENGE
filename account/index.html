@@ -1,4 +1,194 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your account · JAVISREVENGE</title><link rel="stylesheet" href="/assets/legal.css"></head><body>
-<main class="shell"><a class="brand" href="/">← JAVISREVENGE</a><section class="card"><h1>Your account</h1><p id="identity">Loading…</p><div class="row"><input id="notifications" type="checkbox"><label for="notifications" style="margin:0">Email me website updates. You can turn this off at any time.</label></div><p class="status" id="status"></p><div class="actions"><a class="button secondary" href="/api/auth/logout">Sign out</a><button class="button danger" id="delete" type="button">Delete my account</button></div><p class="muted">Deleting removes your account record and signs you out. Limited records may still be retained where legally required.</p></section></main>
-<script src="/assets/site-ui.js"></script><script>(function(){var box=document.getElementById('notifications'),status=document.getElementById('status');fetch('/api/account').then(r=>r.ok?r.json():Promise.reject()).then(a=>{document.getElementById('identity').textContent=a.name+' · '+a.email;box.checked=a.notifications;}).catch(()=>location.replace('/signin?returnTo=/account'));box.addEventListener('change',function(){box.disabled=true;fetch('/api/account/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notifications:box.checked})}).then(r=>r.ok?r.json():Promise.reject()).then(()=>{status.textContent=box.checked?'Email notifications enabled.':'Email notifications turned off.';}).catch(()=>{box.checked=!box.checked;status.textContent='Could not save that choice.';status.className='status error';}).finally(()=>box.disabled=false);});document.getElementById('delete').addEventListener('click',function(){if(!confirm('Permanently delete your JAVISREVENGE account?'))return;fetch('/api/account',{method:'DELETE'}).then(r=>r.ok?location.replace('/signin?deleted=1'):Promise.reject()).catch(()=>{status.textContent='Could not delete the account.';status.className='status error';});});})();</script>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your account · JAVISREVENGE</title><link rel="stylesheet" href="/assets/legal.css">
+<style>
+:root { --t: 200,205,214; }
+.shell { width: min(900px, calc(100% - 24px)); }
+.card { transition: border-color .4s, box-shadow .4s, background .4s; }
+.card.themed { background: linear-gradient(160deg, rgba(var(--t),.2), rgba(var(--t),.06)); border-color: rgba(var(--t),.55); box-shadow: 0 0 50px rgba(var(--t),.18); }
+h2 { color: rgb(var(--t)); filter: brightness(1.4); font-size: 13px; letter-spacing: .22em; text-transform: uppercase; margin-top: 30px; }
+
+/* Member card */
+.member { position: relative; overflow: hidden; display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; padding: 26px; border-radius: 20px;
+  background: radial-gradient(circle at 0% 0%, rgba(var(--t),.55), rgba(var(--t),.12) 45%, rgba(0,0,0,.6)); border: 1px solid rgba(var(--t),.7); }
+.member::after { content: ''; position: absolute; inset: -50%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.12) 50%, transparent 60%); animation: shine 6s ease-in-out infinite; pointer-events: none; }
+@keyframes shine { 0%,60% { transform: translateX(-60%); } 100% { transform: translateX(60%); } }
+.avatar { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; font-size: 48px; background: rgba(var(--t),.35); border: 2px solid rgba(var(--t),1); box-shadow: 0 0 30px rgba(var(--t),.5); overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.m-name { font-size: clamp(24px,5vw,34px); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; overflow-wrap: anywhere; }
+.m-title { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; background: rgba(var(--t),.9); color: #000; }
+.m-mood { margin-top: 8px; font-size: 14px; color: rgba(255,255,255,.85); }
+.m-bio { grid-column: 1 / -1; margin: 0; color: rgba(255,255,255,.85); white-space: pre-wrap; }
+.m-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 5px 11px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(var(--t),.6); background: rgba(var(--t),.15); color: #fff; }
+.stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.stat { padding: 12px; border-radius: 12px; background: rgba(0,0,0,.35); text-align: center; }
+.stat b { display: block; font-size: 22px; } .stat span { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+@media(max-width:520px){ .member { grid-template-columns: 1fr; text-align: center; } .avatar { margin: 0 auto; } .m-meta { justify-content: center; } }
+
+/* Pickers */
+.grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt { padding: 9px 13px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.04); color: #fff; font: inherit; font-size: 14px; cursor: pointer; transition: transform .15s, border-color .2s, background .2s; }
+.opt:hover { transform: translateY(-1px); border-color: rgba(var(--t),.7); }
+.opt[aria-pressed="true"] { background: rgba(var(--t),.35); border-color: rgb(var(--t)); box-shadow: 0 0 14px rgba(var(--t),.35); }
+.opt.emoji { font-size: 22px; width: 48px; height: 48px; padding: 0; }
+.swatch { width: 42px; height: 42px; border-radius: 50%; padding: 0; }
+.swatch[aria-pressed="true"] { outline: 3px solid #fff; outline-offset: 2px; }
+.counter { float: right; font-size: 12px; color: rgba(255,255,255,.45); }
+.save { position: sticky; bottom: 12px; margin-top: 24px; background: rgb(var(--t)); color: #000; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.providers { display: flex; flex-wrap: wrap; gap: 8px; }
+textarea.bio { min-height: 90px; }
+</style></head><body>
+<main class="shell"><a class="brand" href="/">← JAVISREVENGE</a>
+
+<section class="card themed">
+<h1>Your account</h1>
+<div class="member" id="member" aria-live="polite">
+  <div class="avatar" id="mAvatar"></div>
+  <div><div class="m-name" id="mName">Loading…</div><span class="m-title" id="mTitle">Member</span><div class="m-mood" id="mMood"></div></div>
+  <p class="m-bio" id="mBio"></p>
+  <div class="m-meta" id="mMeta"></div>
+  <div class="stats"><div class="stat"><b id="sDays">–</b><span>Days a member</span></div><div class="stat"><b id="sSince">–</b><span>Joined</span></div><div class="stat"><b id="sLinked">–</b><span>Sign-ins linked</span></div></div>
+</div>
+<p class="muted" style="margin-top:12px">This is your member card. Change anything below and it updates live. Your email is private and only shown to you: <span id="email"></span></p>
+</section>
+
+<section class="card themed">
+<h1 style="font-size:28px">Customize</h1>
+<label for="displayName">Display name <span class="counter" id="cName"></span></label>
+<input id="displayName" maxlength="40" autocomplete="nickname">
+
+<label for="bio">Bio <span class="counter" id="cBio"></span></label>
+<textarea id="bio" class="bio" maxlength="200" placeholder="Say something about yourself…"></textarea>
+
+<label for="location">Location <span class="counter" id="cLoc"></span></label>
+<input id="location" maxlength="40" placeholder="e.g. Los Angeles">
+
+<h2>Color theme</h2><div class="grid" id="themes" role="group" aria-label="Color theme"></div>
+<h2>Avatar</h2><p class="muted" style="margin:0 0 10px">Pick an emoji, or the first option to use your sign-in photo.</p><div class="grid" id="avatars" role="group" aria-label="Avatar"></div>
+<h2>Title badge</h2><div class="grid" id="titles" role="group" aria-label="Title badge"></div>
+<h2>Mood</h2><div class="grid" id="moods" role="group" aria-label="Mood"></div>
+<h2>Interests <span class="muted" style="letter-spacing:0;text-transform:none">(up to 6)</span></h2><div class="grid" id="interests" role="group" aria-label="Interests"></div>
+
+<button class="button save" id="save" type="button">Save changes</button>
+<p class="status" id="pStatus"></p>
+</section>
+
+<section class="card themed">
+<h1 style="font-size:28px">Settings</h1>
+<h2>Signed in with</h2><div class="providers" id="providers"></div>
+<p class="muted">Sign in with any option that uses the same email and you'll land in this same account.</p>
+<h2>Email</h2>
+<div class="row"><input id="notifications" type="checkbox"><label for="notifications" style="margin:0">Email me website updates. You can turn this off at any time.</label></div>
+<p class="status" id="status"></p>
+<div class="actions"><a class="button secondary" href="/api/auth/logout">Sign out</a><button class="button danger" id="delete" type="button">Delete my account</button></div>
+<p class="muted">Deleting removes your account record and signs you out. Limited records may still be retained where legally required.</p>
+</section>
+</main>
+
+<script src="/assets/site-ui.js"></script>
+<script>
+(function () {
+  var THEMES = { silver: '200,205,214', red: '220,38,38', gold: '212,160,23', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12' };
+  var LABELS = { google: 'Google', microsoft: 'Microsoft', discord: 'Discord', github: 'GitHub' };
+  var $ = function (id) { return document.getElementById(id); };
+  var acct, state = {};
+
+  function setTheme(name) { document.documentElement.style.setProperty('--t', THEMES[name] || THEMES.silver); }
+
+  function picker(el, values, key, render, multi) {
+    el.innerHTML = '';
+    values.forEach(function (v) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'opt';
+      render(b, v);
+      var on = multi ? state[key].indexOf(v) >= 0 : state[key] === v;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.onclick = function () {
+        if (multi) {
+          var i = state[key].indexOf(v);
+          if (i >= 0) state[key].splice(i, 1);
+          else if (state[key].length < 6) state[key].push(v);
+        } else state[key] = v;
+        if (key === 'theme') setTheme(v);
+        drawPickers(); preview();
+      };
+      el.appendChild(b);
+    });
+  }
+
+  function drawPickers() {
+    var o = acct.options;
+    picker($('themes'), o.themes, 'theme', function (b, v) { b.className += ' swatch'; b.style.background = 'rgb(' + THEMES[v] + ')'; b.title = v; b.setAttribute('aria-label', v); });
+    picker($('avatars'), o.avatars, 'avatar', function (b, v) { b.className += ' emoji'; if (v) b.textContent = v; else { b.title = 'Use my sign-in photo'; b.setAttribute('aria-label', 'Use my sign-in photo'); b.innerHTML = acct.picture ? '<img src="' + acct.picture.replace(/"/g, '') + '" alt="" style="width:100%;height:100%;border-radius:10px;object-fit:cover">' : '👤'; } });
+    picker($('titles'), o.titles, 'title', function (b, v) { b.textContent = v; });
+    picker($('moods'), o.moods, 'mood', function (b, v) { b.textContent = v || 'No mood'; });
+    picker($('interests'), o.interests, 'interests', function (b, v) { b.textContent = v; }, true);
+  }
+
+  function preview() {
+    var name = $('displayName').value.trim() || acct.name;
+    $('mName').textContent = name;
+    $('mTitle').textContent = state.title || 'Member';
+    $('mMood').textContent = state.mood || '';
+    $('mBio').textContent = $('bio').value.trim();
+    var av = $('mAvatar'); av.innerHTML = '';
+    if (state.avatar) av.textContent = state.avatar;
+    else if (acct.picture) { var img = document.createElement('img'); img.src = acct.picture; img.alt = ''; av.appendChild(img); }
+    else av.textContent = name.charAt(0).toUpperCase();
+    var meta = $('mMeta'); meta.innerHTML = '';
+    var loc = $('location').value.trim();
+    if (loc) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = '📍 ' + loc; meta.appendChild(c); }
+    state.interests.forEach(function (i) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = i; meta.appendChild(c); });
+    $('cName').textContent = $('displayName').value.length + '/40';
+    $('cBio').textContent = $('bio').value.length + '/200';
+    $('cLoc').textContent = $('location').value.length + '/40';
+  }
+
+  fetch('/api/account').then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (a) {
+    acct = a;
+    var p = a.profile || {};
+    state = { theme: p.theme || 'silver', avatar: p.avatar || '', title: p.title || 'Member', mood: p.mood || '', interests: (p.interests || []).slice() };
+    setTheme(state.theme);
+    $('email').textContent = a.email;
+    $('displayName').value = a.name || '';
+    $('bio').value = p.bio || '';
+    $('location').value = p.location || '';
+    $('notifications').checked = a.notifications;
+    var created = new Date(a.createdAt);
+    $('sDays').textContent = Math.max(1, Math.ceil((Date.now() - created) / 864e5));
+    $('sSince').textContent = created.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+    $('sLinked').textContent = a.providers.length;
+    $('providers').innerHTML = '';
+    a.providers.forEach(function (id) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = '✓ ' + (LABELS[id] || id); $('providers').appendChild(c); });
+    drawPickers(); preview();
+  }).catch(function () { location.replace('/signin?returnTo=/account'); });
+
+  ['displayName', 'bio', 'location'].forEach(function (id) { $(id).addEventListener('input', preview); });
+
+  $('save').onclick = function () {
+    var st = $('pStatus'); st.className = 'status'; st.textContent = 'Saving…'; this.disabled = true; var btn = this;
+    fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: {
+      displayName: $('displayName').value, bio: $('bio').value, location: $('location').value,
+      theme: state.theme, avatar: state.avatar, title: state.title, mood: state.mood, interests: state.interests } }) })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (d) { acct.name = d.name; st.textContent = 'Saved! Your card and the badge at the top of every page are updated.'; })
+      .catch(function () { st.textContent = 'Could not save. Try again.'; st.className = 'status error'; })
+      .finally(function () { btn.disabled = false; });
+  };
+
+  var box = $('notifications'), status = $('status');
+  box.addEventListener('change', function () {
+    box.disabled = true;
+    fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notifications: box.checked }) })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function () { status.className = 'status'; status.textContent = box.checked ? 'Email notifications enabled.' : 'Email notifications turned off.'; })
+      .catch(function () { box.checked = !box.checked; status.textContent = 'Could not save that choice.'; status.className = 'status error'; })
+      .finally(function () { box.disabled = false; });
+  });
+  $('delete').addEventListener('click', function () {
+    if (!confirm('Permanently delete your JAVISREVENGE account?')) return;
+    fetch('/api/account', { method: 'DELETE' }).then(function (r) { return r.ok ? location.replace('/signin?deleted=1') : Promise.reject(); })
+      .catch(function () { status.textContent = 'Could not delete the account.'; status.className = 'status error'; });
+  });
+})();
+</script>
 <script src="/assets/beta-banner.js"></script></body></html>
