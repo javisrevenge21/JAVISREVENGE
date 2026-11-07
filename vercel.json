@@ -28,7 +28,7 @@
       ]
     },
     {
-      "source": "/api/((?!latest-post).*)",
+      "source": "/api/((?!latest-).*)",
       "headers": [
         {
           "key": "Cache-Control",

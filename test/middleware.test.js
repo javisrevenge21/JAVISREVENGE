@@ -12,15 +12,15 @@ function request(path, cookie) {
   return new Request('https://www.javisrevenge.com' + path, { headers });
 }
 
-test('only sign-in, OAuth, assets, unsubscribe and crawler files are open', () => {
+test('only sign-in, legal pages, OAuth, assets, unsubscribe and crawler files are open', () => {
   for (const path of ['/signin', '/unsubscribe', '/robots.txt', '/sitemap.xml', '/favicon.ico',
-    '/assets/og-image.jpg', '/assets/beta-banner.js', '/assets/legal.css', '/api/auth/login', '/api/auth/callback', '/api/unsubscribe']) {
+    '/terms', '/privacy', '/cookies', '/assets/og-image.jpg', '/assets/beta-banner.js', '/assets/legal.css', '/api/auth/login', '/api/auth/callback', '/api/unsubscribe']) {
     assert.equal(middleware(request(path)), undefined, path);
   }
 });
 
 test('every other page redirects signed-out visitors to sign in', () => {
-  for (const path of ['/', '/index.html', '/socials', '/archives', '/privacy', '/terms', '/cookies', '/account', '/admin', '/contact', '/shop', '/archives/secret']) {
+  for (const path of ['/', '/index.html', '/socials', '/archives', '/politics', '/account', '/admin', '/contact', '/shop', '/archives/secret']) {
     const response = middleware(request(path + '?x=1'));
     assert.equal(response.status, 307, path);
     const location = new URL(response.headers.get('location'));
@@ -30,7 +30,7 @@ test('every other page redirects signed-out visitors to sign in', () => {
 });
 
 test('member APIs still return 401 when signed out', async () => {
-  for (const path of ['/api/account', '/api/account/preferences', '/api/admin/users', '/api/admin/send', '/api/tip-upload', '/api/waitlist', '/api/latest-post']) {
+  for (const path of ['/api/account', '/api/account/preferences', '/api/admin/users', '/api/admin/send', '/api/tip-upload', '/api/waitlist', '/api/latest-post', '/api/latest-instagram']) {
     const response = middleware(request(path));
     assert.equal(response.status, 401, path);
     assert.deepEqual(await response.json(), { error: 'Authentication required' });

@@ -1,11 +1,12 @@
 import { verifySession, parseCookies, SESSION_COOKIE } from './lib/session.js';
 
 // The whole site requires a valid Google sign-in session. Only these stay open:
-// the sign-in page, the Google OAuth flow, static assets the sign-in page needs
+// the sign-in page, the legal pages (Terms, Privacy, Cookies), the Google OAuth flow, static assets the sign-in page needs
 // (CSS, banner, images), email unsubscribe (page + API), and crawler files.
 // '/' (Home) is members-only: signed-out visitors are redirected to /signin.
 const PUBLIC_EXACT = new Set([
   '/signin', '/signin/', '/unsubscribe', '/unsubscribe/',
+  '/terms', '/terms/', '/privacy', '/privacy/', '/cookies', '/cookies/',
   '/robots.txt', '/sitemap.xml', '/favicon.ico'
 ]);
 const PUBLIC_PREFIXES = ['/assets/', '/api/auth/', '/api/unsubscribe'];
