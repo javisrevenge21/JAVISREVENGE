@@ -1,24 +1,35 @@
-import { head, get } from '@vercel/blob';
+import crypto from 'node:crypto';
+import { head, get, put, del } from '@vercel/blob';
 import { handleUpload } from '@vercel/blob/client';
-import { getAccount, saveAccount, listAccounts, accountByUsername, publicProfile, isBanned } from '../lib/accounts.js';
+import { getAccount, saveAccount, listAccounts, accountByUsername, publicProfile, isBanned, readBlobJson } from '../lib/accounts.js';
 import { isAdmin, requireSameOrigin, sessionFromRequest } from '../lib/session.js';
 import { listPosts, getPost, savePost, createPost, deletePost, REACTIONS } from '../lib/wall.js';
 import { check, punish, hasAI, log, label } from '../lib/moderation.js';
 
-// One function for the members community (the Hobby plan caps the site at 12):
-//   GET  ?view=wall | profile&u= | members
-//   GET  ?media=<pathname>         serve a Wall photo/video/PDF (members only)
-//   POST ?upload=1                 Vercel Blob client-upload token (photos, videos, PDFs)
-//   POST { action: 'post', text, media: [{pathname}], frames: [dataURL] }
-//   POST { action: 'react' | 'delete' | 'report', id, emoji? }
+// The members community, in one function (the Hobby plan caps the site at 12).
+//
+// GET  ?view=wall&tab=latest|top|media|saved[&tag=x][&q=text]
+// GET  ?view=post&id=           one post with its replies
+// GET  ?view=profile&u=         a member's profile (only once they've posted)
+// GET  ?view=notifications      your notifications
+// GET  ?view=members            OWNER ONLY
+// GET  ?media=<pathname>        serve an attachment (members only)
+// POST ?upload=1                Blob client-upload token
+// POST { action: post | react | delete | report | restore | reply | deleteReply | save | pin | vote | readNotifications }
+//
+// Privacy rules: nobody but the owner can list members or see sign-up counts;
+// reactions and poll votes are counts only (never who); a profile can't be
+// opened until that person has posted.
 
 const POST_GAP_MS = 20 * 1000;
+const REPLY_GAP_MS = 8 * 1000;
 const REPORTS_TO_HIDE = 3;
 const MAX_MEDIA = 4;
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
 const FILE_TYPES = ['application/pdf'];
 const LIMITS = { image: 10 * 1024 * 1024, video: 100 * 1024 * 1024, file: 20 * 1024 * 1024 };
+const PIN_KEY = 'wall-meta/pinned.json';
 
 function kindOf(type) {
   if (IMAGE_TYPES.includes(type)) return 'image';
@@ -27,8 +38,16 @@ function kindOf(type) {
   return null;
 }
 
-function cleanText(value) {
-  return String(value || '').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 500);
+function cleanText(value, max = 500) {
+  return String(value || '').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
+}
+
+function tagsOf(text) {
+  return [...new Set((String(text || '').match(/(^|\s)#([a-z0-9_]{2,30})/gi) || []).map(t => t.trim().slice(1).toLowerCase()))];
+}
+
+function mentionsOf(text) {
+  return [...new Set((String(text || '').match(/(^|[^\w])@([a-z0-9_]{3,20})\b/gi) || []).map(m => m.replace(/^[^@]*@/, '').toLowerCase()))];
 }
 
 function mini(account) {
@@ -36,28 +55,62 @@ function mini(account) {
   return { username: account.username, name: account.name, picture: account.picture || '', avatar: p.avatar || '', theme: p.theme || 'silver', title: p.title || 'Member' };
 }
 
-async function authorsFor(posts) {
-  const names = [...new Set(posts.map(p => p.author))];
+async function authorsFor(names) {
   const map = {};
-  await Promise.all(names.map(async n => { const a = await accountByUsername(n).catch(() => null); if (a) map[n] = mini(a); }));
+  await Promise.all([...new Set(names)].map(async n => { const a = await accountByUsername(n).catch(() => null); if (a && a.username) map[n] = mini(a); }));
   return map;
 }
 
-function shape(post, me, admin) {
-  const ownerOnly = admin ? { authorEmail: post.email } : {};
+function score(post) {
+  return Object.values(post.reactions || {}).reduce((n, who) => n + who.length, 0) + 2 * (post.replies || []).length;
+}
+
+async function pinnedId() {
+  try { const d = await readBlobJson(PIN_KEY); return d && d.id; } catch { return null; }
+}
+
+function shape(post, me, admin, saved = [], pinned = null) {
   const reactions = {};
   for (const e of REACTIONS) {
     const who = (post.reactions && post.reactions[e]) || [];
-    reactions[e] = { count: who.length, mine: !!me && who.includes(me) };
+    reactions[e] = { count: who.length, mine: who.includes(me) };
   }
+  const poll = post.poll ? {
+    options: post.poll.options.map(o => ({ text: o.text, count: o.votes.length })),
+    total: post.poll.options.reduce((n, o) => n + o.votes.length, 0),
+    mine: post.poll.options.findIndex(o => o.votes.includes(me))
+  } : null;
   return {
-    id: post.id, author: post.author, text: post.text, createdAt: post.createdAt, reactions,
+    id: post.id, author: post.author, text: post.text, createdAt: post.createdAt, reactions, poll,
     media: (post.media || []).map(m => ({ kind: m.kind, name: m.name, size: m.size, url: '/api/community?media=' + encodeURIComponent(m.pathname) })),
+    replyCount: (post.replies || []).length,
     canDelete: admin || post.author === me,
-    hidden: !!post.hidden, reports: admin ? (post.reports || []).length : undefined,
     reported: (post.reports || []).includes(me),
-    ...ownerOnly
+    saved: saved.includes(post.id),
+    pinned: pinned === post.id,
+    hidden: !!post.hidden,
+    ...(admin ? { reports: (post.reports || []).length, authorEmail: post.email } : {})
   };
+}
+
+function shapeReply(r, me, admin) {
+  return { id: r.id, author: r.author, text: r.text, createdAt: r.createdAt, canDelete: admin || r.author === me, ...(admin ? { authorEmail: r.email } : {}) };
+}
+
+// Notifications live on the recipient's account (newest first, max 60).
+// Reactions are grouped into a count and never say who reacted.
+async function notify(username, note, skip) {
+  if (!username || username === skip) return;
+  const account = await accountByUsername(username).catch(() => null);
+  if (!account) return;
+  const inbox = account.inbox || [];
+  if (note.type === 'react') {
+    const existing = inbox.find(n => n.type === 'react' && n.postId === note.postId && !n.read);
+    if (existing) { existing.count = (existing.count || 1) + 1; existing.at = new Date().toISOString(); account.inbox = inbox; return saveAccount(account); }
+    note.count = 1;
+  }
+  account.inbox = [{ ...note, at: new Date().toISOString(), read: false }, ...inbox].slice(0, 60);
+  await saveAccount(account);
 }
 
 async function blobToDataUrl(pathname, type) {
@@ -84,6 +137,12 @@ async function serveMedia(req, res, pathname) {
   return res.end();
 }
 
+function trending(posts) {
+  const week = Date.now() - 7 * 864e5, counts = {};
+  for (const p of posts) if (!p.hidden && Date.parse(p.createdAt) > week) for (const t of tagsOf(p.text)) counts[t] = (counts[t] || 0) + 1;
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([tag, count]) => ({ tag, count }));
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const session = sessionFromRequest(req);
@@ -91,32 +150,81 @@ export default async function handler(req, res) {
   const me = await getAccount(session.email);
   if (!me || !me.username || await isBanned(me.email)) return res.status(403).json({ error: 'Not allowed' });
   const admin = isAdmin(session);
+  const visible = p => !p.hidden || admin || p.author === me.username;
 
   if (req.method === 'GET' && req.query.media) return serveMedia(req, res, String(req.query.media));
 
   if (req.method === 'GET') {
     const view = String(req.query.view || 'wall');
+
     if (view === 'wall') {
-      const posts = (await listPosts(60)).filter(p => !p.hidden || admin || p.author === me.username).slice(0, 40);
-      return res.status(200).json({ me: mini(me), admin, mediaEnabled: hasAI(), reactions: REACTIONS, authors: await authorsFor(posts), posts: posts.map(p => shape(p, me.username, admin)) });
+      const tab = String(req.query.tab || 'latest');
+      const tag = String(req.query.tag || '').toLowerCase().replace(/^#/, '');
+      const q = String(req.query.q || '').toLowerCase().trim().slice(0, 60);
+      const pool = (await listPosts(150)).filter(visible);
+      const pin = await pinnedId();
+      let posts;
+      if (tab === 'saved') {
+        posts = (await Promise.all((me.saved || []).slice(-60).reverse().map(id => getPost(id)))).filter(p => p && visible(p));
+      } else if (tab === 'top') {
+        const week = Date.now() - 7 * 864e5;
+        posts = pool.filter(p => Date.parse(p.createdAt) > week).sort((a, b) => score(b) - score(a));
+      } else if (tab === 'media') {
+        posts = pool.filter(p => (p.media || []).length);
+      } else {
+        posts = pool;
+      }
+      if (tag) posts = posts.filter(p => tagsOf(p.text).includes(tag));
+      if (q) posts = posts.filter(p => (p.text || '').toLowerCase().includes(q) || p.author.includes(q.replace(/^@/, '')));
+      posts = posts.slice(0, 50);
+      if (tab === 'latest' && !tag && !q && pin) {
+        const pinnedPost = pool.find(p => p.id === pin) || await getPost(pin);
+        if (pinnedPost && visible(pinnedPost)) posts = [pinnedPost, ...posts.filter(p => p.id !== pin)];
+      }
+      return res.status(200).json({
+        me: mini(me), admin, mediaEnabled: hasAI(), reactions: REACTIONS,
+        unread: (me.inbox || []).filter(n => !n.read).length,
+        trending: trending(pool),
+        authors: await authorsFor(posts.map(p => p.author)),
+        posts: posts.map(p => shape(p, me.username, admin, me.saved || [], pin))
+      });
     }
+
+    if (view === 'post') {
+      const post = await getPost(String(req.query.id || ''));
+      if (!post || !visible(post)) return res.status(404).json({ error: 'Post not found' });
+      const replies = (post.replies || []).map(r => shapeReply(r, me.username, admin));
+      return res.status(200).json({
+        me: mini(me), admin, reactions: REACTIONS,
+        authors: await authorsFor([post.author, ...replies.map(r => r.author)]),
+        post: shape(post, me.username, admin, me.saved || [], await pinnedId()), replies
+      });
+    }
+
+    if (view === 'notifications') {
+      const inbox = (me.inbox || []).slice(0, 60);
+      return res.status(200).json({ notifications: inbox, authors: await authorsFor(inbox.map(n => n.from).filter(Boolean)) });
+    }
+
     if (view === 'profile') {
       const account = await accountByUsername(req.query.u);
-      // A profile is only visible once that person has posted something, so
-      // browsing usernames can't reveal who has signed up. You can always see
-      // your own, and the owner can see everyone's.
       const notFound = () => res.status(404).json({ error: 'No member with that username' });
       if (!account || !account.username) return notFound();
-      const all = (await listPosts(200)).filter(p => p.author === account.username);
+      const all = (await listPosts(150)).filter(p => p.author === account.username);
       const isSelf = account.username === me.username;
       if (!admin && !isSelf && !all.some(p => !p.hidden)) return notFound();
-      const posts = all.filter(p => !p.hidden || admin || isSelf).slice(0, 20);
-      const out = { me: me.username, admin, reactions: REACTIONS, profile: publicProfile(account), posts: posts.map(p => shape(p, me.username, admin)) };
+      const posts = all.filter(visible).slice(0, 30);
+      const pin = await pinnedId();
+      const out = {
+        me: me.username, admin, reactions: REACTIONS, profile: publicProfile(account),
+        stats: { posts: posts.length, reactions: posts.reduce((n, p) => n + score(p), 0) },
+        posts: posts.map(p => shape(p, me.username, admin, me.saved || [], pin))
+      };
       if (admin) { out.email = account.email; out.strikes = account.strikes || 0; }
       return res.status(200).json(out);
     }
+
     if (view === 'members') {
-      // Who has signed up is private: only the owner can list members.
       if (!admin) return res.status(403).json({ error: 'Owner only' });
       const members = (await listAccounts()).filter(a => a.username)
         .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
@@ -128,7 +236,6 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Browser asks for a one-time token, then uploads straight to Blob storage.
   if (req.query.upload) {
     if (!hasAI()) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
     try {
@@ -149,15 +256,29 @@ export default async function handler(req, res) {
   if (!requireSameOrigin(req)) return res.status(403).json({ error: 'Invalid origin' });
   const action = req.body?.action;
 
+  async function blocked(verdict, text, extra = {}) {
+    const result = admin ? { banned: false, strikes: 0 } : await punish(me, verdict.categories, { text: text.slice(0, 200), ...extra });
+    if (admin) await log({ action: 'blocked', username: me.username, email: me.email, reason: label(verdict.categories), text: text.slice(0, 200) });
+    return res.status(422).json({
+      error: result.banned
+        ? 'This broke the rules and your account has been banned automatically.'
+        : `Blocked for ${label(verdict.categories)}. That's strike ${result.strikes} of 3 — at 3 your account is banned automatically.`,
+      banned: result.banned
+    });
+  }
+
   if (action === 'post') {
     const text = cleanText(req.body.text);
     const wanted = Array.isArray(req.body.media) ? req.body.media.slice(0, MAX_MEDIA) : [];
+    let poll = null;
+    if (Array.isArray(req.body.poll)) {
+      const opts = req.body.poll.map(o => cleanText(o, 60)).filter(Boolean).slice(0, 4);
+      if (opts.length >= 2) poll = { options: opts.map(t => ({ text: t, votes: [] })) };
+    }
     if (!text && !wanted.length) return res.status(400).json({ error: 'Write something or add a photo first.' });
     if (!admin && me.lastPostAt && Date.now() - Date.parse(me.lastPostAt) < POST_GAP_MS) {
       return res.status(429).json({ error: 'Slow down — wait a few seconds between posts.' });
     }
-
-    // Verify every upload belongs to this person and is an allowed type and size.
     const media = [];
     for (const w of wanted) {
       const pathname = String(w?.pathname || '');
@@ -170,70 +291,122 @@ export default async function handler(req, res) {
     }
     if (media.length && !hasAI()) return res.status(403).json({ error: 'Uploads are switched off until automatic moderation is set up.' });
 
-    // Automatic moderation: text, every photo, frames from every video, PDF names.
     const images = [];
     for (const m of media) if (m.kind === 'image' && m.type !== 'image/gif') images.push(await blobToDataUrl(m.pathname, m.type));
     const frames = (Array.isArray(req.body.frames) ? req.body.frames : []).filter(f => /^data:image\/jpeg;base64,/.test(f) && f.length < 400000).slice(0, 8);
     if (media.some(m => m.kind === 'video') && !frames.length) return res.status(400).json({ error: 'Could not read that video. Try a different file.' });
     images.push(...frames);
-    const names = media.map(m => m.name).join(' ');
+    const checkText = [text, media.map(m => m.name).join(' '), poll ? poll.options.map(o => o.text).join(' ') : ''].filter(Boolean).join('\n');
 
     let verdict;
-    try { verdict = await check({ text: [text, names].filter(Boolean).join('\n'), images }); }
-    catch (err) { return res.status(503).json({ error: 'The safety check is unavailable right now. Try again in a minute.' }); }
-
+    try { verdict = await check({ text: checkText, images }); }
+    catch { return res.status(503).json({ error: 'The safety check is unavailable right now. Try again in a minute.' }); }
     if (!verdict.ok) {
-      for (const m of media) await import('@vercel/blob').then(b => b.del(m.pathname)).catch(() => {});
-      const result = admin ? { banned: false, strikes: 0 } : await punish(me, verdict.categories, { text: text.slice(0, 200), media: media.length });
-      if (admin) await log({ action: 'blocked', username: me.username, email: me.email, reason: label(verdict.categories), text: text.slice(0, 200) });
-      return res.status(422).json({
-        error: result.banned
-          ? 'This post broke the rules and your account has been banned automatically.'
-          : `This post was blocked for ${label(verdict.categories)}. That's strike ${result.strikes} of 3 — at 3 your account is banned automatically.`,
-        banned: result.banned
-      });
+      for (const m of media) await del(m.pathname).catch(() => {});
+      return blocked(verdict, text, { media: media.length });
     }
 
     const post = await createPost(me, text, media);
+    if (poll) { post.poll = poll; await savePost(post); }
     me.lastPostAt = post.createdAt;
     await saveAccount(me);
-    return res.status(200).json({ post: shape(post, me.username, admin), author: mini(me) });
+    for (const u of mentionsOf(text).slice(0, 10)) await notify(u, { type: 'mention', from: me.username, postId: post.id, text: text.slice(0, 120) }, me.username).catch(() => {});
+    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || []), author: mini(me) });
   }
 
-  if (action === 'react' || action === 'delete' || action === 'report' || action === 'restore') {
-    const post = await getPost(String(req.body.id || ''));
-    if (!post) return res.status(404).json({ error: 'Post not found' });
+  if (action === 'readNotifications') {
+    const fresh = await getAccount(me.email);
+    fresh.inbox = (fresh.inbox || []).map(n => ({ ...n, read: true }));
+    await saveAccount(fresh);
+    return res.status(200).json({ ok: true });
+  }
 
-    if (action === 'react') {
-      const emoji = String(req.body.emoji || '');
-      if (!REACTIONS.includes(emoji)) return res.status(400).json({ error: 'Unknown reaction' });
-      post.reactions = post.reactions || {};
-      const who = new Set(post.reactions[emoji] || []);
-      if (who.has(me.username)) who.delete(me.username); else who.add(me.username);
-      post.reactions[emoji] = [...who];
-      await savePost(post);
-      return res.status(200).json({ post: shape(post, me.username, admin) });
-    }
+  const post = await getPost(String(req.body?.id || ''));
+  if (!post || !visible(post)) return res.status(404).json({ error: 'Post not found' });
 
-    if (action === 'restore') {
-      if (!admin) return res.status(403).json({ error: 'Owner only' });
-      post.hidden = false; post.reports = [];
-      await savePost(post);
-      return res.status(200).json({ restored: true });
-    }
+  if (action === 'react') {
+    const emoji = String(req.body.emoji || '');
+    if (!REACTIONS.includes(emoji)) return res.status(400).json({ error: 'Unknown reaction' });
+    post.reactions = post.reactions || {};
+    const who = new Set(post.reactions[emoji] || []);
+    const adding = !who.has(me.username);
+    if (adding) who.add(me.username); else who.delete(me.username);
+    post.reactions[emoji] = [...who];
+    await savePost(post);
+    if (adding) await notify(post.author, { type: 'react', emoji, postId: post.id, text: String(post.text || '').slice(0, 80) }, me.username).catch(() => {});
+    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || [], await pinnedId()) });
+  }
 
-    if (action === 'delete') {
-      if (!admin && post.author !== me.username) return res.status(403).json({ error: 'Not your post' });
-      await deletePost(post.id);
-      return res.status(200).json({ deleted: true });
-    }
+  if (action === 'vote') {
+    if (!post.poll) return res.status(400).json({ error: 'No poll on this post' });
+    const i = Number(req.body.option);
+    if (!(i >= 0 && i < post.poll.options.length)) return res.status(400).json({ error: 'Bad option' });
+    for (const o of post.poll.options) o.votes = o.votes.filter(u => u !== me.username);
+    post.poll.options[i].votes.push(me.username);
+    await savePost(post);
+    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || [], await pinnedId()) });
+  }
 
-    // Report: an admin report removes it right away; otherwise 3 different
-    // members reporting a post removes it and gives the author a strike.
+  if (action === 'save') {
+    const fresh = await getAccount(me.email);
+    const saved = new Set(fresh.saved || []);
+    if (saved.has(post.id)) saved.delete(post.id); else saved.add(post.id);
+    fresh.saved = [...saved].slice(-300);
+    await saveAccount(fresh);
+    return res.status(200).json({ saved: saved.has(post.id) });
+  }
+
+  if (action === 'reply') {
+    const text = cleanText(req.body.text, 300);
+    if (!text) return res.status(400).json({ error: 'Write a reply first.' });
+    if (!admin && me.lastReplyAt && Date.now() - Date.parse(me.lastReplyAt) < REPLY_GAP_MS) return res.status(429).json({ error: 'Slow down a little.' });
+    if ((post.replies || []).length >= 300) return res.status(400).json({ error: 'This thread is full.' });
+    let verdict;
+    try { verdict = await check({ text }); } catch { return res.status(503).json({ error: 'The safety check is unavailable right now.' }); }
+    if (!verdict.ok) return blocked(verdict, text, { reply: true });
+    const reply = { id: crypto.randomBytes(4).toString('hex'), author: me.username, email: me.email, text, createdAt: new Date().toISOString() };
+    post.replies = [...(post.replies || []), reply];
+    await savePost(post);
+    me.lastReplyAt = reply.createdAt; await saveAccount(me);
+    await notify(post.author, { type: 'reply', from: me.username, postId: post.id, text: text.slice(0, 120) }, me.username).catch(() => {});
+    for (const u of mentionsOf(text).slice(0, 10)) if (u !== post.author) await notify(u, { type: 'mention', from: me.username, postId: post.id, text: text.slice(0, 120) }, me.username).catch(() => {});
+    return res.status(200).json({ reply: shapeReply(reply, me.username, admin), author: mini(me), replyCount: post.replies.length });
+  }
+
+  if (action === 'deleteReply') {
+    const r = (post.replies || []).find(x => x.id === req.body.rid);
+    if (!r) return res.status(404).json({ error: 'Reply not found' });
+    if (!admin && r.author !== me.username) return res.status(403).json({ error: 'Not your reply' });
+    post.replies = post.replies.filter(x => x.id !== r.id);
+    await savePost(post);
+    return res.status(200).json({ deleted: true, replyCount: post.replies.length });
+  }
+
+  if (action === 'pin') {
+    if (!admin) return res.status(403).json({ error: 'Owner only' });
+    const current = await pinnedId();
+    if (current === post.id) await del(PIN_KEY).catch(() => {});
+    else await put(PIN_KEY, JSON.stringify({ id: post.id }), { access: 'private', allowOverwrite: true, contentType: 'application/json' });
+    return res.status(200).json({ pinned: current !== post.id });
+  }
+
+  if (action === 'restore') {
+    if (!admin) return res.status(403).json({ error: 'Owner only' });
+    post.hidden = false; post.reports = [];
+    await savePost(post);
+    return res.status(200).json({ restored: true });
+  }
+
+  if (action === 'delete') {
+    if (!admin && post.author !== me.username) return res.status(403).json({ error: 'Not your post' });
+    await deletePost(post.id);
+    if (await pinnedId() === post.id) await del(PIN_KEY).catch(() => {});
+    return res.status(200).json({ deleted: true });
+  }
+
+  if (action === 'report') {
     if (post.author === me.username) return res.status(400).json({ error: "You can't report your own post" });
     post.reports = [...new Set([...(post.reports || []), me.username])];
-    // Reports don't punish anyone automatically; they hide the post until the
-    // owner looks (Admin > Reported posts) and decides to restore or remove it.
     if (post.reports.length >= REPORTS_TO_HIDE && !post.hidden) {
       post.hidden = true;
       await log({ action: 'hidden', username: post.author, email: post.email, reason: `reported by ${post.reports.length} members`, text: String(post.text || '').slice(0, 200), postId: post.id });

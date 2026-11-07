@@ -10,7 +10,7 @@
     },
     {
       "source": "/u/:name",
-      "destination": "/u/index.html"
+      "destination": "/wall/index.html"
     }
   ],
   "headers": [
