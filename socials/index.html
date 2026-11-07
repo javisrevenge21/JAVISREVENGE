@@ -201,6 +201,23 @@ background: radial-gradient(circle at 50% 30%, #1b1c1f, #000 70%);
 .profile::after { animation: none !important; }
 }
 </style>
+<style id="page-theme">
+:root { --theme: 147,51,234; }
+.view { padding-left: 16px !important; padding-right: 16px !important; }
+.wrap, .wrap.wide { max-width: 1200px !important; width: 100%; }
+.card {
+  width: 100%;
+  background: linear-gradient(160deg, rgba(var(--theme),0.22), rgba(var(--theme),0.08)) !important;
+  border: 1px solid rgba(var(--theme),0.55) !important;
+  box-shadow: 0 0 40px rgba(var(--theme),0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+  padding: clamp(18px, 4vw, 40px) !important;
+}
+.card-label { color: rgba(var(--theme),1) !important; filter: brightness(1.5); }
+.rule { background: linear-gradient(90deg, transparent, rgba(var(--theme),0.9), transparent) !important; }
+.ig-link { border-color: rgba(var(--theme),0.6) !important; }
+.ig-link:hover, .ig-link:focus-visible { box-shadow: 0 14px 40px rgba(var(--theme),0.35) !important; }
+@media (max-width: 600px) { .view { padding-left: 10px !important; padding-right: 10px !important; } .card { border-radius: 14px; } }
+</style>
 </head>
 <body>
 <canvas id="bg"></canvas>
