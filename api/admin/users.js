@@ -1,4 +1,4 @@
-import { listAccounts, getAccount, deleteAccount, banEmail, unbanEmail, listBans } from '../../lib/accounts.js';
+import { listAccounts, getAccount, saveAccount, deleteAccount, banEmail, unbanEmail, listBans, scrubUsername } from '../../lib/accounts.js';
 import { purgeMember } from '../../lib/wall.js';
 import { recentLog, hasAI } from '../../lib/moderation.js';
 import { countWaitlist } from '../../lib/waitlist.js';
@@ -22,7 +22,10 @@ export default async function handler(req, res) {
       notifications: account.notifications === true,
       createdAt: account.createdAt,
       lastSignInAt: account.lastSignInAt,
-      strikes: account.strikes || 0
+      strikes: account.strikes || 0,
+      mediaAccess: account.mediaAccess || 'none',
+      mediaRequestedAt: account.mediaRequestedAt || null,
+      followers: (account.followers || []).length
     }));
     const bans = await listBans().catch(() => []);
     const waitlistCount = await countWaitlist().catch(() => null);
@@ -38,12 +41,23 @@ export default async function handler(req, res) {
   if (email === session.email.toLowerCase() && action !== 'unban') return res.status(400).json({ error: "You can't remove or ban yourself" });
 
   if (action === 'unban') { await unbanEmail(email); return res.status(200).json({ unbanned: email }); }
+  // Photo/video permission: grant, deny (clears a request) or revoke.
+  if (action === 'media') {
+    const account = await getAccount(email);
+    if (!account) return res.status(404).json({ error: 'Account not found' });
+    const v = req.body?.value;
+    account.mediaAccess = v === 'grant' ? 'granted' : v === 'deny' ? 'denied' : 'none';
+    account.mediaDecidedAt = new Date().toISOString();
+    account.inbox = [{ type: 'media', granted: v === 'grant', at: account.mediaDecidedAt, read: false }, ...(account.inbox || [])].slice(0, 60);
+    await saveAccount(account);
+    return res.status(200).json({ email, mediaAccess: account.mediaAccess });
+  }
   if (action !== 'remove' && action !== 'ban') return res.status(400).json({ error: 'Unknown action' });
 
   const account = await getAccount(email);
   const purged = await purgeMember(email, account?.username).catch(() => ({ posts: 0 }));
   const posts = purged.posts;
-  if (account) await deleteAccount(email);
+  if (account) { await deleteAccount(email); await scrubUsername(account.username).catch(() => {}); }
   if (action === 'ban') {
     await banEmail(email, { username: account?.username || '', name: account?.name || '', reason: String(req.body?.reason || '').slice(0, 200), by: session.email });
   }

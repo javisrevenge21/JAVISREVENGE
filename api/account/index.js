@@ -1,4 +1,4 @@
-import { deleteAccount, getAccount, PROFILE_OPTIONS } from '../../lib/accounts.js';
+import { deleteAccount, getAccount, PROFILE_OPTIONS, scrubUsername } from '../../lib/accounts.js';
 import { purgeMember, exportMember } from '../../lib/wall.js';
 import { clearCookie, requireSameOrigin, sessionFromRequest, SESSION_COOKIE } from '../../lib/session.js';
 
@@ -24,6 +24,7 @@ export default async function handler(req, res) {
       email: account.email,
       name: account.name,
       username: account.username || '',
+      mediaAccess: account.mediaAccess || 'none',
       picture: account.picture,
       notifications: account.notifications === true,
       createdAt: account.createdAt,
@@ -39,6 +40,7 @@ export default async function handler(req, res) {
     const account = await getAccount(session.email);
     await purgeMember(session.email, account?.username).catch(() => null);
     await deleteAccount(session.email);
+    await scrubUsername(account?.username).catch(() => {});
     res.setHeader('Set-Cookie', clearCookie(SESSION_COOKIE));
     return res.status(200).json({ deleted: true });
   }

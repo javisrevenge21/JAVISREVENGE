@@ -1,4 +1,5 @@
 import { updateNotifications, updateProfile, claimUsername, normalizeUsername, usernameProblem, usernameTaken } from '../../lib/accounts.js';
+import { blocklistHit } from '../../lib/moderation.js';
 import { requireSameOrigin, sessionFromRequest, createSession, sessionCookie } from '../../lib/session.js';
 
 // POST { notifications: true|false }  or  POST { profile: { displayName, bio, ... } }
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
   // Check availability as the person types: POST { checkUsername: "name" }
   if (typeof req.body?.checkUsername === 'string') {
     const name = normalizeUsername(req.body.checkUsername);
-    const problem = usernameProblem(name);
+    const problem = usernameProblem(name) || (blocklistHit(name) ? 'That username is not available.' : null);
     if (problem) return res.status(200).json({ available: false, message: problem });
     const taken = await usernameTaken(name);
     return res.status(200).json({ available: !taken, message: taken ? 'That username is taken.' : 'Available!' });
@@ -20,6 +21,7 @@ export default async function handler(req, res) {
   // Claim: POST { username: "name" }. Re-issues the session so the site
   // stops asking for a username.
   if (typeof req.body?.username === 'string') {
+    if (blocklistHit(req.body.username)) return res.status(409).json({ error: 'That username is not available.' });
     const result = await claimUsername(session.email, req.body.username, req.body.agree === true);
     if (result.error) return res.status(409).json({ error: result.error });
     res.setHeader('Set-Cookie', sessionCookie(createSession(result.account, process.env.SESSION_SECRET)));
@@ -27,6 +29,9 @@ export default async function handler(req, res) {
   }
 
   if (req.body && typeof req.body.profile === 'object' && req.body.profile) {
+    const pf = req.body.profile;
+    const words = ['displayName', 'bio', 'location', 'quote', 'pronouns', 'instagram', 'x', 'tiktok'].map(k => String(pf[k] || '')).join('\n');
+    if (blocklistHit(words)) return res.status(422).json({ error: 'Your profile contains words that are not allowed on JAVISREVENGE.' });
     const account = await updateProfile(session.email, req.body.profile);
     if (!account) return res.status(404).json({ error: 'Account not found' });
     return res.status(200).json({ name: account.name, profile: account.profile });

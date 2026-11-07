@@ -61,6 +61,8 @@ async function authorsFor(names) {
   return map;
 }
 
+function canMedia(account, admin) { return admin || account.mediaAccess === 'granted'; }
+
 function score(post) {
   return Object.values(post.reactions || {}).reduce((n, who) => n + who.length, 0) + 2 * (post.replies || []).length;
 }
@@ -151,6 +153,13 @@ export default async function handler(req, res) {
   if (!me || !me.username || await isBanned(me.email)) return res.status(403).json({ error: 'Not allowed' });
   const admin = isAdmin(session);
   const visible = p => !p.hidden || admin || p.author === me.username;
+  const hiddenAuthors = new Set([...(me.blocked || []), ...(me.muted || [])]);
+  // Posts from people I blocked/muted, and from people who blocked me, are not shown to me.
+  async function blockedMe(names) {
+    const out = new Set();
+    await Promise.all([...new Set(names)].map(async n => { const a = await accountByUsername(n).catch(() => null); if (a && (a.blocked || []).includes(me.username)) out.add(n); }));
+    return out;
+  }
 
   if (req.method === 'GET' && req.query.media) return serveMedia(req, res, String(req.query.media));
 
@@ -171,18 +180,26 @@ export default async function handler(req, res) {
         posts = pool.filter(p => Date.parse(p.createdAt) > week).sort((a, b) => score(b) - score(a));
       } else if (tab === 'media') {
         posts = pool.filter(p => (p.media || []).length);
+      } else if (tab === 'following') {
+        const f = new Set([...(me.following || []), me.username]);
+        posts = pool.filter(p => f.has(p.author));
       } else {
         posts = pool;
       }
       if (tag) posts = posts.filter(p => tagsOf(p.text).includes(tag));
       if (q) posts = posts.filter(p => (p.text || '').toLowerCase().includes(q) || p.author.includes(q.replace(/^@/, '')));
+      if (!admin) {
+        const by = await blockedMe(posts.map(p => p.author));
+        posts = posts.filter(p => !hiddenAuthors.has(p.author) && !by.has(p.author));
+      }
       posts = posts.slice(0, 50);
       if (tab === 'latest' && !tag && !q && pin) {
         const pinnedPost = pool.find(p => p.id === pin) || await getPost(pin);
         if (pinnedPost && visible(pinnedPost)) posts = [pinnedPost, ...posts.filter(p => p.id !== pin)];
       }
       return res.status(200).json({
-        me: mini(me), admin, mediaEnabled: hasAI(), reactions: REACTIONS,
+        me: mini(me), admin, mediaEnabled: hasAI(), mediaAccess: admin ? 'granted' : (me.mediaAccess || 'none'), reactions: REACTIONS,
+        following: (me.following || []).length,
         unread: (me.inbox || []).filter(n => !n.read).length,
         trending: trending(pool),
         authors: await authorsFor(posts.map(p => p.author)),
@@ -213,15 +230,24 @@ export default async function handler(req, res) {
       const all = (await listPosts(150)).filter(p => p.author === account.username);
       const isSelf = account.username === me.username;
       if (!admin && !isSelf && !all.some(p => !p.hidden)) return notFound();
+      if (!admin && (account.blocked || []).includes(me.username)) return notFound();
       const posts = all.filter(visible).slice(0, 30);
       const pin = await pinnedId();
       const out = {
         me: me.username, admin, reactions: REACTIONS, profile: publicProfile(account),
-        stats: { posts: posts.length, reactions: posts.reduce((n, p) => n + score(p), 0) },
+        stats: { posts: posts.length, reactions: posts.reduce((n, p) => n + score(p), 0), followers: (account.followers || []).length, following: (account.following || []).length },
+        relation: { following: (me.following || []).includes(account.username), followsYou: (account.following || []).includes(me.username), blocked: (me.blocked || []).includes(account.username), muted: (me.muted || []).includes(account.username) },
         posts: posts.map(p => shape(p, me.username, admin, me.saved || [], pin))
       };
       if (admin) { out.email = account.email; out.strikes = account.strikes || 0; }
       return res.status(200).json(out);
+    }
+
+    if (view === 'network') {
+      // Only you can see who follows you and who you follow.
+      const which = req.query.list === 'followers' ? (me.followers || []) : req.query.list === 'blocked' ? [...new Set([...(me.blocked || []), ...(me.muted || [])])] : (me.following || []);
+      const authors = await authorsFor(which.slice(0, 300));
+      return res.status(200).json({ list: which.filter(n => authors[n]).map(n => ({ ...authors[n], blocked: (me.blocked || []).includes(n), muted: (me.muted || []).includes(n), following: (me.following || []).includes(n) })) });
     }
 
     if (view === 'members') {
@@ -238,12 +264,15 @@ export default async function handler(req, res) {
 
   if (req.query.upload) {
     if (!hasAI()) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
+    const mediaOk = canMedia(me, admin);
     try {
       const json = await handleUpload({
         body: req.body, request: req,
         onBeforeGenerateToken: async (pathname) => {
           if (!pathname.startsWith(`wall-media/${me.username}/`)) throw new Error('Bad upload path');
-          return { allowedContentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES, ...FILE_TYPES], maximumSizeInBytes: LIMITS.video, addRandomSuffix: true };
+          return mediaOk
+            ? { allowedContentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES, ...FILE_TYPES], maximumSizeInBytes: LIMITS.video, addRandomSuffix: true }
+            : { allowedContentTypes: FILE_TYPES, maximumSizeInBytes: LIMITS.file, addRandomSuffix: true };
         },
         onUploadCompleted: async () => {}
       });
@@ -257,12 +286,17 @@ export default async function handler(req, res) {
   const action = req.body?.action;
 
   async function blocked(verdict, text, extra = {}) {
+    // Banned words: the post is simply refused, no strike.
+    if (verdict.categories.every(c => c === 'blocklist')) {
+      await log({ action: 'blocked', username: me.username, email: me.email, reason: 'banned words', text: text.slice(0, 200) });
+      return res.status(422).json({ error: 'That contains a word that isn’t allowed on JAVISREVENGE. Remove it and try again.' });
+    }
     const result = admin ? { banned: false, strikes: 0 } : await punish(me, verdict.categories, { text: text.slice(0, 200), ...extra });
     if (admin) await log({ action: 'blocked', username: me.username, email: me.email, reason: label(verdict.categories), text: text.slice(0, 200) });
     return res.status(422).json({
       error: result.banned
         ? 'This broke the rules and your account has been banned automatically.'
-        : `Blocked for ${label(verdict.categories)}. That's strike ${result.strikes} of 3 — at 3 your account is banned automatically.`,
+        : `Blocked for ${label(verdict.categories)}.`,
       banned: result.banned
     });
   }
@@ -287,6 +321,10 @@ export default async function handler(req, res) {
       const kind = info && kindOf(info.contentType);
       if (!kind) return res.status(400).json({ error: 'That file type is not allowed.' });
       if (info.size > LIMITS[kind]) return res.status(400).json({ error: `That ${kind} is too large.` });
+      if ((kind === 'image' || kind === 'video') && !canMedia(me, admin)) {
+        await del(pathname).catch(() => {});
+        return res.status(403).json({ error: 'Photo and video posting is only for members the owner has approved. You can request access from your account.' });
+      }
       media.push({ pathname, kind, type: info.contentType, size: info.size, name: String(w.name || '').slice(0, 80) });
     }
     if (media.length && !hasAI()) return res.status(403).json({ error: 'Uploads are switched off until automatic moderation is set up.' });
@@ -321,8 +359,54 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
+  if (action === 'requestMedia') {
+    const fresh = await getAccount(me.email);
+    if (fresh.mediaAccess === 'granted') return res.status(200).json({ mediaAccess: 'granted' });
+    fresh.mediaAccess = 'requested'; fresh.mediaRequestedAt = new Date().toISOString();
+    await saveAccount(fresh);
+    return res.status(200).json({ mediaAccess: 'requested' });
+  }
+
+  if (['follow', 'block', 'mute'].includes(action)) {
+    const other = await accountByUsername(req.body?.username);
+    if (!other || !other.username || other.username === me.username) return res.status(404).json({ error: 'Member not found' });
+    const fresh = await getAccount(me.email);
+    const toggle = (list, name) => { const s0 = new Set(list || []); const on = !s0.has(name); if (on) s0.add(name); else s0.delete(name); return [[...s0], on]; };
+    if (action === 'follow') {
+      if ((other.blocked || []).includes(me.username) || (fresh.blocked || []).includes(other.username)) return res.status(403).json({ error: "You can't follow this member." });
+      const [list, on] = toggle(fresh.following, other.username);
+      fresh.following = list.slice(-2000); await saveAccount(fresh);
+      const [fl] = on ? [[...new Set([...(other.followers || []), me.username])]] : [(other.followers || []).filter(u => u !== me.username)];
+      other.followers = fl; if (on) other.inbox = [{ type: 'follow', from: me.username, at: new Date().toISOString(), read: false }, ...(other.inbox || [])].slice(0, 60);
+      await saveAccount(other);
+      return res.status(200).json({ following: on, followers: other.followers.length });
+    }
+    if (action === 'block') {
+      const [list, on] = toggle(fresh.blocked, other.username);
+      fresh.blocked = list;
+      if (on) {
+        // Blocking also removes any follow in either direction.
+        fresh.following = (fresh.following || []).filter(u => u !== other.username);
+        fresh.followers = (fresh.followers || []).filter(u => u !== other.username);
+        other.following = (other.following || []).filter(u => u !== me.username);
+        other.followers = (other.followers || []).filter(u => u !== me.username);
+        await saveAccount(other);
+      }
+      await saveAccount(fresh);
+      return res.status(200).json({ blocked: on });
+    }
+    const [list, on] = toggle(fresh.muted, other.username);
+    fresh.muted = list; await saveAccount(fresh);
+    return res.status(200).json({ muted: on });
+  }
+
   const post = await getPost(String(req.body?.id || ''));
   if (!post || !visible(post)) return res.status(404).json({ error: 'Post not found' });
+  // People who blocked me: I can't reply to or react on their posts.
+  if (!admin && ['react', 'reply', 'vote'].includes(action)) {
+    const author = await accountByUsername(post.author).catch(() => null);
+    if (author && (author.blocked || []).includes(me.username)) return res.status(403).json({ error: 'You can’t interact with this post.' });
+  }
 
   if (action === 'react') {
     const emoji = String(req.body.emoji || '');

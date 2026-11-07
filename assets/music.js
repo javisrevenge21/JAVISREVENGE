@@ -52,6 +52,7 @@
     '.jr-c-links{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}.jr-c-links a{padding:9px;border-radius:10px;text-align:center;text-decoration:none;color:#fff;font-weight:700;font-size:13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}.jr-c-links a:hover{background:rgba(255,255,255,.16)}' +
     '.jr-c-links a:first-child{background:#1db954;border-color:#1db954;color:#000}.jr-c-links a:nth-child(2){background:#fa2d48;border-color:#fa2d48}' +
     'body.app .jr-music-info{background:rgba(255,255,255,.95);border-color:#e6e8ec}body.app .jr-music-info svg{stroke:#0f1419}' +
+    '@media(min-width:641px){body.app .jr-music-wrap{left:auto;right:16px}body.app .jr-credits{left:auto;right:0}}' +
     '@media(max-width:640px){body.app .jr-music-wrap{bottom:calc(76px + env(safe-area-inset-bottom))}.jr-music .jr-lbl{display:none}}';
   document.head.appendChild(style);
 

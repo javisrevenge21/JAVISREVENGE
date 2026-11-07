@@ -30,7 +30,7 @@
     sword: '<svg viewBox="0 0 24 24"><path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>'
   };
   var REACTIONS = ['🔥', '🇺🇸', '😂', '💯', '👏', '😤'];
-  var state = { me: null, admin: false, mediaEnabled: false, authors: {}, posts: {}, unread: 0 };
+  var state = { me: null, admin: false, mediaEnabled: false, mediaAccess: 'none', authors: {}, posts: {}, unread: 0 };
 
   // ---------- helpers ----------
   function $(id) { return document.getElementById(id); }
@@ -135,6 +135,7 @@
     var mine = p.author === state.me.username, out = '';
     out += '<button data-share="' + p.id + '">🔗 Copy link to post</button>';
     out += '<button data-save="' + p.id + '">' + (p.saved ? '🔖 Remove from Saved' : '🔖 Save post') + '</button>';
+    if (!mine) out += '<button data-mute="' + esc(p.author) + '">🔇 Mute @' + esc(p.author) + '</button><button data-block="' + esc(p.author) + '">🚫 Block @' + esc(p.author) + '</button>';
     if (!mine) out += '<button data-report="' + p.id + '"' + (p.reported ? ' disabled' : '') + '>🚩 ' + (p.reported ? 'Reported' : 'Report post') + '</button>';
     if (mine && !state.admin) out += '<button class="red" data-del="' + p.id + '">🗑️ Delete</button>';
     if (state.admin) {
@@ -185,6 +186,7 @@
       var empty = tab === 'saved' ? '<b>Nothing saved yet</b>Tap the bookmark on any post to keep it here.'
         : route.q ? '<b>No results</b>Try a different word or @username.'
         : route.tag ? '<b>No posts with #' + esc(route.tag) + '</b>Be the first to use it.'
+        : tab === 'following' ? '<b>Nothing here yet</b>Follow people from their profile and their posts show up here.'
         : tab === 'media' ? '<b>No photos or videos yet</b>' : tab === 'top' ? '<b>Nothing trending this week</b>React to posts to push them up.'
         : '<b>Welcome to the Wall</b>Nobody has posted yet. Be the first. 🔥';
       main.innerHTML = d.posts.length ? d.posts.map(function (p) { return postHtml(p); }).join('') : '<div class="empty">' + empty + '</div>';
@@ -215,19 +217,35 @@
   }
 
   function showNotifications() {
-    setTop('Notifications', 'Replies, mentions and reactions', false, false); setNav('notes'); $('composer').hidden = true; loading();
+    setTop('Notifications', 'Follows, replies, mentions and reactions', false, false); setNav('notes'); $('composer').hidden = true; loading();
     getJSON('/api/community?view=notifications').then(function (d) {
       Object.keys(d.authors).forEach(function (k) { state.authors[k] = d.authors[k]; });
-      var ICON = { reply: '💬', mention: '📣', react: '' };
+      var ICON = { reply: '💬', mention: '📣', react: '', follow: '👤', media: '📷' };
       main.innerHTML = d.notifications.length ? d.notifications.map(function (n) {
         var a = n.from ? author(n.from) : null, line;
-        if (n.type === 'react') line = '<b>' + (n.count > 1 ? n.count + ' people' : 'Someone') + '</b> reacted ' + esc(n.emoji) + ' to your post';
+        if (n.type === 'follow') line = '<b>' + esc(a.name) + '</b> followed you';
+        else if (n.type === 'media') line = n.granted ? '<b>You can now post photos and videos</b> — the owner approved your request.' : 'Your photo &amp; video request was <b>declined</b>.';
+        else if (n.type === 'react') line = '<b>' + (n.count > 1 ? n.count + ' people' : 'Someone') + '</b> reacted ' + esc(n.emoji) + ' to your post';
         else if (n.type === 'reply') line = '<b>' + esc(a.name) + '</b> replied to your post';
         else line = '<b>' + esc(a.name) + '</b> mentioned you';
-        return '<a class="note' + (n.read ? '' : ' unread') + '" href="/wall?post=' + n.postId + '" data-nav><span class="ico">' + (ICON[n.type] || esc(n.emoji)) + '</span><span class="body">' +
+        return '<a class="note' + (n.read ? '' : ' unread') + '" href="' + (n.type === 'follow' ? '/u/' + encodeURIComponent(n.from) : n.type === 'media' ? '/wall' : '/wall?post=' + n.postId) + '" data-nav><span class="ico">' + (ICON[n.type] || esc(n.emoji)) + '</span><span class="body">' +
           (a ? avatar(a, 'sm', false) : '') + '<div style="margin-top:6px">' + line + ' <time>· ' + ago(n.at) + '</time></div>' + (n.text ? '<p>' + esc(n.text) + '</p>' : '') + '</span></a>';
       }).join('') : '<div class="empty"><b>Nothing yet</b>When people reply to you, mention you or react to your posts, it shows up here.</div>';
       if (d.notifications.some(function (n) { return !n.read; })) api({ action: 'readNotifications' }).then(function () { setUnread(0); });
+    }).catch(function () {});
+  }
+
+  function showNetwork(list) {
+    var titles = { following: 'Following', followers: 'Followers', blocked: 'Blocked & muted' };
+    setTop(titles[list] || 'Following', 'Only you can see this list', true, false); setNav('profile'); $('composer').hidden = true; loading();
+    getJSON('/api/community?view=network&list=' + encodeURIComponent(list)).then(function (d) {
+      main.innerHTML = '<div class="tabs" style="border-bottom:1px solid var(--line)">' + ['following', 'followers', 'blocked'].map(function (k) { return '<a class="tab' + (k === list ? ' on' : '') + '" href="/wall?view=network&list=' + k + '" data-nav style="text-decoration:none;text-align:center">' + titles[k] + '</a>'; }).join('') + '</div>' +
+        (d.list.length ? d.list.map(function (m) {
+          var btn = list === 'blocked'
+            ? (m.blocked ? '<button class="btn red" data-block="' + esc(m.username) + '">Unblock</button>' : '<button class="btn" data-mute="' + esc(m.username) + '">Unmute</button>')
+            : '<button class="btn ' + (m.following ? '' : 'dark') + '" data-follow="' + esc(m.username) + '">' + (m.following ? 'Following' : 'Follow') + '</button>';
+          return '<div class="who-row" style="padding:12px 16px;border-bottom:1px solid var(--line)">' + avatar(m) + '<a href="/u/' + encodeURIComponent(m.username) + '" data-nav style="flex:1;text-decoration:none;min-width:0"><b>' + esc(m.name) + '</b><span style="display:block;color:var(--ink2);font-size:14px">@' + esc(m.username) + '</span></a>' + btn + '</div>';
+        }).join('') : '<div class="empty"><b>' + (list === 'followers' ? 'No followers yet' : list === 'blocked' ? 'Nobody blocked or muted' : 'You’re not following anyone yet') + '</b>' + (list === 'following' ? 'Open someone’s profile and tap Follow.' : '') + '</div>');
     }).catch(function () {});
   }
 
@@ -245,14 +263,19 @@
       facts += '<span>🗓️ Joined ' + new Date(u.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) + '</span>';
       var html = '<div class="cover ' + esc(u.finish) + '" style="--t:' + t + '">' + (PATTERNS[u.banner] ? '<svg aria-hidden="true"><defs>' + PATTERNS[u.banner] + '</defs><rect width="100%" height="100%" fill="url(#pt)"/></svg>' : '') + '</div>' +
         '<div class="phead" style="--t:' + t + '">' + avatar(u, 'lg', false) +
-        (d.me === u.username ? '<a class="edit" href="/account">Edit profile</a>' : '') +
+        (d.me === u.username ? '<a class="edit" href="/account">Edit profile</a>'
+          : '<div class="pbtns">' + (d.relation.blocked ? '<button class="btn red" data-block="' + esc(u.username) + '">Unblock</button>'
+            : '<button class="btn more2" data-pmenu="' + esc(u.username) + '" aria-label="More">⋯</button><button class="btn ' + (d.relation.following ? '' : 'dark') + '" data-follow="' + esc(u.username) + '">' + (d.relation.following ? 'Following' : 'Follow') + '</button>') + '</div>') +
         '<div class="pname f-' + esc(u.font) + ' e-' + esc(u.effect) + '">' + esc(u.name) + '</div>' +
-        '<div class="phandle">@' + esc(u.username) + (u.pronouns ? ' · ' + esc(u.pronouns) : '') + '</div>' +
+        '<div class="phandle">@' + esc(u.username) + (u.pronouns ? ' · ' + esc(u.pronouns) : '') + (d.relation && d.relation.followsYou ? ' <span class="fy">Follows you</span>' : '') + '</div>' +
         '<div style="margin-top:8px"><span class="badge">' + esc(u.title) + '</span>' + (u.mood ? ' <span class="muted" style="font-size:14px">' + esc(u.mood) + '</span>' : '') + '</div>' +
         (u.bio ? '<p class="pbio">' + linkify(u.bio) + '</p>' : '') + (u.quote ? '<p class="pquote">“' + esc(u.quote) + '”</p>' : '') +
         '<div class="pfacts">' + facts + '</div>' +
         ((u.interests || []).length ? '<div class="pchips">' + u.interests.map(function (i) { return '<span class="chip">' + esc(i) + '</span>'; }).join('') + '</div>' : '') +
-        '<div class="pstats"><span><b>' + d.stats.posts + '</b> posts</span><span><b>' + d.stats.reactions + '</b> reactions &amp; replies</span></div></div>';
+        '<div class="pstats">' + (d.me === u.username
+          ? '<a href="/wall?view=network&list=following" data-nav><b>' + d.stats.following + '</b> Following</a><a href="/wall?view=network&list=followers" data-nav><b id="fcount">' + d.stats.followers + '</b> Followers</a>'
+          : '<span><b>' + d.stats.following + '</b> Following</span><span><b id="fcount">' + d.stats.followers + '</b> Followers</span>') +
+        '<span><b>' + d.stats.posts + '</b> Posts</span></div>' + (d.relation && d.relation.muted ? '<div class="muted" style="margin-top:8px">🔇 You muted this account. <a href="#" data-mute="' + esc(u.username) + '">Unmute</a></div>' : '') + '</div>';
       if (d.admin && d.email && d.me !== u.username) {
         html += '<div class="ownerpanel"><div class="lbl">OWNER ONLY · NOBODY ELSE SEES THIS</div><div style="margin-top:4px">Email: <b>' + esc(d.email) + '</b>' + (d.strikes ? ' · ⚠️ ' + d.strikes + '/3 strikes' : '') + '</div>' +
           '<div class="row"><button class="btn" data-remove="' + esc(d.email) + '" data-user="' + esc(u.username) + '">Remove account</button><input id="banReason" placeholder="Ban reason (optional)" maxlength="200"><button class="btn red" data-ban="' + esc(d.email) + '" data-user="' + esc(u.username) + '" data-reason-from="banReason">Ban</button></div></div>';
@@ -269,6 +292,7 @@
     if (d.me) { state.me = d.me; state.authors[d.me.username] = d.me; }
     if ('admin' in d) state.admin = d.admin;
     if ('mediaEnabled' in d) state.mediaEnabled = d.mediaEnabled;
+    if ('mediaAccess' in d) { state.mediaAccess = d.mediaAccess; drawMediaBtn(); }
     if (d.authors) Object.keys(d.authors).forEach(function (k) { state.authors[k] = d.authors[k]; });
     if ('unread' in d) setUnread(d.unread);
     if (state.me && !boot.done) {
@@ -281,7 +305,14 @@
         loadOwnerBox();
       }
       if (!state.mediaEnabled) ['btnMedia', 'btnFile'].forEach(function (id) { $(id).disabled = true; $(id).title = 'Uploads switch on once automatic moderation is set up'; });
+      drawMediaBtn();
     }
+  }
+  function drawMediaBtn() {
+    var b = $('btnMedia'); if (!b || !state.mediaEnabled) return;
+    var ok = state.mediaAccess === 'granted';
+    b.classList.toggle('locked', !ok);
+    b.title = ok ? 'Photo or video' : state.mediaAccess === 'requested' ? 'Photo/video access requested — waiting for the owner' : 'Photos & videos are for approved members — tap to request access';
   }
   function setUnread(n) {
     state.unread = n;
@@ -311,6 +342,7 @@
     if (route.user) return showProfile(route.user);
     if (route.post) return showPost(route.post);
     if (route.view === 'notifications') return showNotifications();
+    if (route.view === 'network') return showNetwork(new URLSearchParams(location.search).get('list') || 'following');
     showFeed();
   }
   function go(url) { history.pushState(null, '', url); render(); }
@@ -371,6 +403,33 @@
       ev.stopPropagation(); closeMenus();
       var url = location.origin + '/wall?post=' + el.dataset.share;
       (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('Link copied — only members can open it'); }, function () { prompt('Copy this link:', url); });
+      return;
+    }
+    if ((el = t.closest('[data-follow]'))) {
+      ev.preventDefault(); ev.stopPropagation(); el.disabled = true;
+      api({ action: 'follow', username: el.dataset.follow }).then(function (d) {
+        el.disabled = false; el.textContent = d.following ? 'Following' : 'Follow'; el.classList.toggle('dark', !d.following);
+        var fc = $('fcount'); if (fc && route.user === el.dataset.follow) fc.textContent = d.followers;
+        toast(d.following ? 'Following @' + el.dataset.follow : 'Unfollowed @' + el.dataset.follow);
+      }).catch(function (e) { el.disabled = false; toast(e.message, true); });
+      return;
+    }
+    if ((el = t.closest('[data-pmenu]'))) {
+      ev.stopPropagation(); var had = el.parentNode.querySelector('.menu'); closeMenus();
+      if (!had) el.insertAdjacentHTML('afterend', '<div class="menu" style="top:46px;right:0"><button data-mute="' + esc(el.dataset.pmenu) + '">🔇 Mute @' + esc(el.dataset.pmenu) + '</button><button class="red" data-block="' + esc(el.dataset.pmenu) + '">🚫 Block @' + esc(el.dataset.pmenu) + '</button></div>');
+      return;
+    }
+    if ((el = t.closest('[data-block]'))) {
+      ev.preventDefault(); ev.stopPropagation(); closeMenus();
+      var u0 = el.dataset.block;
+      if (el.textContent.indexOf('Unblock') < 0 && !confirm('Block @' + u0 + '?\n\nThey won’t be able to see your posts, follow you, reply or react to you, and you won’t see theirs.')) return;
+      api({ action: 'block', username: u0 }).then(function (d) { toast(d.blocked ? 'Blocked @' + u0 : 'Unblocked @' + u0); render(); }).catch(function (e) { toast(e.message, true); });
+      return;
+    }
+    if ((el = t.closest('[data-mute]'))) {
+      ev.preventDefault(); ev.stopPropagation(); closeMenus();
+      var u1 = el.dataset.mute;
+      api({ action: 'mute', username: u1 }).then(function (d) { toast(d.muted ? 'Muted @' + u1 + ' — you won’t see their posts' : 'Unmuted @' + u1); render(); }).catch(function (e) { toast(e.message, true); });
       return;
     }
     if ((el = t.closest('[data-reply]'))) { ev.stopPropagation(); go('/wall?post=' + el.dataset.reply + '&reply=1'); return; }
@@ -473,6 +532,7 @@
       if (items.length >= 4) return say('Up to 4 attachments per post.', true);
       var kind = kindOf(file);
       if (!kind) return say(file.name + ': only photos, videos and PDFs.', true);
+      if (kind !== 'file' && state.mediaAccess !== 'granted') return say('Photos and videos are only for members the owner approves. Request access with the 🖼️ button.', true);
       if (file.size > LIMITS[kind]) return say(file.name + ' is too large (max ' + LIMITS[kind] / 1048576 + ' MB for a ' + kind + ').', true);
       var item = { kind: kind, name: file.name, done: false };
       var el = document.createElement('div'); el.className = 'pv';
@@ -512,7 +572,12 @@
   }
   function initComposer() {
     var text = $('text');
-    $('btnMedia').onclick = function () { $('pickMedia').click(); };
+    $('btnMedia').onclick = function () {
+      if (state.mediaAccess === 'granted') return $('pickMedia').click();
+      if (state.mediaAccess === 'requested') return toast('Your request is waiting for the owner to approve.');
+      if (!confirm('Posting photos and videos is only for members the owner approves.\n\nSend a request for access?')) return;
+      api({ action: 'requestMedia' }).then(function () { state.mediaAccess = 'requested'; drawMediaBtn(); toast('Request sent — you\'ll get a notification when the owner decides.'); }).catch(function (e) { toast(e.message, true); });
+    };
     $('btnFile').onclick = function () { $('pickFile').click(); };
     $('btnPoll').onclick = function () { togglePoll(!pollOn); };
     $('pickMedia').onchange = function () { addFiles(this.files); this.value = ''; };

@@ -134,6 +134,7 @@ textarea.bio { min-height: 90px; }
 <h2>Email</h2>
 <div class="row"><input id="notifications" type="checkbox"><label for="notifications" style="margin:0">Email me website updates. You can turn this off at any time.</label></div>
 <p class="status" id="status"></p>
+<h2>Photos &amp; videos</h2><p class="muted" id="mediaState" style="margin-top:0">Loading…</p><button class="button secondary" id="reqMedia" type="button" hidden>Request photo &amp; video access</button>
 <h2>Your data</h2><p class="muted" style="margin-top:0">Download a copy of everything we store about you: your account, profile, posts, replies, saved posts and notifications.</p><a class="button secondary" href="/api/account?export=1" download>Download my data</a>
 <div class="actions"><a class="button secondary" href="/api/auth/logout">Sign out</a><button class="button danger" id="delete" type="button">Delete my account</button></div>
 <p class="muted">Deleting your account permanently erases your profile, username, posts, uploads, replies, reactions and poll votes, and signs you out. This can't be undone.</p>
@@ -244,6 +245,16 @@ textarea.bio { min-height: 90px; }
     $('providers').innerHTML = '';
     a.providers.forEach(function (id) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = '✓ ' + (LABELS[id] || id); $('providers').appendChild(c); });
     drawPickers(); preview();
+    var MS = { granted: 'You can post photos and videos on the Wall.', requested: 'Request sent. The owner will review it — you\'ll get a notification on the Wall.', denied: 'Your request was declined. You can still post text and PDFs.', none: 'Posting photos and videos on the Wall is only for members the owner approves. Text and PDFs are open to everyone.' };
+    $('mediaState').textContent = MS[a.mediaAccess] || MS.none;
+    $('reqMedia').hidden = a.mediaAccess === 'granted' || a.mediaAccess === 'requested';
+    $('reqMedia').onclick = function () {
+      var b = this; b.disabled = true;
+      fetch('/api/community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'requestMedia' }) })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function () { $('mediaState').textContent = MS.requested; b.hidden = true; })
+        .catch(function () { b.disabled = false; $('mediaState').textContent = 'Could not send the request. Try again.'; });
+    };
   }).catch(function () { location.replace('/signin?returnTo=/account'); });
 
   ['displayName', 'bio', 'location', 'quote', 'pronouns', 'birthday', 'instagram', 'x', 'tiktok'].forEach(function (id) { $(id).addEventListener('input', preview); });
