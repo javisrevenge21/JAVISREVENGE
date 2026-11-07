@@ -21,7 +21,7 @@ test('only sign-in, legal pages, OAuth, assets, unsubscribe and crawler files ar
 });
 
 test('every other page redirects signed-out visitors to sign in', () => {
-  for (const path of ['/', '/index.html', '/socials', '/archives', '/politics', '/account', '/admin', '/contact', '/shop', '/archives/secret']) {
+  for (const path of ['/', '/index.html', '/about', '/archives', '/politics', '/account', '/admin', '/contact', '/shop', '/archives/secret']) {
     const response = middleware(request(path + '?x=1'));
     assert.equal(response.status, 307, path);
     const location = new URL(response.headers.get('location'));

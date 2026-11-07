@@ -1,4 +1,4 @@
-// Returns the newest post id for @javisrevenge so /socials can embed it with
+// Returns the newest post id for @javisrevenge so /about can embed it with
 // the official single-post X embed. No X API key or secret is used.
 //
 // Sources, tried in order:

@@ -44,5 +44,12 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/socials",
+      "destination": "/about",
+      "permanent": true
+    }
   ]
 }
