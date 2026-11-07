@@ -63,7 +63,7 @@
             (u.title && u.title !== 'Member' ? '<em>' + escapeHtml(u.title) + '</em>' : '') + (u.mood ? '<small>' + escapeHtml(u.mood) + '</small>' : '') + '</span></a>' +
           '<a href="' + profileUrl + '" role="menuitem">👤 View my profile</a>' +
           '<a href="/account" role="menuitem">🎨 Edit profile &amp; settings</a>' +
-          '<a href="/wall" role="menuitem">🏠 The Wall</a>' +
+          '<a href="/wall" role="menuitem">🏠 The Revenge Wall</a>' +
           (data.admin ? '<a href="/admin" role="menuitem">🛡️ Admin</a>' : '') +
           '<a href="/api/auth/logout" role="menuitem" class="jr-out">↩ Sign out</a>' +
         '</div>';

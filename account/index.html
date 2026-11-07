@@ -245,7 +245,7 @@ textarea.bio { min-height: 90px; }
     $('providers').innerHTML = '';
     a.providers.forEach(function (id) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = '✓ ' + (LABELS[id] || id); $('providers').appendChild(c); });
     drawPickers(); preview();
-    var MS = { granted: 'You can post photos and videos on the Wall.', requested: 'Request sent. The owner will review it — you\'ll get a notification on the Wall.', denied: 'Your request was declined. You can still post text and PDFs.', none: 'Posting photos and videos on the Wall is only for members the owner approves. Text and PDFs are open to everyone.' };
+    var MS = { granted: 'You can post photos and videos on the Revenge Wall.', requested: 'Request sent. The owner will review it — you\'ll get a notification on the Revenge Wall.', denied: 'Your request was declined. You can still post text and PDFs.', none: 'Posting photos and videos on the Revenge Wall is only for members the owner approves. Text and PDFs are open to everyone.' };
     $('mediaState').textContent = MS[a.mediaAccess] || MS.none;
     $('reqMedia').hidden = a.mediaAccess === 'granted' || a.mediaAccess === 'requested';
     $('reqMedia').onclick = function () {

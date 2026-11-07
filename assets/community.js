@@ -1,4 +1,4 @@
-// JAVISREVENGE community app: The Wall, single posts, notifications, saved
+// JAVISREVENGE community app: The Revenge Wall, single posts, notifications, saved
 // posts and member profiles. Served at /wall and /u/<username>.
 (function () {
   'use strict';
@@ -140,7 +140,7 @@
     if (mine && !state.admin) out += '<button class="red" data-del="' + p.id + '">🗑️ Delete</button>';
     if (state.admin) {
       out += '<div class="owner">';
-      out += '<button data-pin="' + p.id + '">📌 ' + (p.pinned ? 'Unpin' : 'Pin to top of the Wall') + '</button>';
+      out += '<button data-pin="' + p.id + '">📌 ' + (p.pinned ? 'Unpin' : 'Pin to top of the Revenge Wall') + '</button>';
       if (p.hidden) out += '<button data-restore="' + p.id + '">♻️ Restore post</button>';
       out += '<button class="red" data-del="' + p.id + '">🗑️ Delete post</button>';
       if (!mine && p.authorEmail) out += '<button class="red" data-ban="' + esc(p.authorEmail) + '" data-user="' + esc(p.author) + '">⛔ Ban @' + esc(p.author) + '</button>';
@@ -174,7 +174,7 @@
 
   function showFeed() {
     var tab = route.tab || 'latest';
-    setTop(route.tag ? '#' + route.tag : route.q ? 'Search' : tab === 'saved' ? 'Saved' : 'The Wall', route.q ? '“' + route.q + '”' : tab === 'saved' ? 'Only you can see what you save' : 'Members only', !!(route.tag || route.q), !(route.tag || route.q) && tab !== 'saved');
+    setTop(route.tag ? '#' + route.tag : route.q ? 'Search' : tab === 'saved' ? 'Saved' : 'The Revenge Wall', route.q ? '“' + route.q + '”' : tab === 'saved' ? 'Only you can see what you save' : 'Break the walls down. No limits.', !!(route.tag || route.q), !(route.tag || route.q) && tab !== 'saved');
     setNav(tab === 'saved' ? 'saved' : route.q ? 'search' : 'wall');
     document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t.dataset.tab === tab); });
     $('composer').hidden = tab === 'saved' || !!route.q;
@@ -188,7 +188,7 @@
         : route.tag ? '<b>No posts with #' + esc(route.tag) + '</b>Be the first to use it.'
         : tab === 'following' ? '<b>Nothing here yet</b>Follow people from their profile and their posts show up here.'
         : tab === 'media' ? '<b>No photos or videos yet</b>' : tab === 'top' ? '<b>Nothing trending this week</b>React to posts to push them up.'
-        : '<b>Welcome to the Wall</b>Nobody has posted yet. Be the first. 🔥';
+        : '<b>Welcome to the Revenge Wall</b>Nobody has posted yet. Be the first. 🔥';
       main.innerHTML = d.posts.length ? d.posts.map(function (p) { return postHtml(p); }).join('') : '<div class="empty">' + empty + '</div>';
     }).catch(function (e) { if (e.message !== 'auth') main.innerHTML = '<div class="empty"><b>Could not load</b>' + esc(e.message) + '</div>'; });
   }
@@ -320,7 +320,7 @@
   }
   function renderTrending(list) {
     $('trending').innerHTML = list && list.length ? list.map(function (t, i) {
-      return '<a class="item" href="/wall?tag=' + esc(t.tag) + '" data-nav><small>' + (i + 1) + ' · Trending on the Wall</small><b>#' + esc(t.tag) + '</b><small>' + t.count + ' post' + (t.count === 1 ? '' : 's') + '</small></a>';
+      return '<a class="item" href="/wall?tag=' + esc(t.tag) + '" data-nav><small>' + (i + 1) + ' · Trending on the Revenge Wall</small><b>#' + esc(t.tag) + '</b><small>' + t.count + ' post' + (t.count === 1 ? '' : 's') + '</small></a>';
     }).join('') : '<div class="pad muted">No hashtags yet this week. Add one like #LA to a post.</div>';
   }
   function loadOwnerBox() {
@@ -456,7 +456,7 @@
     }
     if ((el = t.closest('[data-pin]'))) {
       ev.stopPropagation(); closeMenus();
-      api({ action: 'pin', id: el.dataset.pin }).then(function (d) { toast(d.pinned ? 'Pinned to the top of the Wall' : 'Unpinned'); render(); }).catch(function (e) { toast(e.message, true); });
+      api({ action: 'pin', id: el.dataset.pin }).then(function (d) { toast(d.pinned ? 'Pinned to the top of the Revenge Wall' : 'Unpinned'); render(); }).catch(function (e) { toast(e.message, true); });
       return;
     }
     if ((el = t.closest('[data-restore]'))) {

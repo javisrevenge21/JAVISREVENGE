@@ -1,8 +1,8 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta name="theme-color" content="#ffffff"><title>The Wall · JAVISREVENGE</title><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/assets/community.css"></head><body class="app">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta name="theme-color" content="#ffffff"><title>The Revenge Wall · JAVISREVENGE</title><meta name="description" content="The Revenge Wall — Break the walls down. No limits."><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/assets/community.css"></head><body class="app">
 <div class="layout">
   <nav class="side" aria-label="Main">
     <a class="logo" href="/"><img src="/assets/favicon.png" alt=""><span>JAVISREVENGE</span></a>
-    <a class="nav" href="/wall" data-nav data-navkey="wall" data-icon="home"><span>The Wall</span></a>
+    <a class="nav" href="/wall" data-nav data-navkey="wall" data-icon="home"><span>Revenge Wall</span></a>
     <a class="nav" href="#" id="navSearch" data-navkey="search" data-icon="search" onclick="document.getElementById('searchInput').focus();return false"><span>Explore</span></a>
     <a class="nav" href="/wall?view=notifications" data-nav data-navkey="notes" data-icon="bell"><span>Notifications</span><b class="dot unread-dot" hidden></b></a>
     <a class="nav" href="/wall?tab=saved" data-nav data-navkey="saved" data-icon="bookmark"><span>Saved</span></a>
@@ -15,7 +15,7 @@
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><button class="back" id="backBtn" type="button" aria-label="Back" hidden>←</button><div><h1 id="topTitle">The Wall</h1><div class="sub" id="topSub">Members only</div></div></div>
+      <div class="title"><button class="back" id="backBtn" type="button" aria-label="Back" hidden>←</button><div><h1 id="topTitle">The Revenge Wall</h1><div class="sub" id="topSub">Break the walls down. No limits.</div></div></div>
       <div class="tabs" id="tabs" role="tablist">
         <button class="tab on" data-tab="latest" role="tab">Latest</button>
         <button class="tab" data-tab="following" role="tab">Following</button>
@@ -30,7 +30,7 @@
         <textarea id="text" maxlength="500" placeholder="What's happening?" rows="1"></textarea>
         <div class="previews" id="previews"></div>
         <div class="polledit" id="pollEdit" hidden></div>
-        <div class="who-sees">🔒 Only signed-in members can see the Wall</div>
+        <div class="who-sees">🔒 Only signed-in members can see the Revenge Wall</div>
         <div class="bar">
           <input type="file" id="pickMedia" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" multiple hidden>
           <input type="file" id="pickFile" accept="application/pdf" hidden>
@@ -75,7 +75,7 @@
 </div>
 
 <nav class="mobnav" aria-label="Main">
-  <a href="/wall" data-nav data-navkey="wall" aria-label="The Wall" data-icon="home"></a>
+  <a href="/wall" data-nav data-navkey="wall" aria-label="The Revenge Wall" data-icon="home"></a>
   <a href="#" aria-label="Search" data-icon="search" onclick="var q=prompt('Search posts, #tags or @people');if(q)location.href=q[0]==='#'?'/wall?tag='+encodeURIComponent(q.slice(1)):'/wall?q='+encodeURIComponent(q);return false"></a>
   <a href="/wall?view=notifications" data-nav data-navkey="notes" aria-label="Notifications" data-icon="bell"><b class="dot unread-dot" hidden></b></a>
   <a href="/wall?tab=saved" data-nav data-navkey="saved" aria-label="Saved" data-icon="bookmark"></a>
