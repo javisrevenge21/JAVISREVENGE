@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/auth/logout",
+      "destination": "/api/auth/session?logout=1"
+    },
+    {
       "source": "/api/waitlist",
       "destination": "/api/unsubscribe?action=join-waitlist"
     },
