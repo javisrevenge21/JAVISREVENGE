@@ -1,50 +1,86 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your account · JAVISREVENGE</title><link rel="stylesheet" href="/assets/legal.css">
 <style>
-:root { --t: 200,205,214; }
+:root { --t: 200,205,214; color-scheme: light; }
+body { background: #fff !important; color: #111; }
+.brand { color: #555 !important; }
 .shell { width: min(900px, calc(100% - 24px)); }
-.card { transition: border-color .4s, box-shadow .4s, background .4s; }
-.card.themed { background: linear-gradient(160deg, rgba(var(--t),.2), rgba(var(--t),.06)); border-color: rgba(var(--t),.55); box-shadow: 0 0 50px rgba(var(--t),.18); }
-h2 { color: rgb(var(--t)); filter: brightness(1.4); font-size: 13px; letter-spacing: .22em; text-transform: uppercase; margin-top: 30px; }
+p, li, label { color: #333 !important; }
+.muted, .counter, .rules { color: #777 !important; }
+h1 { color: #0b0b0d; }
+.card.themed { background: rgba(var(--t),.10); border: 1.5px solid rgba(var(--t),.55); box-shadow: 0 18px 50px rgba(var(--t),.18); backdrop-filter: none; transition: background .4s, border-color .4s; }
+h2 { color: rgb(var(--t)); filter: brightness(.8) saturate(1.3); font-size: 13px; letter-spacing: .22em; text-transform: uppercase; margin-top: 30px; }
+input, textarea, select { background: #fff !important; color: #111 !important; border: 1px solid rgba(0,0,0,.18) !important; }
+input:focus, textarea:focus, select:focus { outline: 2px solid rgb(var(--t)); outline-offset: 1px; }
+.status { color: #059669 !important; } .status.error { color: #dc2626 !important; }
+.button.secondary { color: #111 !important; border-color: rgba(0,0,0,.25) !important; }
+.button.danger { background: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; }
 
-/* Member card */
-.member { position: relative; overflow: hidden; display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; padding: 26px; border-radius: 20px;
-  background: radial-gradient(circle at 0% 0%, rgba(var(--t),.55), rgba(var(--t),.12) 45%, rgba(0,0,0,.6)); border: 1px solid rgba(var(--t),.7); }
-.member::after { content: ''; position: absolute; inset: -50%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.12) 50%, transparent 60%); animation: shine 6s ease-in-out infinite; pointer-events: none; }
+/* Member card (stays dark so colors pop) */
+.member { position: relative; overflow: hidden; display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; padding: 26px; border-radius: 20px; color: #fff;
+  background: radial-gradient(circle at 0% 0%, rgba(var(--t),.9), rgba(var(--t),.35) 45%, #0d0d10 85%); border: 1px solid rgba(var(--t),.8); box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+.member > * { position: relative; z-index: 1; }
+.member .banner { position: absolute; inset: 0; z-index: 0; opacity: .35; pointer-events: none; }
+.member.glossy::after { content: ''; position: absolute; inset: -50%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.16) 50%, transparent 60%); animation: shine 6s ease-in-out infinite; pointer-events: none; }
+.member.matte { background: linear-gradient(135deg, rgba(var(--t),.75), #1a1a1e 70%); }
+.member.neon { background: #08080b; border: 2px solid rgb(var(--t)); box-shadow: 0 0 25px rgba(var(--t),.8), inset 0 0 30px rgba(var(--t),.35); }
+.member.glass { background: linear-gradient(135deg, rgba(var(--t),.55), rgba(var(--t),.15)); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.5); color: #0b0b0d; }
+.member.glass .m-mood, .member.glass .m-bio, .member.glass .m-quote, .member.glass .m-handle { color: #111 !important; }
 @keyframes shine { 0%,60% { transform: translateX(-60%); } 100% { transform: translateX(60%); } }
 .avatar { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; font-size: 48px; background: rgba(var(--t),.35); border: 2px solid rgba(var(--t),1); box-shadow: 0 0 30px rgba(var(--t),.5); overflow: hidden; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .m-name { font-size: clamp(24px,5vw,34px); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; overflow-wrap: anywhere; }
-.m-title { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; background: rgba(var(--t),.9); color: #000; }
-.m-mood { margin-top: 8px; font-size: 14px; color: rgba(255,255,255,.85); }
-.m-bio { grid-column: 1 / -1; margin: 0; color: rgba(255,255,255,.85); white-space: pre-wrap; }
+.f-serif { font-family: Georgia, serif; } .f-mono { font-family: ui-monospace, Menlo, monospace; } .f-script { font-family: "Brush Script MT", "Segoe Script", cursive; } .f-wide { letter-spacing: .14em; }
+.m-name.f-serif { font-family: Georgia, "Times New Roman", serif; font-weight: 700; }
+.m-name.f-mono { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0; }
+.m-name.f-wide { text-transform: uppercase; letter-spacing: .18em; font-size: clamp(20px,4vw,26px); }
+.m-name.f-script { font-family: "Brush Script MT", "Segoe Script", cursive; font-weight: 400; font-size: clamp(30px,6vw,42px); }
+.m-name.e-glow { text-shadow: 0 0 12px rgb(var(--t)), 0 0 30px rgba(var(--t),.8); }
+.m-name.e-gradient { background: linear-gradient(90deg, #fff, rgb(var(--t)), #fff); -webkit-background-clip: text; background-clip: text; color: transparent; background-size: 200% auto; animation: slide 4s linear infinite; }
+.m-name.e-shadow { text-shadow: 3px 3px 0 rgb(var(--t)); }
+.m-name.e-outline { color: transparent; -webkit-text-stroke: 1.5px currentColor; }
+.member:not(.glass) .m-name.e-outline { -webkit-text-stroke-color: #fff; }
+@keyframes slide { to { background-position: 200% center; } }
+.m-handle { color: rgba(255,255,255,.75) !important; font-size: 14px; margin-top: 2px; }
+.m-title { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; background: rgb(var(--t)); color: #000; }
+.m-mood { margin-top: 8px; font-size: 14px; color: rgba(255,255,255,.9) !important; }
+.m-bio { grid-column: 1 / -1; margin: 0; color: rgba(255,255,255,.92) !important; white-space: pre-wrap; }
+.m-quote { grid-column: 1 / -1; margin: 0; font-family: Georgia, serif; font-style: italic; color: rgba(255,255,255,.85) !important; border-left: 3px solid rgb(var(--t)); padding-left: 12px; }
+.m-quote:empty, .m-bio:empty { display: none; }
 .m-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { padding: 5px 11px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(var(--t),.6); background: rgba(var(--t),.15); color: #fff; }
+.m-meta:empty { display: none; }
+.chip { padding: 5px 11px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(var(--t),.7); background: rgba(var(--t),.2); color: inherit; text-decoration: none; }
+.settings .chip { color: #111; }
 .stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
-.stat { padding: 12px; border-radius: 12px; background: rgba(0,0,0,.35); text-align: center; }
-.stat b { display: block; font-size: 22px; } .stat span { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.6); }
-@media(max-width:520px){ .member { grid-template-columns: 1fr; text-align: center; } .avatar { margin: 0 auto; } .m-meta { justify-content: center; } }
+.stat { padding: 12px; border-radius: 12px; background: rgba(0,0,0,.35); text-align: center; color: #fff; }
+.stat b { display: block; font-size: 22px; } .stat span { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+@media(max-width:520px){ .member { grid-template-columns: 1fr; text-align: center; } .avatar { margin: 0 auto; } .m-meta { justify-content: center; } .m-quote { text-align: left; } }
 
 /* Pickers */
 .grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.opt { padding: 9px 13px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.04); color: #fff; font: inherit; font-size: 14px; cursor: pointer; transition: transform .15s, border-color .2s, background .2s; }
-.opt:hover { transform: translateY(-1px); border-color: rgba(var(--t),.7); }
-.opt[aria-pressed="true"] { background: rgba(var(--t),.35); border-color: rgb(var(--t)); box-shadow: 0 0 14px rgba(var(--t),.35); }
+.opt { padding: 9px 13px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #fff; color: #111; font: inherit; font-size: 14px; cursor: pointer; transition: transform .15s, border-color .2s, background .2s; text-transform: capitalize; }
+.opt:hover { transform: translateY(-1px); border-color: rgb(var(--t)); }
+.opt[aria-pressed="true"] { background: rgba(var(--t),.25); border-color: rgb(var(--t)); box-shadow: 0 0 0 2px rgba(var(--t),.5); font-weight: 600; }
 .opt.emoji { font-size: 22px; width: 48px; height: 48px; padding: 0; }
-.swatch { width: 42px; height: 42px; border-radius: 50%; padding: 0; }
-.swatch[aria-pressed="true"] { outline: 3px solid #fff; outline-offset: 2px; }
-.counter { float: right; font-size: 12px; color: rgba(255,255,255,.45); }
-.save { position: sticky; bottom: 12px; margin-top: 24px; background: rgb(var(--t)); color: #000; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.swatch { width: 42px; height: 42px; border-radius: 50%; padding: 0; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px #111; }
+.counter { float: right; font-size: 12px; }
+.save { position: sticky; bottom: 12px; margin-top: 24px; background: #111 !important; color: #fff !important; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
 .providers { display: flex; flex-wrap: wrap; gap: 8px; }
 textarea.bio { min-height: 90px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.three { display: grid; grid-template-columns: repeat(3,1fr); gap: 0 12px; }
+@media(max-width:600px){ .two, .three { grid-template-columns: 1fr; } }
 </style></head><body>
 <main class="shell"><a class="brand" href="/">← JAVISREVENGE</a>
 
 <section class="card themed">
 <h1>Your account</h1>
-<div class="member" id="member" aria-live="polite">
+<div class="member glossy" id="member" aria-live="polite">
+  <svg class="banner" id="mBanner" width="100%" height="100%" aria-hidden="true"></svg>
   <div class="avatar" id="mAvatar"></div>
-  <div><div class="m-name" id="mName">Loading…</div><span class="m-title" id="mTitle">Member</span><div class="m-mood" id="mMood"></div></div>
+  <div><div class="m-name" id="mName">Loading…</div><div class="m-handle" id="mHandle"></div><span class="m-title" id="mTitle">Member</span><div class="m-mood" id="mMood"></div></div>
   <p class="m-bio" id="mBio"></p>
+  <p class="m-quote" id="mQuote"></p>
   <div class="m-meta" id="mMeta"></div>
   <div class="stats"><div class="stat"><b id="sDays">–</b><span>Days a member</span></div><div class="stat"><b id="sSince">–</b><span>Joined</span></div><div class="stat"><b id="sLinked">–</b><span>Sign-ins linked</span></div></div>
 </div>
@@ -62,8 +98,27 @@ textarea.bio { min-height: 90px; }
 <label for="location">Location <span class="counter" id="cLoc"></span></label>
 <input id="location" maxlength="40" placeholder="e.g. Los Angeles">
 
+<label for="quote">Favorite quote <span class="counter" id="cQuote"></span></label>
+<input id="quote" maxlength="120" placeholder="A line you live by">
+
+<div class="two">
+<div><label for="pronouns">Pronouns</label><input id="pronouns" maxlength="20" placeholder="optional"></div>
+<div><label for="birthday">Birthday (month &amp; day)</label><input id="birthday" type="text" maxlength="5" placeholder="MM-DD" inputmode="numeric"></div>
+</div>
+
+<h2>Socials</h2>
+<div class="three">
+<div><label for="instagram">Instagram</label><input id="instagram" maxlength="31" placeholder="@handle" autocapitalize="none"></div>
+<div><label for="x">X</label><input id="x" maxlength="31" placeholder="@handle" autocapitalize="none"></div>
+<div><label for="tiktok">TikTok</label><input id="tiktok" maxlength="31" placeholder="@handle" autocapitalize="none"></div>
+</div>
+
 <h2>Color theme</h2><div class="grid" id="themes" role="group" aria-label="Color theme"></div>
 <h2>Avatar</h2><p class="muted" style="margin:0 0 10px">Pick an emoji, or the first option to use your sign-in photo.</p><div class="grid" id="avatars" role="group" aria-label="Avatar"></div>
+<h2>Card style</h2><div class="grid" id="finishes" role="group" aria-label="Card style"></div>
+<h2>Card pattern</h2><div class="grid" id="banners" role="group" aria-label="Card pattern"></div>
+<h2>Name font</h2><div class="grid" id="fonts" role="group" aria-label="Name font"></div>
+<h2>Name effect</h2><div class="grid" id="effects" role="group" aria-label="Name effect"></div>
 <h2>Title badge</h2><div class="grid" id="titles" role="group" aria-label="Title badge"></div>
 <h2>Mood</h2><div class="grid" id="moods" role="group" aria-label="Mood"></div>
 <h2>Interests <span class="muted" style="letter-spacing:0;text-transform:none">(up to 6)</span></h2><div class="grid" id="interests" role="group" aria-label="Interests"></div>
@@ -72,7 +127,7 @@ textarea.bio { min-height: 90px; }
 <p class="status" id="pStatus"></p>
 </section>
 
-<section class="card themed">
+<section class="card themed settings">
 <h1 style="font-size:28px">Settings</h1>
 <h2>Signed in with</h2><div class="providers" id="providers"></div>
 <p class="muted">Sign in with any option that uses the same email and you'll land in this same account.</p>
@@ -89,6 +144,16 @@ textarea.bio { min-height: 90px; }
 (function () {
   var THEMES = { silver: '200,205,214', red: '220,38,38', gold: '212,160,23', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12' };
   var LABELS = { google: 'Google', microsoft: 'Microsoft', discord: 'Discord', github: 'GitHub' };
+  var PATTERN_ICON = { stars: '★', stripes: '▤', waves: '〰', grid: '▦', dots: '⠿', flames: '🔥', palms: '🌴' };
+  var PATTERNS = {
+    stars: '<pattern id="pt" width="40" height="40" patternUnits="userSpaceOnUse"><text x="6" y="22" font-size="14" fill="#fff">★</text><text x="26" y="38" font-size="8" fill="#fff">★</text></pattern>',
+    stripes: '<pattern id="pt" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="9" height="22" fill="#fff"/></pattern>',
+    waves: '<pattern id="pt" width="60" height="20" patternUnits="userSpaceOnUse"><path d="M0 10 Q15 0 30 10 T60 10" stroke="#fff" stroke-width="2" fill="none"/></pattern>',
+    grid: '<pattern id="pt" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" stroke="#fff" stroke-width="1" fill="none"/></pattern>',
+    dots: '<pattern id="pt" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="8" cy="8" r="2.2" fill="#fff"/></pattern>',
+    flames: '<pattern id="pt" width="46" height="46" patternUnits="userSpaceOnUse"><text x="4" y="30" font-size="20">🔥</text></pattern>',
+    palms: '<pattern id="pt" width="50" height="50" patternUnits="userSpaceOnUse"><text x="6" y="34" font-size="22">🌴</text></pattern>'
+  };
   var $ = function (id) { return document.getElementById(id); };
   var acct, state = {};
 
@@ -119,6 +184,10 @@ textarea.bio { min-height: 90px; }
     var o = acct.options;
     picker($('themes'), o.themes, 'theme', function (b, v) { b.className += ' swatch'; b.style.background = 'rgb(' + THEMES[v] + ')'; b.title = v; b.setAttribute('aria-label', v); });
     picker($('avatars'), o.avatars, 'avatar', function (b, v) { b.className += ' emoji'; if (v) b.textContent = v; else { b.title = 'Use my sign-in photo'; b.setAttribute('aria-label', 'Use my sign-in photo'); b.innerHTML = acct.picture ? '<img src="' + acct.picture.replace(/"/g, '') + '" alt="" style="width:100%;height:100%;border-radius:10px;object-fit:cover">' : '👤'; } });
+    picker($('finishes'), o.finishes, 'finish', function (b, v) { b.textContent = v; });
+    picker($('banners'), o.banners, 'banner', function (b, v) { b.textContent = v === 'none' ? 'None' : (PATTERN_ICON[v] || '') + ' ' + v; });
+    picker($('fonts'), o.fonts, 'font', function (b, v) { b.textContent = 'Aa ' + v; b.className += ' f-' + v; });
+    picker($('effects'), o.effects, 'effect', function (b, v) { b.textContent = v; });
     picker($('titles'), o.titles, 'title', function (b, v) { b.textContent = v; });
     picker($('moods'), o.moods, 'mood', function (b, v) { b.textContent = v || 'No mood'; });
     picker($('interests'), o.interests, 'interests', function (b, v) { b.textContent = v; }, true);
@@ -127,6 +196,11 @@ textarea.bio { min-height: 90px; }
   function preview() {
     var name = $('displayName').value.trim() || acct.name;
     $('mName').textContent = name;
+    $('mName').className = 'm-name f-' + state.font + ' e-' + state.effect;
+    $('member').className = 'member ' + state.finish;
+    $('mHandle').textContent = (acct.username ? '@' + acct.username : '') + ($('pronouns').value.trim() ? ' · ' + $('pronouns').value.trim() : '');
+    $('mQuote').textContent = $('quote').value.trim() ? '“' + $('quote').value.trim() + '”' : '';
+    $('mBanner').innerHTML = PATTERNS[state.banner] ? '<defs>' + PATTERNS[state.banner] + '</defs><rect width="100%" height="100%" fill="url(#pt)"/>' : '';
     $('mTitle').textContent = state.title || 'Member';
     $('mMood').textContent = state.mood || '';
     $('mBio').textContent = $('bio').value.trim();
@@ -137,16 +211,25 @@ textarea.bio { min-height: 90px; }
     var meta = $('mMeta'); meta.innerHTML = '';
     var loc = $('location').value.trim();
     if (loc) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = '📍 ' + loc; meta.appendChild(c); }
+    var bd = $('birthday').value.trim();
+    if (/^\d{2}-\d{2}$/.test(bd)) { var d = new Date(2000, +bd.slice(0,2) - 1, +bd.slice(3)); var c0 = document.createElement('span'); c0.className = 'chip'; c0.textContent = '🎂 ' + d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); meta.appendChild(c0); }
     state.interests.forEach(function (i) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = i; meta.appendChild(c); });
+    [['instagram','https://instagram.com/','IG'],['x','https://x.com/','X'],['tiktok','https://tiktok.com/@','TikTok']].forEach(function (s) {
+      var h = $(s[0]).value.trim().replace(/^@/, '');
+      if (!/^[A-Za-z0-9._]{1,30}$/.test(h)) return;
+      var a = document.createElement('a'); a.className = 'chip'; a.href = s[1] + h; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = s[2] + ' @' + h; meta.appendChild(a);
+    });
     $('cName').textContent = $('displayName').value.length + '/40';
     $('cBio').textContent = $('bio').value.length + '/200';
+    $('cQuote').textContent = $('quote').value.length + '/120';
     $('cLoc').textContent = $('location').value.length + '/40';
   }
 
   fetch('/api/account').then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (a) {
     acct = a;
     var p = a.profile || {};
-    state = { theme: p.theme || 'silver', avatar: p.avatar || '', title: p.title || 'Member', mood: p.mood || '', interests: (p.interests || []).slice() };
+    state = { theme: p.theme || 'silver', avatar: p.avatar || '', title: p.title || 'Member', mood: p.mood || '', interests: (p.interests || []).slice(), banner: p.banner || 'none', font: p.font || 'bold', effect: p.effect || 'none', finish: p.finish || 'glossy' };
+    ['quote','pronouns','birthday','instagram','x','tiktok'].forEach(function (k) { $(k).value = p[k] || ''; });
     setTheme(state.theme);
     $('email').textContent = a.email;
     $('displayName').value = a.name || '';
@@ -162,13 +245,16 @@ textarea.bio { min-height: 90px; }
     drawPickers(); preview();
   }).catch(function () { location.replace('/signin?returnTo=/account'); });
 
-  ['displayName', 'bio', 'location'].forEach(function (id) { $(id).addEventListener('input', preview); });
+  ['displayName', 'bio', 'location', 'quote', 'pronouns', 'birthday', 'instagram', 'x', 'tiktok'].forEach(function (id) { $(id).addEventListener('input', preview); });
 
   $('save').onclick = function () {
     var st = $('pStatus'); st.className = 'status'; st.textContent = 'Saving…'; this.disabled = true; var btn = this;
     fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: {
       displayName: $('displayName').value, bio: $('bio').value, location: $('location').value,
-      theme: state.theme, avatar: state.avatar, title: state.title, mood: state.mood, interests: state.interests } }) })
+      theme: state.theme, avatar: state.avatar, title: state.title, mood: state.mood, interests: state.interests,
+      banner: state.banner, font: state.font, effect: state.effect, finish: state.finish,
+      quote: $('quote').value, pronouns: $('pronouns').value, birthday: $('birthday').value,
+      instagram: $('instagram').value, x: $('x').value, tiktok: $('tiktok').value } }) })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (d) { acct.name = d.name; st.textContent = 'Saved! Your card and the badge at the top of every page are updated.'; })
       .catch(function () { st.textContent = 'Could not save. Try again.'; st.className = 'status error'; })

@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       email: account.email,
       name: account.name,
+      username: account.username || '',
       picture: account.picture,
       notifications: account.notifications === true,
       createdAt: account.createdAt,

@@ -11,6 +11,8 @@ const PUBLIC_EXACT = new Set([
 ]);
 const PUBLIC_PREFIXES = ['/assets/', '/api/auth/', '/api/unsubscribe'];
 
+const USERNAME_SETUP = ['/username', '/api/account', '/api/auth', '/account'];
+
 export const config = { runtime: 'nodejs', matcher: '/(.*)' };
 
 export default function middleware(request) {
@@ -23,7 +25,17 @@ export default function middleware(request) {
 
   const cookies = parseCookies(request.headers.get('cookie') || '');
   const session = verifySession(cookies[SESSION_COOKIE], process.env.SESSION_SECRET);
-  if (session) return;
+  if (session) {
+    // Everyone needs a username. Until they pick one, only the username page,
+    // the account APIs it uses, and sign-out are reachable.
+    if (!session.username && !USERNAME_SETUP.some(p => path === p || path.startsWith(p + '/'))) {
+      if (path.startsWith('/api/')) return Response.json({ error: 'Username required' }, { status: 403 });
+      const pick = new URL('/username', request.url);
+      if (path !== '/') pick.searchParams.set('returnTo', path + url.search);
+      return Response.redirect(pick, 307);
+    }
+    return;
+  }
 
   if (path.startsWith('/api/')) {
     return Response.json({ error: 'Authentication required' }, { status: 401 });

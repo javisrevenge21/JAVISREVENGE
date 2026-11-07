@@ -9,6 +9,7 @@ export default async function handler(req, res) {
   const users = (await listAccounts()).map(account => ({
     email: account.email,
     name: account.name,
+    username: account.username || '',
     notifications: account.notifications === true,
     createdAt: account.createdAt,
     lastSignInAt: account.lastSignInAt

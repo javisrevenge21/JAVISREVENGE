@@ -5,7 +5,7 @@ import { createSession, SESSION_COOKIE } from '../lib/session.js';
 
 const secret = 'test-secret-that-is-long-enough-for-tests';
 process.env.SESSION_SECRET = secret;
-const user = { sub: 'google-123', email: 'person@example.com', name: 'Person' };
+const user = { sub: 'google-123', email: 'person@example.com', name: 'Person', username: 'person' };
 
 function request(path, cookie) {
   const headers = cookie ? { cookie } : {};
@@ -49,4 +49,17 @@ test('a valid session still unlocks member pages', () => {
   assert.equal(middleware(request('/account', cookie)), undefined);
   assert.equal(middleware(request('/api/admin/users', cookie)), undefined);
   assert.equal(middleware(request('/account', `${SESSION_COOKIE}=tampered.value`)).status, 307);
+});
+
+test('signed-in people without a username are sent to pick one', () => {
+  const cookie = `${SESSION_COOKIE}=${encodeURIComponent(createSession({ ...user, username: '' }, secret))}`;
+  const r = middleware(request('/politics', cookie));
+  assert.equal(r.status, 307);
+  const loc = new URL(r.headers.get('location'));
+  assert.equal(loc.pathname, '/username');
+  assert.equal(loc.searchParams.get('returnTo'), '/politics');
+  assert.equal(middleware(request('/username', cookie)), undefined);
+  assert.equal(middleware(request('/api/account/preferences', cookie)), undefined);
+  assert.equal(middleware(request('/api/auth/logout', cookie)), undefined);
+  assert.equal(middleware(request('/api/admin/users', cookie)).status, 403);
 });

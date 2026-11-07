@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Pick your username · JAVISREVENGE</title><link rel="stylesheet" href="/assets/legal.css">
+<style>
+.shell { width: min(560px, calc(100% - 24px)); }
+.handle { display: flex; align-items: center; border: 1px solid rgba(255,255,255,.22); border-radius: 12px; background: rgba(255,255,255,.05); overflow: hidden; transition: border-color .2s; }
+.handle span { padding: 0 4px 0 16px; font-size: 22px; color: rgba(255,255,255,.5); }
+.handle input { border: 0; background: transparent; font-size: 22px; padding: 16px 16px 16px 0; outline: none; }
+.handle.ok { border-color: #34d399; } .handle.bad { border-color: #f87171; }
+#msg { min-height: 24px; margin-top: 10px; font-size: 14px; }
+#msg.ok { color: #6ee7b7; } #msg.bad { color: #fca5a5; }
+.rules { font-size: 13px; color: rgba(255,255,255,.5); margin-top: 6px; }
+.button[disabled] { opacity: .4; cursor: not-allowed; }
+</style></head><body>
+<main class="shell"><span class="brand">JAVISREVENGE</span>
+<section class="card">
+<h1>Pick your username</h1>
+<p>Everyone on JAVISREVENGE has a username. It's how people will know you here. <strong>Choose carefully, you can't change it later.</strong></p>
+<label for="u">Username</label>
+<div class="handle" id="box"><span>@</span><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></div>
+<p class="rules">3 to 20 characters. Lowercase letters, numbers and underscores.</p>
+<p id="msg" aria-live="polite"></p>
+<div class="actions"><button class="button" id="go" type="button" disabled>Claim username</button><a class="button secondary" href="/api/auth/logout">Sign out</a></div>
+</section></main>
+<script>
+(function () {
+  var input = document.getElementById('u'), box = document.getElementById('box'), msg = document.getElementById('msg'), go = document.getElementById('go');
+  var timer, seq = 0;
+  var p = new URLSearchParams(location.search).get('returnTo');
+  var returnTo = p && p.charAt(0) === '/' && p.slice(0, 2) !== '//' ? p : '/';
+
+  function show(ok, text) {
+    box.className = 'handle ' + (ok === null ? '' : ok ? 'ok' : 'bad');
+    msg.className = ok === null ? '' : ok ? 'ok' : 'bad';
+    msg.textContent = text || '';
+    go.disabled = ok !== true;
+  }
+
+  input.addEventListener('input', function () {
+    var clean = input.value.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+    if (clean !== input.value) input.value = clean;
+    clearTimeout(timer);
+    if (!clean) return show(null);
+    if (clean.length < 3) return show(false, 'At least 3 characters.');
+    show(null, 'Checking…');
+    var mine = ++seq;
+    timer = setTimeout(function () {
+      fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checkUsername: clean }) })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (mine === seq) show(!!d.available, d.message); })
+        .catch(function () { if (mine === seq) show(false, 'Could not check right now.'); });
+    }, 350);
+  });
+
+  go.addEventListener('click', function () {
+    go.disabled = true; msg.className = ''; msg.textContent = 'Claiming…';
+    fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: input.value }) })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error); return d; }); })
+      .then(function (d) { show(true, 'You are @' + d.username + '. Welcome!'); setTimeout(function () { location.replace(returnTo); }, 700); })
+      .catch(function (e) { show(false, e.message || 'Could not claim that username.'); });
+  });
+
+  fetch('/api/account').then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (a) { if (a.username) location.replace(returnTo); })
+    .catch(function () { location.replace('/signin?returnTo=/username'); });
+})();
+</script>
+<script src="/assets/beta-banner.js"></script></body></html>
