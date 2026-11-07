@@ -1,5 +1,6 @@
 import { deleteAccount, getAccount, PROFILE_OPTIONS, scrubUsername } from '../../lib/accounts.js';
 import { purgeMember, exportMember } from '../../lib/wall.js';
+import { isPlus } from '../../lib/billing.js';
 import { clearCookie, requireSameOrigin, sessionFromRequest, SESSION_COOKIE } from '../../lib/session.js';
 
 export default async function handler(req, res) {
@@ -25,6 +26,7 @@ export default async function handler(req, res) {
       name: account.name,
       username: account.username || '',
       mediaAccess: account.mediaAccess || 'none',
+      plus: isPlus(account),
       picture: account.picture,
       notifications: account.notifications === true,
       createdAt: account.createdAt,

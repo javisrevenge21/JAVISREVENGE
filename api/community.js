@@ -5,6 +5,8 @@ import { getAccount, saveAccount, listAccounts, accountByUsername, publicProfile
 import { isAdmin, requireSameOrigin, sessionFromRequest } from '../lib/session.js';
 import { listPosts, getPost, savePost, createPost, deletePost, REACTIONS } from '../lib/wall.js';
 import { check, punish, hasAI, log, label } from '../lib/moderation.js';
+import { isPlus, billingOn, PRICE_CENTS, createCheckout, confirmCheckout, refreshPlus, portalUrl } from '../lib/billing.js';
+import { listAds, isLive, saveAd, getAd, deleteAd, bump, publicAd } from '../lib/ads.js';
 
 // The members community, in one function (the Hobby plan caps the site at 12).
 //
@@ -52,7 +54,7 @@ function mentionsOf(text) {
 
 function mini(account) {
   const p = account.profile || {};
-  return { username: account.username, name: account.name, picture: account.picture || '', avatar: p.avatar || '', theme: p.theme || 'silver', title: p.title || 'Member' };
+  return { username: account.username, name: account.name, picture: account.picture || '', avatar: p.avatar || '', theme: p.theme || 'silver', title: p.title || 'Member', plus: isPlus(account) };
 }
 
 async function authorsFor(names) {
@@ -129,7 +131,7 @@ async function blobToDataUrl(pathname, type) {
 }
 
 async function serveMedia(req, res, pathname) {
-  if (!/^wall-media\/[a-z0-9_]{3,20}\/[\w.\-]+$/.test(pathname)) return res.status(400).end();
+  if (!/^(wall-media\/[a-z0-9_]{3,20}|ads-media)\/[\w.\-]+$/.test(pathname)) return res.status(400).end();
   const headers = req.headers.range ? { range: req.headers.range } : undefined;
   const r = await get(pathname, { access: 'private', headers }).catch(() => null);
   if (!r || !r.stream) return res.status(404).end();
@@ -165,6 +167,9 @@ export default async function handler(req, res) {
   const me = await getAccount(session.email);
   if (!me || !me.username || await isBanned(me.email)) return res.status(403).json({ error: 'Not allowed' });
   const admin = isAdmin(session);
+  try { const fresh = await refreshPlus(me); if (fresh) { me.plus = fresh; await saveAccount(me); } } catch (e) {}
+  const plus = isPlus(me);
+  const origin = `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
   const visible = p => !p.hidden || admin || p.author === me.username;
   const hiddenAuthors = new Set([...(me.blocked || []), ...(me.muted || [])]);
   // Posts from people I blocked/muted, and from people who blocked me, are not shown to me.
@@ -213,6 +218,8 @@ export default async function handler(req, res) {
       const lookup = await lookupFor(posts, pool);
       const embedAuthors = Object.values(lookup).filter(Boolean).map(p => p.author);
       return res.status(200).json({
+        ads: plus ? [] : (await listAds().catch(() => [])).filter(a => isLive(a)).map(publicAd),
+        plusInfo: { on: billingOn(), price: PRICE_CENTS() },
         me: mini(me), admin, mediaEnabled: hasAI(), mediaAccess: admin ? 'granted' : (me.mediaAccess || 'none'), reactions: REACTIONS,
         following: (me.following || []).length,
         unread: (me.inbox || []).filter(n => !n.read).length,
@@ -269,6 +276,18 @@ export default async function handler(req, res) {
       return res.status(200).json({ list: which.filter(n => authors[n]).map(n => ({ ...authors[n], blocked: (me.blocked || []).includes(n), muted: (me.muted || []).includes(n), following: (me.following || []).includes(n) })) });
     }
 
+    if (view === 'plus') {
+      return res.status(200).json({
+        on: billingOn(), price: PRICE_CENTS(), member: plus,
+        plus: me.plus ? { status: me.plus.comp ? 'gift' : me.plus.status, periodEnd: me.plus.periodEnd || null, cancelAtPeriodEnd: !!me.plus.cancelAtPeriodEnd, since: me.plus.since || null, comp: !!me.plus.comp } : null
+      });
+    }
+
+    if (view === 'ads') {
+      if (!admin) return res.status(403).json({ error: 'Owner only' });
+      return res.status(200).json({ ads: (await listAds()).map(a => ({ ...a, imageUrl: a.image ? '/api/community?media=' + encodeURIComponent(a.image) : '', live: isLive(a) })) });
+    }
+
     if (view === 'members') {
       if (!admin) return res.status(403).json({ error: 'Owner only' });
       const members = (await listAccounts()).filter(a => a.username)
@@ -282,12 +301,13 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   if (req.query.upload) {
-    if (!hasAI()) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
+    if (!hasAI() && !admin) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
     const mediaOk = canMedia(me, admin);
     try {
       const json = await handleUpload({
         body: req.body, request: req,
         onBeforeGenerateToken: async (pathname) => {
+          if (admin && pathname.startsWith('ads-media/')) return { allowedContentTypes: IMAGE_TYPES, maximumSizeInBytes: LIMITS.image, addRandomSuffix: true };
           if (!pathname.startsWith(`wall-media/${me.username}/`)) throw new Error('Bad upload path');
           return mediaOk
             ? { allowedContentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES, ...FILE_TYPES], maximumSizeInBytes: LIMITS.video, addRandomSuffix: true }
@@ -321,7 +341,7 @@ export default async function handler(req, res) {
   }
 
   if (action === 'post') {
-    const text = cleanText(req.body.text);
+    const text = cleanText(req.body.text, plus || admin ? 1000 : 500);
     const wanted = Array.isArray(req.body.media) ? req.body.media.slice(0, MAX_MEDIA) : [];
     let poll = null;
     if (Array.isArray(req.body.poll)) {
@@ -384,6 +404,38 @@ export default async function handler(req, res) {
     fresh.inbox = (fresh.inbox || []).map(n => ({ ...n, read: true }));
     await saveAccount(fresh);
     return res.status(200).json({ ok: true });
+  }
+
+  if (action === 'checkout') {
+    if (!billingOn()) return res.status(503).json({ error: 'REVENGE+ isn’t open yet. Check back soon.' });
+    if (plus) return res.status(400).json({ error: 'You’re already a REVENGE+ member.' });
+    try { return res.status(200).json({ url: await createCheckout(me, origin) }); }
+    catch (e) { return res.status(502).json({ error: e.message }); }
+  }
+  if (action === 'confirmPlus') {
+    try {
+      const fresh = await getAccount(me.email);
+      fresh.plus = await confirmCheckout(fresh, req.body.sessionId);
+      await saveAccount(fresh);
+      return res.status(200).json({ member: isPlus(fresh) });
+    } catch (e) { return res.status(400).json({ error: e.message }); }
+  }
+  if (action === 'portal') {
+    try { return res.status(200).json({ url: await portalUrl(me, origin) }); }
+    catch (e) { return res.status(400).json({ error: e.message }); }
+  }
+  if (action === 'adSeen' || action === 'adClick') {
+    const ids = (Array.isArray(req.body.ids) ? req.body.ids : [req.body.id]).map(String);
+    await bump(ids, action === 'adSeen' ? 'impressions' : 'clicks').catch(() => {});
+    return res.status(200).json({ ok: true });
+  }
+  if (action === 'saveAd' || action === 'deleteAd' || action === 'toggleAd') {
+    if (!admin) return res.status(403).json({ error: 'Owner only' });
+    const existing = req.body.adId ? await getAd(req.body.adId) : null;
+    if (action === 'deleteAd') { if (existing) await deleteAd(existing.id); return res.status(200).json({ deleted: true }); }
+    if (action === 'toggleAd') { if (!existing) return res.status(404).json({ error: 'Ad not found' }); const ad = await saveAd({ ...existing, active: !existing.active, startsAt: existing.startsAt, endsAt: existing.endsAt }, existing); return res.status(200).json({ ad }); }
+    try { return res.status(200).json({ ad: await saveAd(req.body.ad || {}, existing) }); }
+    catch (e) { return res.status(400).json({ error: e.message }); }
   }
 
   if (action === 'requestMedia') {
@@ -460,7 +512,7 @@ export default async function handler(req, res) {
     if (post.author !== me.username) return res.status(403).json({ error: 'You can only edit your own posts.' });
     if (post.repostOf) return res.status(400).json({ error: 'Reposts can’t be edited.' });
     if (!admin && Date.now() - Date.parse(post.createdAt) > 60 * 60 * 1000) return res.status(400).json({ error: 'Posts can only be edited for 1 hour after posting.' });
-    const text = cleanText(req.body.text);
+    const text = cleanText(req.body.text, plus || admin ? 1000 : 500);
     if (!text && !(post.media || []).length) return res.status(400).json({ error: 'A post can’t be empty.' });
     let verdict;
     try { verdict = await check({ text }); } catch { return res.status(503).json({ error: 'The safety check is unavailable right now.' }); }
@@ -504,7 +556,7 @@ export default async function handler(req, res) {
   }
 
   if (action === 'reply') {
-    const text = cleanText(req.body.text, 300);
+    const text = cleanText(req.body.text, plus || admin ? 600 : 300);
     if (!text) return res.status(400).json({ error: 'Write a reply first.' });
     if (!admin && me.lastReplyAt && Date.now() - Date.parse(me.lastReplyAt) < REPLY_GAP_MS) return res.status(429).json({ error: 'Slow down a little.' });
     if ((post.replies || []).length >= 300) return res.status(400).json({ error: 'This thread is full.' });

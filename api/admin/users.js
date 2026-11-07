@@ -1,6 +1,7 @@
 import { listAccounts, getAccount, saveAccount, deleteAccount, banEmail, unbanEmail, listBans, scrubUsername } from '../../lib/accounts.js';
 import { purgeMember } from '../../lib/wall.js';
 import { recentLog, hasAI } from '../../lib/moderation.js';
+import { isPlus } from '../../lib/billing.js';
 import { countWaitlist } from '../../lib/waitlist.js';
 import { isAdmin, requireSameOrigin, sessionFromRequest } from '../../lib/session.js';
 
@@ -25,7 +26,8 @@ export default async function handler(req, res) {
       strikes: account.strikes || 0,
       mediaAccess: account.mediaAccess || 'none',
       mediaRequestedAt: account.mediaRequestedAt || null,
-      followers: (account.followers || []).length
+      followers: (account.followers || []).length,
+      plus: isPlus(account), plusComp: !!(account.plus && account.plus.comp)
     }));
     const bans = await listBans().catch(() => []);
     const waitlistCount = await countWaitlist().catch(() => null);
@@ -41,6 +43,15 @@ export default async function handler(req, res) {
   if (email === session.email.toLowerCase() && action !== 'unban') return res.status(400).json({ error: "You can't remove or ban yourself" });
 
   if (action === 'unban') { await unbanEmail(email); return res.status(200).json({ unbanned: email }); }
+  // Give or remove a free REVENGE+ membership.
+  if (action === 'plus') {
+    const account = await getAccount(email);
+    if (!account) return res.status(404).json({ error: 'Account not found' });
+    if (req.body?.value === 'grant') account.plus = { ...(account.plus || {}), comp: true, since: (account.plus && account.plus.since) || new Date().toISOString() };
+    else if (account.plus) delete account.plus.comp;
+    await saveAccount(account);
+    return res.status(200).json({ email, plus: isPlus(account) });
+  }
   // Photo/video permission: grant, deny (clears a request) or revoke.
   if (action === 'media') {
     const account = await getAccount(email);

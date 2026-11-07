@@ -1,6 +1,8 @@
 import { updateNotifications, updateProfile, claimUsername, normalizeUsername, usernameProblem, usernameTaken } from '../../lib/accounts.js';
 import { blocklistHit } from '../../lib/moderation.js';
-import { requireSameOrigin, sessionFromRequest, createSession, sessionCookie } from '../../lib/session.js';
+import { isPlus } from '../../lib/billing.js';
+import { getAccount } from '../../lib/accounts.js';
+import { isAdmin, requireSameOrigin, sessionFromRequest, createSession, sessionCookie } from '../../lib/session.js';
 
 // POST { notifications: true|false }  or  POST { profile: { displayName, bio, ... } }
 export default async function handler(req, res) {
@@ -30,9 +32,10 @@ export default async function handler(req, res) {
 
   if (req.body && typeof req.body.profile === 'object' && req.body.profile) {
     const pf = req.body.profile;
-    const words = ['displayName', 'bio', 'location', 'quote', 'pronouns', 'instagram', 'x', 'tiktok'].map(k => String(pf[k] || '')).join('\n');
+    const words = ['displayName', 'bio', 'location', 'quote', 'pronouns', 'instagram', 'x', 'tiktok', 'snapchat', 'discord', 'youtube', 'twitch', 'threads'].map(k => String(pf[k] || '')).join('\n');
     if (blocklistHit(words)) return res.status(422).json({ error: 'Your profile contains words that are not allowed on JAVISREVENGE.' });
-    const account = await updateProfile(session.email, req.body.profile);
+    const current = await getAccount(session.email);
+    const account = await updateProfile(session.email, req.body.profile, isPlus(current) || isAdmin(session));
     if (!account) return res.status(404).json({ error: 'Account not found' });
     return res.status(200).json({ name: account.name, profile: account.profile });
   }

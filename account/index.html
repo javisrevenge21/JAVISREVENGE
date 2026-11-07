@@ -111,6 +111,11 @@ textarea.bio { min-height: 90px; }
 <div><label for="instagram">Instagram</label><input id="instagram" maxlength="31" placeholder="@handle" autocapitalize="none"></div>
 <div><label for="x">X</label><input id="x" maxlength="31" placeholder="@handle" autocapitalize="none"></div>
 <div><label for="tiktok">TikTok</label><input id="tiktok" maxlength="31" placeholder="@handle" autocapitalize="none"></div>
+<div><label for="snapchat">Snapchat</label><input id="snapchat" maxlength="33" placeholder="username" autocapitalize="none"></div>
+<div><label for="discord">Discord</label><input id="discord" maxlength="33" placeholder="username" autocapitalize="none"></div>
+<div><label for="youtube">YouTube</label><input id="youtube" maxlength="33" placeholder="@handle" autocapitalize="none"></div>
+<div><label for="twitch">Twitch</label><input id="twitch" maxlength="33" placeholder="username" autocapitalize="none"></div>
+<div><label for="threads">Threads</label><input id="threads" maxlength="33" placeholder="@handle" autocapitalize="none"></div>
 </div>
 
 <h2>Color theme</h2><div class="grid" id="themes" role="group" aria-label="Color theme"></div>
@@ -144,7 +149,7 @@ textarea.bio { min-height: 90px; }
 <script src="/assets/site-ui.js"></script>
 <script>
 (function () {
-  var THEMES = { silver: '200,205,214', red: '220,38,38', gold: '212,160,23', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12' };
+  var THEMES = { silver: '200,205,214', red: '220,38,38', gold: '212,160,23', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12', obsidian: '63,63,70', cyber: '6,182,160' };
   var LABELS = { google: 'Google', microsoft: 'Microsoft', discord: 'Discord', github: 'GitHub' };
   var PATTERN_ICON = { stars: '★', stripes: '▤', waves: '〰', grid: '▦', dots: '⠿', flames: '🔥', palms: '🌴' };
   var PATTERNS = {
@@ -169,7 +174,7 @@ textarea.bio { min-height: 90px; }
       render(b, v);
       var on = multi ? state[key].indexOf(v) >= 0 : state[key] === v;
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
-      b.onclick = function () {
+      if (!b.onclick) b.onclick = function () {
         if (multi) {
           var i = state[key].indexOf(v);
           if (i >= 0) state[key].splice(i, 1);
@@ -184,7 +189,10 @@ textarea.bio { min-height: 90px; }
 
   function drawPickers() {
     var o = acct.options;
-    picker($('themes'), o.themes, 'theme', function (b, v) { b.className += ' swatch'; b.style.background = 'rgb(' + THEMES[v] + ')'; b.title = v; b.setAttribute('aria-label', v); });
+    picker($('themes'), o.themes, 'theme', function (b, v) {
+      b.className += ' swatch'; b.style.background = 'rgb(' + THEMES[v] + ')'; b.title = v; b.setAttribute('aria-label', v);
+      if ((o.plusThemes || []).indexOf(v) >= 0) { b.title = v + ' (REVENGE+)'; b.style.backgroundImage = 'linear-gradient(135deg, rgba(255,255,255,.35), transparent 60%)'; if (!acct.plus) { b.textContent = '✦'; b.style.color = '#fff'; b.style.fontSize = '16px'; b.onclick = function () { location.href = '/wall?view=plus'; }; } }
+    });
     picker($('avatars'), o.avatars, 'avatar', function (b, v) { b.className += ' emoji'; if (v) b.textContent = v; else { b.title = 'Use my sign-in photo'; b.setAttribute('aria-label', 'Use my sign-in photo'); b.innerHTML = acct.picture ? '<img src="' + acct.picture.replace(/"/g, '') + '" alt="" style="width:100%;height:100%;border-radius:10px;object-fit:cover">' : '👤'; } });
     picker($('finishes'), o.finishes, 'finish', function (b, v) { b.textContent = v; });
     picker($('banners'), o.banners, 'banner', function (b, v) { b.textContent = v === 'none' ? 'None' : (PATTERN_ICON[v] || '') + ' ' + v; });
@@ -216,10 +224,10 @@ textarea.bio { min-height: 90px; }
     var bd = $('birthday').value.trim();
     if (/^\d{2}-\d{2}$/.test(bd)) { var d = new Date(2000, +bd.slice(0,2) - 1, +bd.slice(3)); var c0 = document.createElement('span'); c0.className = 'chip'; c0.textContent = '🎂 ' + d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); meta.appendChild(c0); }
     state.interests.forEach(function (i) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = i; meta.appendChild(c); });
-    [['instagram','https://instagram.com/','IG'],['x','https://x.com/','X'],['tiktok','https://tiktok.com/@','TikTok']].forEach(function (s) {
+    [['instagram','https://instagram.com/','IG'],['x','https://x.com/','X'],['tiktok','https://tiktok.com/@','TikTok'],['snapchat','https://snapchat.com/add/','Snap'],['youtube','https://youtube.com/@','YouTube'],['twitch','https://twitch.tv/','Twitch'],['threads','https://threads.net/@','Threads'],['discord','','Discord']].forEach(function (s) {
       var h = $(s[0]).value.trim().replace(/^@/, '');
-      if (!/^[A-Za-z0-9._]{1,30}$/.test(h)) return;
-      var a = document.createElement('a'); a.className = 'chip'; a.href = s[1] + h; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = s[2] + ' @' + h; meta.appendChild(a);
+      if (!/^[A-Za-z0-9._-]{1,32}$/.test(h)) return;
+      var a = document.createElement(s[1] ? 'a' : 'span'); a.className = 'chip'; if (s[1]) a.href = s[1] + h; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = s[2] + ' @' + h; meta.appendChild(a);
     });
     $('cName').textContent = $('displayName').value.length + '/40';
     $('cBio').textContent = $('bio').value.length + '/200';
@@ -231,7 +239,7 @@ textarea.bio { min-height: 90px; }
     acct = a;
     var p = a.profile || {};
     state = { theme: p.theme || 'silver', avatar: p.avatar || '', title: p.title || 'Member', mood: p.mood || '', interests: (p.interests || []).slice(), banner: p.banner || 'none', font: p.font || 'bold', effect: p.effect || 'none', finish: p.finish || 'glossy' };
-    ['quote','pronouns','birthday','instagram','x','tiktok'].forEach(function (k) { $(k).value = p[k] || ''; });
+    ['quote','pronouns','birthday','instagram','x','tiktok','snapchat','discord','youtube','twitch','threads'].forEach(function (k) { $(k).value = p[k] || ''; });
     setTheme(state.theme);
     $('email').textContent = a.email;
     $('displayName').value = a.name || '';
@@ -257,7 +265,7 @@ textarea.bio { min-height: 90px; }
     };
   }).catch(function () { location.replace('/signin?returnTo=/account'); });
 
-  ['displayName', 'bio', 'location', 'quote', 'pronouns', 'birthday', 'instagram', 'x', 'tiktok'].forEach(function (id) { $(id).addEventListener('input', preview); });
+  ['displayName', 'bio', 'location', 'quote', 'pronouns', 'birthday', 'instagram', 'x', 'tiktok', 'snapchat', 'discord', 'youtube', 'twitch', 'threads'].forEach(function (id) { $(id).addEventListener('input', preview); });
 
   $('save').onclick = function () {
     var st = $('pStatus'); st.className = 'status'; st.textContent = 'Saving…'; this.disabled = true; var btn = this;
@@ -266,7 +274,7 @@ textarea.bio { min-height: 90px; }
       theme: state.theme, avatar: state.avatar, title: state.title, mood: state.mood, interests: state.interests,
       banner: state.banner, font: state.font, effect: state.effect, finish: state.finish,
       quote: $('quote').value, pronouns: $('pronouns').value, birthday: $('birthday').value,
-      instagram: $('instagram').value, x: $('x').value, tiktok: $('tiktok').value } }) })
+      instagram: $('instagram').value, x: $('x').value, tiktok: $('tiktok').value, snapchat: $('snapchat').value, discord: $('discord').value, youtube: $('youtube').value, twitch: $('twitch').value, threads: $('threads').value } }) })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (d) { acct.name = d.name; st.textContent = 'Saved! Your card and the badge at the top of every page are updated.'; })
       .catch(function () { st.textContent = 'Could not save. Try again.'; st.className = 'status error'; })

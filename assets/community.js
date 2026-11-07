@@ -2,7 +2,7 @@
 // posts and member profiles. Served at /wall and /u/<username>.
 (function () {
   'use strict';
-  var THEMES = { silver: '120,130,145', red: '220,38,38', gold: '202,138,4', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12' };
+  var THEMES = { silver: '120,130,145', red: '220,38,38', gold: '202,138,4', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12', obsidian: '63,63,70', cyber: '6,182,160' };
   var PATTERNS = {
     stars: '<pattern id="pt" width="40" height="40" patternUnits="userSpaceOnUse"><text x="6" y="22" font-size="14" fill="#fff">★</text><text x="26" y="38" font-size="8" fill="#fff">★</text></pattern>',
     stripes: '<pattern id="pt" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="9" height="22" fill="#fff"/></pattern>',
@@ -28,10 +28,14 @@
     user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     brush: '<svg viewBox="0 0 24 24"><path d="M18 3l3 3-9 9-3-3zM9 12l-3 3c-2 0-3 1.5-3 4 2.5 0 4-1 4-3l3-3"/></svg>',
     shield: '<svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>',
+    megaphone: '<svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 8a5 5 0 0 1 0 8M18 5a9 9 0 0 1 0 14"/></svg>',
+    star: '<svg viewBox="0 0 24 24"><path d="M12 2l2.6 6.9L22 9.3l-5.6 4.8L18.2 22 12 18l-6.2 4 1.8-7.9L2 9.3l7.4-.4z"/></svg>',
     sword: '<svg viewBox="0 0 24 24"><path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>'
   };
   var REACTIONS = ['🔥', '🇺🇸', '😂', '💯', '👏', '😤'];
-  var state = { me: null, admin: false, mediaEnabled: false, mediaAccess: 'none', authors: {}, posts: {}, unread: 0 };
+  var state = { me: null, admin: false, mediaEnabled: false, mediaAccess: 'none', authors: {}, posts: {}, unread: 0, ads: [], plusInfo: { on: false, price: 499 } };
+  function maxLen() { return state.me && (state.me.plus || state.admin) ? 1000 : 500; }
+  var PLUS = '<span class="plusb" title="REVENGE+ member">✦</span>';
 
   // ---------- helpers ----------
   function $(id) { return document.getElementById(id); }
@@ -132,7 +136,7 @@
       avatar(a) +
       '<div class="body">' +
         (p.pinned ? '<div class="pinline">📌 Pinned by the owner</div>' : '') +
-        '<div class="who"><a class="nm" href="/u/' + encodeURIComponent(a.username) + '" data-nav>' + esc(a.name) + '</a>' +
+        '<div class="who"><a class="nm" href="/u/' + encodeURIComponent(a.username) + '" data-nav>' + esc(a.name) + '</a>' + (a.plus ? PLUS : '') +
           (a.title && a.title !== 'Member' ? '<span class="badge">' + esc(a.title) + '</span>' : '') +
           '<span class="hd">@' + esc(a.username) + '</span><span class="hd">·</span><time datetime="' + esc(p.createdAt) + '" title="' + esc(fullDate(p.createdAt)) + '">' + ago(p.createdAt) + '</time>' +
           (p.editedAt ? '<span class="hd" title="Edited ' + esc(fullDate(p.editedAt)) + '">· edited</span>' : '') +
@@ -150,6 +154,25 @@
       '</div>' +
       '<button class="more" data-more="' + p.id + '" aria-label="More">⋯</button>' +
     '</article>';
+  }
+  function adHtml(ad) {
+    return '<article class="post ad" data-ad="' + ad.id + '"><span class="av adav">' + esc((ad.sponsor || '?').charAt(0).toUpperCase()) + '</span><div class="body">' +
+      '<div class="who"><b class="nm">' + esc(ad.sponsor) + '</b><span class="badge adbadge">Sponsored</span></div>' +
+      '<div class="text"><b>' + esc(ad.headline) + '</b>' + (ad.text ? '<br>' + esc(ad.text) : '') + '</div>' +
+      (ad.image ? '<a class="adimg" href="' + esc(ad.link) + '" target="_blank" rel="noopener sponsored" data-adclick="' + ad.id + '"><img src="' + esc(ad.image) + '" alt="" loading="lazy"></a>' : '') +
+      '<a class="adcta" href="' + esc(ad.link) + '" target="_blank" rel="noopener sponsored" data-adclick="' + ad.id + '">' + esc(ad.cta) + ' ↗</a>' +
+      (state.plusInfo.on ? '<div class="muted adnote">Go ad-free with <a href="/wall?view=plus" data-nav>REVENGE+</a></div>' : '') + '</div></article>';
+  }
+  function renderSideAd() {
+    var box = $('sideAd'); if (!box) return;
+    var ad = state.ads.filter(function (a) { return a.placement !== 'feed'; })[0];
+    if (!ad) { box.hidden = true; return; }
+    box.hidden = false;
+    if (box.dataset.id === ad.id) return;
+    box.dataset.id = ad.id;
+    box.innerHTML = '<h3>Sponsored</h3>' + (ad.image ? '<a href="' + esc(ad.link) + '" target="_blank" rel="noopener sponsored" data-adclick="' + ad.id + '"><img src="' + esc(ad.image) + '" alt=""></a>' : '') +
+      '<div class="pad"><b>' + esc(ad.headline) + '</b><div class="muted" style="margin:4px 0 10px">' + esc(ad.sponsor) + (ad.text ? ' · ' + esc(ad.text) : '') + '</div><a class="adcta" href="' + esc(ad.link) + '" target="_blank" rel="noopener sponsored" data-adclick="' + ad.id + '">' + esc(ad.cta) + ' ↗</a></div>';
+    api({ action: 'adSeen', ids: [ad.id] }).catch(function () {});
   }
   function menuHtml(p) {
     var mine = p.author === state.me.username, out = '';
@@ -210,7 +233,13 @@
         : tab === 'following' ? '<b>Nothing here yet</b>Follow people from their profile and their posts show up here.'
         : tab === 'media' ? '<b>No photos or videos yet</b>' : tab === 'top' ? '<b>Nothing trending this week</b>React to posts to push them up.'
         : '<b>Welcome to the Revenge Wall</b>Nobody has posted yet. Be the first. 🔥';
-      main.innerHTML = d.posts.length ? d.posts.map(function (p) { return postHtml(p); }).join('') : '<div class="empty">' + empty + '</div>';
+      var feedAds = state.ads.filter(function (a) { return a.placement !== 'sidebar'; }), shown = [];
+      main.innerHTML = d.posts.length ? d.posts.map(function (p, i) {
+        var h = postHtml(p);
+        if (feedAds.length && i % 6 === 4) { var ad = feedAds[Math.floor(i / 6) % feedAds.length]; shown.push(ad.id); h += adHtml(ad); }
+        return h;
+      }).join('') : '<div class="empty">' + empty + '</div>';
+      if (shown.length) api({ action: 'adSeen', ids: shown }).catch(function () {});
     }).catch(function (e) { if (e.message !== 'auth') main.innerHTML = '<div class="empty"><b>Could not load</b>' + esc(e.message) + '</div>'; });
   }
 
@@ -258,6 +287,69 @@
     }).catch(function () {});
   }
 
+  function money(c) { return '$' + (c / 100).toFixed(2); }
+  function showPlus() {
+    setTop('REVENGE+', 'Support the site. Get the perks.', true, false); setNav('plus'); $('composer').hidden = true; loading();
+    var q = new URLSearchParams(location.search), sid = q.get('session_id');
+    var confirmP = sid ? api({ action: 'confirmPlus', sessionId: sid }).then(function () { toast('Welcome to REVENGE+ ✦'); history.replaceState(null, '', '/wall?view=plus'); }).catch(function (e) { toast(e.message, true); }) : Promise.resolve();
+    confirmP.then(function () { return getJSON('/api/community?view=plus'); }).then(function (d) {
+      var perks = [['✦', 'REVENGE+ badge', 'A ✦ next to your name on every post and your profile.'], ['🚫', 'No ads', 'The Revenge Wall with zero sponsored posts.'], ['📝', 'Longer posts', 'Up to 1,000 characters per post and 600 per reply.'], ['🎨', 'Exclusive themes', 'Obsidian and Cyber profile colors, members only.'], ['❤️', 'Keep it independent', 'Your membership pays for the site, so it stays ad-light and free of big platforms.']];
+      var status = '';
+      if (d.member) {
+        var p = d.plus || {};
+        status = '<div class="pluscard on"><div class="big">✦ You’re a REVENGE+ member</div>' + (p.comp ? '<div class="muted">Gifted by the owner.</div>' :
+          '<div class="muted">' + (p.cancelAtPeriodEnd ? 'Ends' : 'Renews') + ' ' + (p.periodEnd ? new Date(p.periodEnd).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '') + '</div><button class="btn" id="plusManage" style="margin-top:12px">Manage or cancel</button>') + '</div>';
+      } else if (d.on) {
+        status = '<div class="pluscard"><div class="big">' + money(d.price) + '<small>/month</small></div><div class="muted">Cancel anytime. Billed securely by Stripe.</div><button class="postbtn" id="plusJoin" style="width:100%;margin-top:14px">Join REVENGE+</button>' + (q.get('canceled') ? '<div class="muted" style="margin-top:8px">Checkout canceled — no charge was made.</div>' : '') + '</div>';
+      } else {
+        status = '<div class="pluscard"><div class="big">Coming soon</div><div class="muted">Memberships open shortly.' + (state.admin ? ' <b>Owner:</b> add STRIPE_SECRET_KEY in Vercel to turn this on.' : '') + '</div></div>';
+      }
+      main.innerHTML = '<div class="plushero"><div class="plusmark">✦</div><h2>REVENGE+</h2><p>The membership that keeps JAVISREVENGE running.</p></div>' + status +
+        '<div class="perks">' + perks.map(function (k) { return '<div class="perk"><span>' + k[0] + '</span><div><b>' + k[1] + '</b><div class="muted">' + k[2] + '</div></div></div>'; }).join('') + '</div>' +
+        '<p class="muted" style="padding:0 16px 24px">By joining you agree to the <a href="/terms">Terms</a>. Payments are handled by Stripe; JAVISREVENGE never sees your card details.</p>';
+      var j = $('plusJoin'); if (j) j.onclick = function () { j.disabled = true; j.textContent = 'Opening secure checkout…'; api({ action: 'checkout' }).then(function (x) { location.href = x.url; }).catch(function (e) { toast(e.message, true); j.disabled = false; j.textContent = 'Join REVENGE+'; }); };
+      var m = $('plusManage'); if (m) m.onclick = function () { m.disabled = true; api({ action: 'portal' }).then(function (x) { location.href = x.url; }).catch(function (e) { toast(e.message, true); m.disabled = false; }); };
+    }).catch(function () {});
+  }
+
+  function showAds() {
+    setTop('Sponsors', 'Only you see this · sell ad spots directly', true, false); setNav('ads'); $('composer').hidden = true; loading();
+    getJSON('/api/community?view=ads').then(function (d) {
+      var form = '<form class="adform" id="adForm"><h3 id="adFormTitle">New sponsored post</h3>' +
+        '<label>Sponsor name<input name="sponsor" maxlength="60" required placeholder="e.g. Sunset Tacos"></label>' +
+        '<label>Headline<input name="headline" maxlength="90" required placeholder="Best tacos on Sunset Blvd"></label>' +
+        '<label>Text (optional)<textarea name="text" maxlength="280" rows="2" placeholder="Show this post for 10% off"></textarea></label>' +
+        '<div class="two"><label>Link<input name="link" required placeholder="https://…"></label><label>Button text<input name="cta" maxlength="24" placeholder="Learn more"></label></div>' +
+        '<div class="two"><label>Where<select name="placement"><option value="both">Feed + sidebar</option><option value="feed">Feed only</option><option value="sidebar">Sidebar only</option></select></label>' +
+        '<label>Image (optional)<input type="file" name="img" accept="image/jpeg,image/png,image/webp"></label></div>' +
+        '<div class="two"><label>Start (optional)<input type="date" name="startsAt"></label><label>End (optional)<input type="date" name="endsAt"></label></div>' +
+        '<div class="row"><span class="muted" id="adStatus"></span><button type="button" class="btn" id="adReset">Clear</button><button class="btn dark" type="submit">Save ad</button></div></form>';
+      var listHtml = d.ads.length ? d.ads.map(function (a) {
+        var ctr = a.impressions ? (a.clicks * 100 / a.impressions).toFixed(1) : '0.0';
+        return '<div class="adrow">' + (a.imageUrl ? '<img src="' + esc(a.imageUrl) + '" alt="">' : '<span class="av adav">' + esc(a.sponsor.charAt(0)) + '</span>') +
+          '<div class="body"><b>' + esc(a.sponsor) + '</b> · ' + esc(a.headline) + '<div class="muted">' + (a.live ? '🟢 Live' : a.active ? '🕒 Scheduled/ended' : '⏸ Paused') + ' · ' + esc(a.placement) + ' · ' + a.impressions + ' views · ' + a.clicks + ' clicks · ' + ctr + '% CTR' +
+          (a.endsAt ? ' · ends ' + new Date(a.endsAt).toLocaleDateString() : '') + '</div></div>' +
+          '<button class="btn" data-adedit="' + a.id + '">Edit</button><button class="btn" data-adtoggle="' + a.id + '">' + (a.active ? 'Pause' : 'Resume') + '</button><button class="btn red" data-addel="' + a.id + '">Delete</button></div>';
+      }).join('') : '<p class="empty">No sponsors yet. Sell a spot to a local business and add it here.</p>';
+      main.innerHTML = '<div class="adhelp">Ads show to everyone except REVENGE+ members — one in every 6 posts, plus the sidebar. Every ad is labeled <b>Sponsored</b>. You only see view and click counts, never who.</div>' + form + '<h3 style="padding:16px 16px 4px;margin:0">Your sponsors</h3>' + listHtml;
+      var f = $('adForm'), editing = null;
+      function fill(a) { editing = a ? a.id : null; $('adFormTitle').textContent = a ? 'Edit ad' : 'New sponsored post'; ['sponsor', 'headline', 'text', 'link', 'cta', 'placement'].forEach(function (k) { f[k].value = a ? (a[k] || '') : (k === 'placement' ? 'both' : ''); }); f.startsAt.value = a && a.startsAt ? a.startsAt.slice(0, 10) : ''; f.endsAt.value = a && a.endsAt ? a.endsAt.slice(0, 10) : ''; f.img.value = ''; if (a) window.scrollTo(0, 0); }
+      $('adReset').onclick = function () { fill(null); };
+      main.querySelectorAll('[data-adedit]').forEach(function (b) { b.onclick = function () { fill(d.ads.filter(function (x) { return x.id === b.dataset.adedit; })[0]); }; });
+      main.querySelectorAll('[data-adtoggle]').forEach(function (b) { b.onclick = function () { api({ action: 'toggleAd', adId: b.dataset.adtoggle }).then(showAds); }; });
+      main.querySelectorAll('[data-addel]').forEach(function (b) { b.onclick = function () { if (confirm('Delete this ad?')) api({ action: 'deleteAd', adId: b.dataset.addel }).then(showAds); }; });
+      f.onsubmit = function (e) {
+        e.preventDefault(); var st = $('adStatus'); st.textContent = 'Saving…';
+        var file = f.img.files[0];
+        var up = file ? Promise.all([shrinkImage(file), uploader()]).then(function (r) { return r[1].upload('ads-media/' + r[0].name.replace(/[^\w.\-]+/g, '_').slice(-50), r[0], { access: 'private', handleUploadUrl: '/api/community?upload=1', contentType: r[0].type }); }).then(function (b) { return b.pathname; }) : Promise.resolve('');
+        up.then(function (img) {
+          var ad = { sponsor: f.sponsor.value, headline: f.headline.value, text: f.text.value, link: f.link.value, cta: f.cta.value, placement: f.placement.value, startsAt: f.startsAt.value || null, endsAt: f.endsAt.value || null, image: img, active: true };
+          return api({ action: 'saveAd', adId: editing, ad: ad });
+        }).then(function () { toast('Ad saved'); showAds(); }).catch(function (e2) { st.textContent = e2.message; });
+      };
+    }).catch(function () {});
+  }
+
   function showNetwork(list) {
     var titles = { following: 'Following', followers: 'Followers', blocked: 'Blocked & muted' };
     setTop(titles[list] || 'Following', 'Only you can see this list', true, false); setNav('profile'); $('composer').hidden = true; loading();
@@ -281,8 +373,14 @@
       setTop(u.name, d.stats.posts + ' post' + (d.stats.posts === 1 ? '' : 's'), true, false);
       var facts = '';
       if (u.location) facts += '<span>📍 ' + esc(u.location) + '</span>';
-      [['instagram', 'https://instagram.com/', 'Instagram'], ['x', 'https://x.com/', 'X'], ['tiktok', 'https://tiktok.com/@', 'TikTok']].forEach(function (s) {
-        if (u[s[0]] && /^[A-Za-z0-9._]{1,30}$/.test(u[s[0]])) facts += '<a target="_blank" rel="noopener noreferrer" href="' + s[1] + u[s[0]] + '">' + s[2] + ' @' + esc(u[s[0]]) + '</a>';
+      var socials = '';
+      [['instagram', 'https://instagram.com/', 'Instagram', '#e1306c'], ['x', 'https://x.com/', 'X', '#0f1419'], ['tiktok', 'https://tiktok.com/@', 'TikTok', '#111'], ['snapchat', 'https://snapchat.com/add/', 'Snapchat', '#f7d000'],
+       ['youtube', 'https://youtube.com/@', 'YouTube', '#ff0000'], ['twitch', 'https://twitch.tv/', 'Twitch', '#9146ff'], ['threads', 'https://threads.net/@', 'Threads', '#0f1419'], ['discord', '', 'Discord', '#5865f2']].forEach(function (s) {
+        var h = u[s[0]];
+        if (!h || !/^[A-Za-z0-9._-]{1,32}$/.test(h)) return;
+        socials += s[1]
+          ? '<a class="soc" style="--c:' + s[3] + '" target="_blank" rel="noopener noreferrer" href="' + s[1] + encodeURIComponent(h) + '"><b>' + s[2] + '</b><span>@' + esc(h) + '</span></a>'
+          : '<button class="soc" style="--c:' + s[3] + '" data-copy="' + esc(h) + '" title="Copy Discord username"><b>' + s[2] + '</b><span>' + esc(h) + ' ⧉</span></button>';
       });
       facts += '<span>🗓️ Joined ' + new Date(u.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) + '</span>';
       var html = '<div class="cover ' + esc(u.finish) + '" style="--t:' + t + '">' + (PATTERNS[u.banner] ? '<svg aria-hidden="true"><defs>' + PATTERNS[u.banner] + '</defs><rect width="100%" height="100%" fill="url(#pt)"/></svg>' : '') + '</div>' +
@@ -290,11 +388,12 @@
         (d.me === u.username ? '<a class="edit" href="/account">Edit profile</a>'
           : '<div class="pbtns">' + (d.relation.blocked ? '<button class="btn red" data-block="' + esc(u.username) + '">Unblock</button>'
             : '<button class="btn more2" data-pmenu="' + esc(u.username) + '" aria-label="More">⋯</button><button class="btn ' + (d.relation.following ? '' : 'dark') + '" data-follow="' + esc(u.username) + '">' + (d.relation.following ? 'Following' : 'Follow') + '</button>') + '</div>') +
-        '<div class="pname f-' + esc(u.font) + ' e-' + esc(u.effect) + '">' + esc(u.name) + '</div>' +
+        '<div class="pname f-' + esc(u.font) + ' e-' + esc(u.effect) + '">' + esc(u.name) + (u.plus ? ' ' + PLUS : '') + '</div>' +
         '<div class="phandle">@' + esc(u.username) + (u.pronouns ? ' · ' + esc(u.pronouns) : '') + (d.relation && d.relation.followsYou ? ' <span class="fy">Follows you</span>' : '') + '</div>' +
         '<div style="margin-top:8px"><span class="badge">' + esc(u.title) + '</span>' + (u.mood ? ' <span class="muted" style="font-size:14px">' + esc(u.mood) + '</span>' : '') + '</div>' +
         (u.bio ? '<p class="pbio">' + linkify(u.bio) + '</p>' : '') + (u.quote ? '<p class="pquote">“' + esc(u.quote) + '”</p>' : '') +
         '<div class="pfacts">' + facts + '</div>' +
+        (socials ? '<div class="socials">' + socials + '</div>' : '') +
         ((u.interests || []).length ? '<div class="pchips">' + u.interests.map(function (i) { return '<span class="chip">' + esc(i) + '</span>'; }).join('') + '</div>' : '') +
         '<div class="pstats">' + (d.me === u.username
           ? '<a href="/wall?view=network&list=following" data-nav><b>' + d.stats.following + '</b> Following</a><a href="/wall?view=network&list=followers" data-nav><b id="fcount">' + d.stats.followers + '</b> Followers</a>'
@@ -319,13 +418,17 @@
     if ('mediaAccess' in d) { state.mediaAccess = d.mediaAccess; drawMediaBtn(); }
     if (d.authors) Object.keys(d.authors).forEach(function (k) { state.authors[k] = d.authors[k]; });
     if ('unread' in d) setUnread(d.unread);
+    if (d.ads) state.ads = d.ads;
+    if (d.plusInfo) state.plusInfo = d.plusInfo;
+    if ($('text')) $('text').maxLength = maxLen();
+    renderSideAd();
     if (state.me && !boot.done) {
       boot.done = true;
       $('meAv').innerHTML = avatar(state.me, '', false);
       $('sideMe').innerHTML = avatar(state.me, 'sm', false) + '<span class="txt"><b>' + esc(state.me.name) + '</b><span>@' + esc(state.me.username) + '</span></span>';
       $('sideMe').href = $('navProfile').href = $('mobProfile').href = '/u/' + encodeURIComponent(state.me.username);
       if (state.admin) {
-        $('navProfile').insertAdjacentHTML('afterend', '<a class="nav" href="/admin">' + I.shield + '<span>Admin</span></a>');
+        $('navProfile').insertAdjacentHTML('afterend', '<a class="nav" href="/admin">' + I.shield + '<span>Admin</span></a><a class="nav" href="/wall?view=ads" data-nav data-navkey="ads">' + I.megaphone + '<span>Sponsors</span></a>');
         loadOwnerBox();
       }
       if (!state.mediaEnabled) ['btnMedia', 'btnFile'].forEach(function (id) { $(id).disabled = true; $(id).title = 'Uploads switch on once automatic moderation is set up'; });
@@ -366,6 +469,8 @@
     if (route.user) return showProfile(route.user);
     if (route.post) return showPost(route.post);
     if (route.view === 'notifications') return showNotifications();
+    if (route.view === 'plus') return showPlus();
+    if (route.view === 'ads') return showAds();
     if (route.view === 'network') return showNetwork(new URLSearchParams(location.search).get('list') || 'following');
     showFeed();
   }
@@ -396,6 +501,10 @@
 
   document.addEventListener('click', function (ev) {
     var t = ev.target, el;
+    if ((el = t.closest('[data-adclick]'))) {
+      fetch('/api/community', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adClick', id: el.dataset.adclick }) }).catch(function () {});
+      return;
+    }
     if ((el = t.closest('[data-nav]')) && !ev.metaKey && !ev.ctrlKey) {
       ev.preventDefault(); ev.stopPropagation(); go(el.getAttribute('href')); return;
     }
@@ -432,6 +541,11 @@
       ev.stopPropagation(); closeMenus();
       var url = location.origin + '/wall?post=' + el.dataset.share;
       (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('Link copied — only members can open it'); }, function () { prompt('Copy this link:', url); });
+      return;
+    }
+    if ((el = t.closest('[data-copy]'))) {
+      ev.stopPropagation(); var v = el.dataset.copy;
+      (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function () { toast('Copied ' + v + ' — paste it in Discord to add them'); }, function () { prompt('Discord username:', v); });
       return;
     }
     if ((el = t.closest('[data-rpmenu]'))) {
@@ -567,8 +681,8 @@
   }
   var LIMITS = { image: 10 * 1024 * 1024, video: 100 * 1024 * 1024, file: 20 * 1024 * 1024 };
   function refreshSend() {
-    var text = $('text'), n = text.value.length, left = 500 - n, ring = $('ring');
-    var C = 2 * Math.PI * 10; ring.querySelector('.fg').style.strokeDashoffset = C * (1 - Math.min(n, 500) / 500);
+    var text = $('text'), M = maxLen(), n = text.value.length, left = M - n, ring = $('ring');
+    var C = 2 * Math.PI * 10; ring.querySelector('.fg').style.strokeDashoffset = C * (1 - Math.min(n, M) / M);
     ring.setAttribute('class', 'ring' + (left < 0 ? ' over' : left < 40 ? ' warn' : '')); ring.style.visibility = n ? 'visible' : 'hidden';
     $('leftN').textContent = left < 40 ? left : '';
     var busy = items.some(function (i) { return !i.done; });

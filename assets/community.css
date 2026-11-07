@@ -294,3 +294,36 @@ body.app .jr-menu a.jr-out { color: var(--red) !important; border-top-color: var
 .appbanner img { width: 40px; height: 40px; border-radius: 10px; } .appbanner span { flex: 1; min-width: 0; } .appbanner b { display: block; font-size: 14px; } .appbanner small { color: var(--ink2); font-size: 12px; }
 .appbanner .x { border: 0; background: none; color: var(--ink2); font-size: 16px; cursor: pointer; padding: 6px; }
 .tile-wall { }
+
+.socials { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.soc { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 6px; border-radius: 999px; border: 1px solid var(--line); background: #fff; text-decoration: none; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+.soc:hover { background: var(--bg2); }
+.soc b { padding: 3px 8px; border-radius: 999px; background: var(--c); color: #fff; font-size: 11px; letter-spacing: .02em; }
+.soc[style*="#f7d000"] b { color: #111; }
+.soc span { color: var(--ink2); }
+
+.plusb { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: linear-gradient(135deg, #111, #555); color: #ffd36b; font-size: 10px; margin-left: 1px; }
+.post.ad { background: #fcfcfd; cursor: default; }
+.adav { background: #111 !important; color: #fff; font-size: 18px; box-shadow: none !important; }
+.badge.adbadge { background: #eef0f3; color: var(--ink2); filter: none; }
+.adimg img { display: block; width: 100%; max-height: 360px; object-fit: cover; border-radius: 16px; border: 1px solid var(--line); margin-top: 10px; }
+.adcta { display: inline-block; margin-top: 10px; padding: 8px 16px; border-radius: 999px; background: var(--ink); color: #fff !important; font-weight: 800; font-size: 14px; text-decoration: none; }
+.adnote { margin-top: 8px; font-size: 12px; } .adnote a { color: var(--blue); }
+.sidead img { display: block; width: 100%; max-height: 180px; object-fit: cover; }
+.plushero { text-align: center; padding: 34px 16px 18px; background: radial-gradient(circle at 50% 0, #2b2b31, #0b0b0d 70%); color: #fff; }
+.plusmark { width: 72px; height: 72px; margin: 0 auto 10px; border-radius: 20px; display: grid; place-items: center; font-size: 34px; color: #ffd36b; background: linear-gradient(135deg, #222, #000); box-shadow: 0 0 40px rgba(255,211,107,.35); border: 1px solid rgba(255,211,107,.4); }
+.plushero h2 { margin: 0; font-size: 30px; letter-spacing: .12em; } .plushero p { margin: 6px 0 0; color: rgba(255,255,255,.65); }
+.pluscard { margin: 16px; padding: 18px; border-radius: 18px; border: 1px solid var(--line); text-align: center; }
+.pluscard.on { border-color: #e8c867; background: #fffaf0; }
+.pluscard .big { font-size: 30px; font-weight: 900; } .pluscard .big small { font-size: 15px; font-weight: 600; color: var(--ink2); }
+.perks { display: grid; gap: 2px; margin: 0 16px 16px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.perk { display: flex; gap: 14px; align-items: center; padding: 14px 16px; background: #fff; } .perk + .perk { border-top: 1px solid var(--line); }
+.perk > span { font-size: 22px; width: 30px; text-align: center; }
+.adhelp { margin: 12px 16px 0; padding: 12px 14px; border-radius: 12px; background: #eff8ff; font-size: 14px; color: var(--ink); }
+.adform { margin: 12px 16px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; display: grid; gap: 10px; }
+.adform h3 { margin: 0; } .adform label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink2); }
+.adform input, .adform textarea, .adform select { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 15px; color: var(--ink); background: #fff; }
+.adform .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .adform .row { display: flex; gap: 8px; align-items: center; } .adform .row .muted { flex: 1; }
+.adrow { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.adrow img { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; } .adrow .body { flex: 1; min-width: 200px; font-size: 14px; }
+@media (max-width: 640px) { .adform .two { grid-template-columns: 1fr; } }

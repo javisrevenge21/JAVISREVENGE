@@ -42,7 +42,7 @@
       var bar = document.createElement('nav');
       bar.className = 'jr-account';
       bar.setAttribute('aria-label', 'Account');
-      var THEMES = { silver: '200,205,214', red: '220,38,38', gold: '212,160,23', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12' };
+      var THEMES = { silver: '200,205,214', red: '220,38,38', gold: '212,160,23', blue: '37,99,235', purple: '147,51,234', green: '22,163,74', pink: '219,39,119', orange: '234,88,12', obsidian: '63,63,70', cyber: '6,182,160' };
       var rgb = THEMES[data.user.theme] || THEMES.silver;
       bar.style.borderColor = 'rgba(' + rgb + ',.6)';
       bar.style.boxShadow = '0 0 22px rgba(' + rgb + ',.25)';
