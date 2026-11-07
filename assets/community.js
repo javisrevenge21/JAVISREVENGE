@@ -14,6 +14,7 @@
   };
   var I = {
     reply: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.8 7L4 20.5l1.6-4.6A8 8 0 1 1 21 12z"/></svg>',
+    repost: '<svg viewBox="0 0 24 24"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg>',
     save: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>',
     share: '<svg viewBox="0 0 24 24"><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>',
     smile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>',
@@ -107,22 +108,41 @@
       return '<button class="react' + (x.mine ? ' on' : '') + '" data-react="' + e + '" data-id="' + p.id + '" aria-label="' + e + ' ' + x.count + '">' + e + '<b>' + x.count + '</b></button>';
     }).join('') + '<button class="react add" data-picker="' + p.id + '" aria-label="Add reaction">' + I.smile.replace('<svg', '<svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9"') + '</button></span>';
   }
+  function quoteCard(q) {
+    if (!q) return '';
+    if (q.missing) return '<div class="qcard missing">This post is no longer available.</div>';
+    state.posts[q.id] = state.posts[q.id] || q;
+    var a = author(q.author), m = (q.media || []).filter(function (x) { return x.kind === 'image'; })[0];
+    return '<div class="qcard" data-open="' + q.id + '">' +
+      '<div class="who">' + avatar(a, 'xs', false) + '<b class="nm">' + esc(a.name) + '</b><span class="hd">@' + esc(a.username) + ' · ' + ago(q.createdAt) + '</span></div>' +
+      (q.text ? '<div class="text">' + linkify(q.text.length > 280 ? q.text.slice(0, 280) + '…' : q.text) + '</div>' : '') +
+      (m ? '<img src="' + esc(m.url) + '" alt="" loading="lazy">' : (q.media && q.media.length ? '<div class="muted" style="margin-top:6px">📎 ' + q.media.length + ' attachment' + (q.media.length > 1 ? 's' : '') + '</div>' : '')) + '</div>';
+  }
   function postHtml(p, solo) {
+    if (p.repostOf) {
+      if (!p.embed || p.embed.missing) return '';
+      var rb = author(p.author);
+      state.posts[p.id] = p;
+      return postHtml(p.embed, solo).replace('<article class="post', '<article data-repost="' + p.id + '" class="post').replace(' id="p-' + p.embed.id + '"', ' id="p-' + p.id + '"')
+        .replace('<div class="body">', '<div class="body"><div class="pinline">' + I.repost.replace('<svg', '<svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2"') + ' ' + (rb.username === (state.me && state.me.username) ? 'You' : esc(rb.name)) + ' reposted</div>');
+    }
     state.posts[p.id] = p;
     var a = author(p.author);
-    return '<article class="post' + (solo ? ' solo' : '') + (p.hidden ? ' hiddenpost' : '') + '" id="p-' + p.id + '" data-open="' + p.id + '" style="--t:' + rgb(a.theme) + '">' +
+    return '<article class="post' + (solo ? ' solo' : '') + (p.hidden ? ' hiddenpost' : '') + '" id="p-' + p.id + '" data-pid="' + p.id + '" data-open="' + p.id + '" style="--t:' + rgb(a.theme) + '">' +
       avatar(a) +
       '<div class="body">' +
         (p.pinned ? '<div class="pinline">📌 Pinned by the owner</div>' : '') +
         '<div class="who"><a class="nm" href="/u/' + encodeURIComponent(a.username) + '" data-nav>' + esc(a.name) + '</a>' +
           (a.title && a.title !== 'Member' ? '<span class="badge">' + esc(a.title) + '</span>' : '') +
           '<span class="hd">@' + esc(a.username) + '</span><span class="hd">·</span><time datetime="' + esc(p.createdAt) + '" title="' + esc(fullDate(p.createdAt)) + '">' + ago(p.createdAt) + '</time>' +
+          (p.editedAt ? '<span class="hd" title="Edited ' + esc(fullDate(p.editedAt)) + '">· edited</span>' : '') +
           (p.hidden ? '<span class="badge warn">Hidden' + (p.reports ? ' · ' + p.reports + ' reports' : '') + '</span>' : '') +
         '</div>' +
-        (p.text ? '<div class="text">' + linkify(p.text) + '</div>' : '') + mediaHtml(p.media) + pollHtml(p) +
+        (p.text ? '<div class="text">' + linkify(p.text) + '</div>' : '') + mediaHtml(p.media) + pollHtml(p) + (p.quoteOf ? quoteCard(p.embed) : '') +
         (solo ? '<div class="muted" style="margin-top:12px;padding-bottom:10px;border-bottom:1px solid var(--line)">' + esc(fullDate(p.createdAt)) + '</div>' : '') +
         '<div class="actions">' +
           '<button class="act reply" data-reply="' + p.id + '" aria-label="Reply">' + I.reply + '<span>' + (p.replyCount || '') + '</span></button>' +
+          '<span class="rpbox"><button class="act rp' + (p.reposted ? ' on' : '') + '" data-rpmenu="' + p.id + '" aria-label="Repost or quote">' + I.repost + '<span>' + (p.repostCount || '') + '</span></button></span>' +
           reactsHtml(p) +
           '<button class="act save' + (p.saved ? ' on' : '') + '" data-save="' + p.id + '" aria-label="Save">' + I.save + '</button>' +
           '<button class="act share" data-share="' + p.id + '" aria-label="Copy link">' + I.share + '</button>' +
@@ -137,6 +157,7 @@
     out += '<button data-save="' + p.id + '">' + (p.saved ? '🔖 Remove from Saved' : '🔖 Save post') + '</button>';
     if (!mine) out += '<button data-mute="' + esc(p.author) + '">🔇 Mute @' + esc(p.author) + '</button><button data-block="' + esc(p.author) + '">🚫 Block @' + esc(p.author) + '</button>';
     if (!mine) out += '<button data-report="' + p.id + '"' + (p.reported ? ' disabled' : '') + '>🚩 ' + (p.reported ? 'Reported' : 'Report post') + '</button>';
+    if (mine && (state.admin || Date.now() - Date.parse(p.createdAt) < 3600e3)) out += '<button data-edit="' + p.id + '">✏️ Edit post</button>';
     if (mine && !state.admin) out += '<button class="red" data-del="' + p.id + '">🗑️ Delete</button>';
     if (state.admin) {
       out += '<div class="owner">';
@@ -217,13 +238,15 @@
   }
 
   function showNotifications() {
-    setTop('Notifications', 'Follows, replies, mentions and reactions', false, false); setNav('notes'); $('composer').hidden = true; loading();
+    setTop('Notifications', 'Follows, replies, reposts, mentions and reactions', false, false); setNav('notes'); $('composer').hidden = true; loading();
     getJSON('/api/community?view=notifications').then(function (d) {
       Object.keys(d.authors).forEach(function (k) { state.authors[k] = d.authors[k]; });
-      var ICON = { reply: '💬', mention: '📣', react: '', follow: '👤', media: '📷' };
+      var ICON = { reply: '💬', mention: '📣', react: '', follow: '👤', media: '📷', repost: '🔁', quote: '💬' };
       main.innerHTML = d.notifications.length ? d.notifications.map(function (n) {
         var a = n.from ? author(n.from) : null, line;
-        if (n.type === 'follow') line = '<b>' + esc(a.name) + '</b> followed you';
+        if (n.type === 'repost') line = '<b>' + esc(a.name) + '</b> reposted your post';
+        else if (n.type === 'quote') line = '<b>' + esc(a.name) + '</b> quoted your post';
+        else if (n.type === 'follow') line = '<b>' + esc(a.name) + '</b> followed you';
         else if (n.type === 'media') line = n.granted ? '<b>You can now post photos and videos</b> — the owner approved your request.' : 'Your photo &amp; video request was <b>declined</b>.';
         else if (n.type === 'react') line = '<b>' + (n.count > 1 ? n.count + ' people' : 'Someone') + '</b> reacted ' + esc(n.emoji) + ' to your post';
         else if (n.type === 'reply') line = '<b>' + esc(a.name) + '</b> replied to your post';
@@ -253,6 +276,7 @@
     setTop('@' + name, '', true, false); setNav(state.me && name === state.me.username ? 'profile' : ''); $('composer').hidden = true; loading();
     getJSON('/api/community?view=profile&u=' + encodeURIComponent(name)).then(function (d) {
       var u = d.profile, t = rgb(u.theme);
+      if (d.authors) Object.keys(d.authors).forEach(function (k) { state.authors[k] = d.authors[k]; });
       state.authors[u.username] = u; state.admin = d.admin;
       setTop(u.name, d.stats.posts + ' post' + (d.stats.posts === 1 ? '' : 's'), true, false);
       var facts = '';
@@ -351,8 +375,13 @@
   // ---------- interactions ----------
   function closeMenus() { document.querySelectorAll('.menu, .picker').forEach(function (m) { m.remove(); }); }
   function replacePost(p) {
-    var el = $('p-' + p.id); if (!el) return;
-    var tmp = document.createElement('div'); tmp.innerHTML = postHtml(p, el.classList.contains('solo')); el.replaceWith(tmp.firstChild);
+    state.posts[p.id] = p;
+    document.querySelectorAll('[data-pid="' + p.id + '"]').forEach(function (el) {
+      var rid = el.getAttribute('data-repost');
+      var tmp = document.createElement('div');
+      tmp.innerHTML = rid && state.posts[rid] ? postHtml(Object.assign({}, state.posts[rid], { embed: p }), el.classList.contains('solo')) : postHtml(p, el.classList.contains('solo'));
+      if (tmp.firstChild) el.replaceWith(tmp.firstChild);
+    });
   }
   function removePost(id) { var el = $('p-' + id); if (el) el.remove(); if (route.post === id) go('/wall'); }
   function ownerAct(kind, email, user, reason) {
@@ -403,6 +432,46 @@
       ev.stopPropagation(); closeMenus();
       var url = location.origin + '/wall?post=' + el.dataset.share;
       (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('Link copied — only members can open it'); }, function () { prompt('Copy this link:', url); });
+      return;
+    }
+    if ((el = t.closest('[data-rpmenu]'))) {
+      ev.stopPropagation(); var had2 = el.parentNode.querySelector('.menu'); closeMenus();
+      var pp = state.posts[el.dataset.rpmenu];
+      if (!had2 && pp) el.insertAdjacentHTML('afterend', '<div class="menu" style="top:34px;left:0;right:auto;min-width:190px">' +
+        (pp.author !== state.me.username ? '<button data-repost="' + pp.id + '">🔁 ' + (pp.reposted ? 'Undo repost' : 'Repost') + '</button>' : '') +
+        '<button data-quote="' + pp.id + '">✍️ Quote</button></div>');
+      return;
+    }
+    if ((el = t.closest('button[data-repost]'))) {
+      ev.stopPropagation(); closeMenus();
+      api({ action: 'repost', id: el.dataset.repost }).then(function (d) {
+        var p0 = state.posts[d.id]; if (p0) { p0.reposted = d.reposted; p0.repostCount = d.repostCount; replacePost(p0); }
+        toast(d.reposted ? 'Reposted' : 'Repost removed');
+        if (d.reposted && (route.tab || 'latest') === 'latest' && !route.post && !route.user && !route.view) render();
+      }).catch(function (e) { toast(e.message, true); });
+      return;
+    }
+    if ((el = t.closest('[data-quote]'))) {
+      ev.stopPropagation(); closeMenus();
+      var q0 = state.posts[el.dataset.quote];
+      if (route.user || route.post || route.view || route.tab === 'saved' || route.q) go('/wall');
+      setTimeout(function () { setQuote(q0); }, 80);
+      return;
+    }
+    if ((el = t.closest('[data-edit]'))) {
+      ev.stopPropagation(); closeMenus();
+      var pe = state.posts[el.dataset.edit], art = $('p-' + pe.id), tx = art && art.querySelector('.text');
+      if (!art) return;
+      var box = document.createElement('div'); box.className = 'editbox';
+      box.innerHTML = '<textarea maxlength="500"></textarea><div class="row"><span class="muted">Editing · others can see that it was edited</span><button class="btn" data-x>Cancel</button><button class="btn dark" data-s>Save</button></div>';
+      box.querySelector('textarea').value = pe.text || '';
+      (tx || art.querySelector('.who')).insertAdjacentElement(tx ? 'afterend' : 'afterend', box); if (tx) tx.hidden = true;
+      box.querySelector('textarea').focus();
+      box.addEventListener('click', function (e2) {
+        e2.stopPropagation();
+        if (e2.target.closest('[data-x]')) { box.remove(); if (tx) tx.hidden = false; }
+        if (e2.target.closest('[data-s]')) api({ action: 'edit', id: pe.id, text: box.querySelector('textarea').value }).then(function (d) { replacePost(d.post); toast('Post updated'); }).catch(function (e3) { toast(e3.message, true); });
+      });
       return;
     }
     if ((el = t.closest('[data-follow]'))) {
@@ -479,14 +548,23 @@
     }
     if ((el = t.closest('.tab[data-tab]'))) { go(el.dataset.tab === 'latest' ? '/wall' : '/wall?tab=' + el.dataset.tab); return; }
     // Clicking the body of a post opens it (but not on links, media or buttons).
-    if ((el = t.closest('[data-open]')) && !t.closest('a, button, video, .menu, .picker, input, textarea') && !el.classList.contains('solo') && !window.getSelection().toString()) {
+    if ((el = t.closest('[data-open]')) && !t.closest('a, button, video, .menu, .picker, input, textarea, .editbox') && !el.classList.contains('solo') && !window.getSelection().toString()) {
       go('/wall?post=' + el.dataset.open); return;
     }
     if (!t.closest('.menu, .picker')) closeMenus();
   });
 
   // ---------- composer ----------
-  var items = [], pollOn = false;
+  var items = [], pollOn = false, quoting = null;
+  function setQuote(q) {
+    quoting = q ? q.id : null;
+    var box = $('quoteBox');
+    box.innerHTML = q ? quoteCard(q).replace('class="qcard"', 'class="qcard inbox"') + '<button type="button" class="qx" aria-label="Remove quote">✕</button>' : '';
+    box.hidden = !q;
+    if (q) { box.querySelector('.qx').onclick = function () { setQuote(null); }; $('text').placeholder = 'Add a comment'; $('text').focus(); window.scrollTo(0, 0); }
+    else $('text').placeholder = "What's happening?";
+    refreshSend();
+  }
   var LIMITS = { image: 10 * 1024 * 1024, video: 100 * 1024 * 1024, file: 20 * 1024 * 1024 };
   function refreshSend() {
     var text = $('text'), n = text.value.length, left = 500 - n, ring = $('ring');
@@ -496,6 +574,7 @@
     var busy = items.some(function (i) { return !i.done; });
     var pollOk = !pollOn || Array.prototype.filter.call(document.querySelectorAll('#pollEdit input'), function (i) { return i.value.trim(); }).length >= 2;
     $('send').disabled = busy || !pollOk || (!text.value.trim() && !items.length);
+    if (quoting && !text.value.trim() && !items.length) $('send').disabled = true;
   }
   function say(msg, err) { var s = $('status'); s.className = 'cstatus' + (err ? ' err' : ''); s.textContent = msg || ''; }
   function kindOf(f) { return /^image\//.test(f.type) ? 'image' : /^video\//.test(f.type) ? 'video' : f.type === 'application/pdf' ? 'file' : null; }
@@ -598,8 +677,10 @@
       var frames = [];
       items.forEach(function (i) { if (i.frames) frames = frames.concat(i.frames); });
       var poll = pollOn ? Array.prototype.map.call(document.querySelectorAll('#pollEdit input'), function (i) { return i.value; }) : null;
-      api({ action: 'post', text: text.value, poll: poll, media: items.map(function (i) { return { pathname: i.pathname, name: i.name }; }), frames: frames }).then(function (d) {
+      api({ action: 'post', text: text.value, poll: poll, quoteOf: quoting, media: items.map(function (i) { return { pathname: i.pathname, name: i.name }; }), frames: frames }).then(function (d) {
         state.authors[d.author.username] = d.author;
+        if (d.authors) Object.keys(d.authors).forEach(function (k) { state.authors[k] = d.authors[k]; });
+        setQuote(null);
         if (route.tab !== 'latest' || route.tag || route.q || route.post || route.user || route.view) { go('/wall'); }
         else { var e = main.querySelector('.empty'); if (e) e.remove(); var pin = main.querySelector('.post .pinline'); var html = postHtml(d.post); if (pin) pin.closest('.post').insertAdjacentHTML('afterend', html); else main.insertAdjacentHTML('afterbegin', html); }
         text.value = ''; text.style.height = ''; items = []; $('previews').innerHTML = ''; togglePoll(false); say('');
@@ -623,6 +704,19 @@
     $('fab').onclick = $('postBtn').onclick = function () { if (route.user || route.post || route.view || route.tab === 'saved' || route.q) go('/wall'); setTimeout(function () { $('text').focus(); }, 60); };
     initComposer();
     render();
+    if (new URLSearchParams(location.search).get('compose') === '1') setTimeout(function () { $('text').focus(); }, 300);
+    // Phones: suggest installing the app (once per week if dismissed).
+    try {
+      var standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+      var snooze = +localStorage.getItem('jr_app_banner') || 0;
+      if (!standalone && /Android|iPhone|iPad|iPod/.test(navigator.userAgent) && Date.now() - snooze > 7 * 864e5) {
+        var bn = document.createElement('div'); bn.className = 'appbanner';
+        bn.innerHTML = '<img src="/assets/icon-192.png" alt=""><span><b>Get the JAVISREVENGE app</b><small>The Revenge Wall on your home screen</small></span><button class="send" type="button">Get</button><button class="x" type="button" aria-label="Dismiss">✕</button>';
+        bn.querySelector('.send').onclick = function () { window.JRInstall && window.JRInstall(); };
+        bn.querySelector('.x').onclick = function () { bn.remove(); try { localStorage.setItem('jr_app_banner', String(Date.now())); } catch (e) {} };
+        document.querySelector('.topbar').insertAdjacentElement('afterend', bn);
+      }
+    } catch (e) {}
     // Views other than the feed still need the sidebar (trending, unread count).
     if (route.user || route.post || route.view) getJSON('/api/community?view=wall').then(function (d) { boot(d); renderTrending(d.trending); d.posts.forEach(function (p) { state.posts[p.id] = state.posts[p.id] || p; }); }).catch(function () {});
     // Light polling: show a "new posts" bar instead of jumping the feed.

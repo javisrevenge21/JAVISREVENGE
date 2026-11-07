@@ -136,6 +136,9 @@ animation: sweep 13s cubic-bezier(0.45, 0, 0.25, 1) 0.6s infinite;
 .reveal.d3 { transition-delay: 0.24s; }
 .reveal.d4 { transition-delay: 0.32s; }
 
+.tile.tile-wall { padding: 24px 18px; font-size: 1.15rem; color: #fff; border-color: rgba(255,255,255,.5); background: linear-gradient(180deg, #17171b, #000); box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 0 34px rgba(255,255,255,.12); }
+.tile.tile-wall { flex-direction: column; gap: 6px; }
+.tile.tile-wall small { display: block; font-size: .55rem; letter-spacing: .3em; color: rgba(255,255,255,.5); font-weight: 600; }
 .tile {
 position: relative;
 display: flex; align-items: center; justify-content: center;
@@ -254,7 +257,7 @@ transition: background 0.25s, color 0.25s, box-shadow 0.3s, opacity 0.25s;
 .reveal { opacity: 1; transform: none; filter: none; }
 }
 </style>
-</head>
+<link rel="manifest" href="/assets/app.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="REVENGE"><meta name="apple-mobile-web-app-status-bar-style" content="black"></head>
 <body>
 <canvas id="bg"></canvas>
 <div class="glow" id="glow"></div>
@@ -275,9 +278,10 @@ transition: background 0.25s, color 0.25s, box-shadow 0.3s, opacity 0.25s;
 
 
 <nav class="tiles">
-<a class="tile reveal d1" href="/shop"><span>SHOP</span></a>
-<a class="tile reveal d2" href="/contact"><span>CONTACT</span></a>
-<div class="reveal d3">
+<a class="tile tile-wall reveal d1" href="/wall"><span>THE REVENGE WALL</span><small>BREAK THE WALLS DOWN · NO LIMITS</small></a>
+<a class="tile reveal d2" href="/shop"><span>SHOP</span></a>
+<a class="tile reveal d3" href="/contact"><span>CONTACT</span></a>
+<div class="reveal d4">
 <button class="tile" id="moreToggle" type="button" aria-expanded="false" aria-controls="morePanel">
 <span>MORE</span>
 <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
@@ -285,9 +289,8 @@ transition: background 0.25s, color 0.25s, box-shadow 0.3s, opacity 0.25s;
 <div class="panel" id="morePanel">
 <div class="panel-inner">
 <a class="subtile" href="/about" style="--j:0"><span>ABOUT</span></a>
-<a class="subtile" href="/wall" style="--j:1"><span>THE REVENGE WALL</span></a>
-<a class="subtile" href="/politics" style="--j:2"><span>POLITICS</span></a>
-<a class="subtile" href="/archives" style="--j:3"><span>ARCHIVES</span></a>
+<a class="subtile" href="/politics" style="--j:1"><span>POLITICS</span></a>
+<a class="subtile" href="/archives" style="--j:2"><span>ARCHIVES</span></a>
 <p class="hint">More coming soon</p>
 </div>
 </div>

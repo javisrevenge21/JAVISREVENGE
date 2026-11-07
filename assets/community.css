@@ -276,3 +276,21 @@ body.app .jr-menu a.jr-out { color: var(--red) !important; border-top-color: var
 .fy { font-size: 12px; background: var(--bg3); color: var(--ink2); padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
 .pstats a { color: var(--ink2); text-decoration: none; } .pstats a:hover { text-decoration: underline; }
 #topSub { font-weight: 700; letter-spacing: .02em; color: var(--ink); opacity: .55; }
+
+.av.xs { width: 20px; height: 20px; font-size: 11px; box-shadow: none; }
+.qcard { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; }
+.qcard:hover { background: var(--bg2); }
+.qcard .who { gap: 5px; font-size: 14px; }
+.qcard .text { font-size: 14px; margin-top: 3px; }
+.qcard img { display: block; width: 100%; max-height: 240px; object-fit: cover; border-radius: 10px; margin-top: 8px; }
+.qcard.missing { color: var(--ink2); cursor: default; background: var(--bg2); }
+.quotebox { position: relative; } .quotebox .qcard { cursor: default; margin: 4px 0 10px; }
+.quotebox .qx { position: absolute; top: 10px; right: 8px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: var(--bg3); cursor: pointer; }
+.rpbox { position: relative; display: inline-flex; }
+.act.rp:hover, .act.rp.on { color: var(--green); } .act.rp:hover { background: rgba(0,186,124,.1); }
+.editbox { margin-top: 6px; } .editbox textarea { width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid var(--blue); border-radius: 12px; font: inherit; font-size: 15px; outline: none; resize: vertical; }
+.editbox .row { display: flex; align-items: center; gap: 8px; margin-top: 8px; } .editbox .row .muted { flex: 1; }
+.appbanner { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--bg2); }
+.appbanner img { width: 40px; height: 40px; border-radius: 10px; } .appbanner span { flex: 1; min-width: 0; } .appbanner b { display: block; font-size: 14px; } .appbanner small { color: var(--ink2); font-size: 12px; }
+.appbanner .x { border: 0; background: none; color: var(--ink2); font-size: 16px; cursor: pointer; padding: 6px; }
+.tile-wall { }

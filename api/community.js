@@ -71,7 +71,7 @@ async function pinnedId() {
   try { const d = await readBlobJson(PIN_KEY); return d && d.id; } catch { return null; }
 }
 
-function shape(post, me, admin, saved = [], pinned = null) {
+function shape(post, me, admin, saved = [], pinned = null, lookup = null) {
   const reactions = {};
   for (const e of REACTIONS) {
     const who = (post.reactions && post.reactions[e]) || [];
@@ -86,6 +86,12 @@ function shape(post, me, admin, saved = [], pinned = null) {
     id: post.id, author: post.author, text: post.text, createdAt: post.createdAt, reactions, poll,
     media: (post.media || []).map(m => ({ kind: m.kind, name: m.name, size: m.size, url: '/api/community?media=' + encodeURIComponent(m.pathname) })),
     replyCount: (post.replies || []).length,
+    repostCount: (post.reposts || []).length,
+    reposted: (post.reposts || []).includes(me),
+    editedAt: post.editedAt || null,
+    repostOf: post.repostOf || null,
+    quoteOf: post.quoteOf || null,
+    embed: lookup && (post.repostOf || post.quoteOf) ? (() => { const o = lookup[post.repostOf || post.quoteOf]; return o ? shape(o, me, admin, saved, pinned, null) : { missing: true }; })() : undefined,
     canDelete: admin || post.author === me,
     reported: (post.reports || []).includes(me),
     saved: saved.includes(post.id),
@@ -139,6 +145,13 @@ async function serveMedia(req, res, pathname) {
   return res.end();
 }
 
+async function lookupFor(posts, pool) {
+  const ids = [...new Set(posts.map(p => p.repostOf || p.quoteOf).filter(Boolean))];
+  const map = {};
+  for (const id of ids) map[id] = (pool || []).find(p => p.id === id) || await getPost(id);
+  return map;
+}
+
 function trending(posts) {
   const week = Date.now() - 7 * 864e5, counts = {};
   for (const p of posts) if (!p.hidden && Date.parse(p.createdAt) > week) for (const t of tagsOf(p.text)) counts[t] = (counts[t] || 0) + 1;
@@ -177,9 +190,9 @@ export default async function handler(req, res) {
         posts = (await Promise.all((me.saved || []).slice(-60).reverse().map(id => getPost(id)))).filter(p => p && visible(p));
       } else if (tab === 'top') {
         const week = Date.now() - 7 * 864e5;
-        posts = pool.filter(p => Date.parse(p.createdAt) > week).sort((a, b) => score(b) - score(a));
+        posts = pool.filter(p => !p.repostOf && Date.parse(p.createdAt) > week).sort((a, b) => score(b) - score(a));
       } else if (tab === 'media') {
-        posts = pool.filter(p => (p.media || []).length);
+        posts = pool.filter(p => !p.repostOf && (p.media || []).length);
       } else if (tab === 'following') {
         const f = new Set([...(me.following || []), me.username]);
         posts = pool.filter(p => f.has(p.author));
@@ -197,13 +210,15 @@ export default async function handler(req, res) {
         const pinnedPost = pool.find(p => p.id === pin) || await getPost(pin);
         if (pinnedPost && visible(pinnedPost)) posts = [pinnedPost, ...posts.filter(p => p.id !== pin)];
       }
+      const lookup = await lookupFor(posts, pool);
+      const embedAuthors = Object.values(lookup).filter(Boolean).map(p => p.author);
       return res.status(200).json({
         me: mini(me), admin, mediaEnabled: hasAI(), mediaAccess: admin ? 'granted' : (me.mediaAccess || 'none'), reactions: REACTIONS,
         following: (me.following || []).length,
         unread: (me.inbox || []).filter(n => !n.read).length,
         trending: trending(pool),
-        authors: await authorsFor(posts.map(p => p.author)),
-        posts: posts.map(p => shape(p, me.username, admin, me.saved || [], pin))
+        authors: await authorsFor([...posts.map(p => p.author), ...embedAuthors]),
+        posts: posts.map(p => shape(p, me.username, admin, me.saved || [], pin, lookup))
       });
     }
 
@@ -211,10 +226,11 @@ export default async function handler(req, res) {
       const post = await getPost(String(req.query.id || ''));
       if (!post || !visible(post)) return res.status(404).json({ error: 'Post not found' });
       const replies = (post.replies || []).map(r => shapeReply(r, me.username, admin));
+      const lk = await lookupFor([post]);
       return res.status(200).json({
         me: mini(me), admin, reactions: REACTIONS,
-        authors: await authorsFor([post.author, ...replies.map(r => r.author)]),
-        post: shape(post, me.username, admin, me.saved || [], await pinnedId()), replies
+        authors: await authorsFor([post.author, ...replies.map(r => r.author), ...Object.values(lk).filter(Boolean).map(p => p.author)]),
+        post: shape(post, me.username, admin, me.saved || [], await pinnedId(), lk), replies
       });
     }
 
@@ -233,11 +249,14 @@ export default async function handler(req, res) {
       if (!admin && (account.blocked || []).includes(me.username)) return notFound();
       const posts = all.filter(visible).slice(0, 30);
       const pin = await pinnedId();
+      const profLookup = await lookupFor(posts);
+      const embedAuthors2 = await authorsFor(Object.values(profLookup).filter(Boolean).map(p => p.author));
       const out = {
+        authors: embedAuthors2,
         me: me.username, admin, reactions: REACTIONS, profile: publicProfile(account),
         stats: { posts: posts.length, reactions: posts.reduce((n, p) => n + score(p), 0), followers: (account.followers || []).length, following: (account.following || []).length },
         relation: { following: (me.following || []).includes(account.username), followsYou: (account.following || []).includes(me.username), blocked: (me.blocked || []).includes(account.username), muted: (me.muted || []).includes(account.username) },
-        posts: posts.map(p => shape(p, me.username, admin, me.saved || [], pin))
+        posts: posts.map(p => shape(p, me.username, admin, me.saved || [], pin, profLookup))
       };
       if (admin) { out.email = account.email; out.strikes = account.strikes || 0; }
       return res.status(200).json(out);
@@ -309,6 +328,12 @@ export default async function handler(req, res) {
       const opts = req.body.poll.map(o => cleanText(o, 60)).filter(Boolean).slice(0, 4);
       if (opts.length >= 2) poll = { options: opts.map(t => ({ text: t, votes: [] })) };
     }
+    let quoteOf = null;
+    if (req.body.quoteOf) {
+      const q = await getPost(String(req.body.quoteOf));
+      if (!q || !visible(q)) return res.status(400).json({ error: 'The post you are quoting no longer exists.' });
+      quoteOf = q.repostOf || q.id;
+    }
     if (!text && !wanted.length) return res.status(400).json({ error: 'Write something or add a photo first.' });
     if (!admin && me.lastPostAt && Date.now() - Date.parse(me.lastPostAt) < POST_GAP_MS) {
       return res.status(429).json({ error: 'Slow down — wait a few seconds between posts.' });
@@ -345,11 +370,13 @@ export default async function handler(req, res) {
     }
 
     const post = await createPost(me, text, media);
-    if (poll) { post.poll = poll; await savePost(post); }
+    if (poll || quoteOf) { if (poll) post.poll = poll; if (quoteOf) post.quoteOf = quoteOf; await savePost(post); }
+    if (quoteOf) { const q = await getPost(quoteOf); if (q) await notify(q.author, { type: 'quote', from: me.username, postId: post.id, text: text.slice(0, 120) }, me.username).catch(() => {}); }
     me.lastPostAt = post.createdAt;
     await saveAccount(me);
     for (const u of mentionsOf(text).slice(0, 10)) await notify(u, { type: 'mention', from: me.username, postId: post.id, text: text.slice(0, 120) }, me.username).catch(() => {});
-    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || []), author: mini(me) });
+    const lk = await lookupFor([post]);
+    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || [], null, lk), author: mini(me), authors: await authorsFor(Object.values(lk).filter(Boolean).map(p => p.author)) });
   }
 
   if (action === 'readNotifications') {
@@ -403,9 +430,45 @@ export default async function handler(req, res) {
   const post = await getPost(String(req.body?.id || ''));
   if (!post || !visible(post)) return res.status(404).json({ error: 'Post not found' });
   // People who blocked me: I can't reply to or react on their posts.
-  if (!admin && ['react', 'reply', 'vote'].includes(action)) {
+  if (!admin && ['react', 'reply', 'vote', 'repost'].includes(action)) {
     const author = await accountByUsername(post.author).catch(() => null);
     if (author && (author.blocked || []).includes(me.username)) return res.status(403).json({ error: 'You can’t interact with this post.' });
+  }
+
+  if (action === 'repost') {
+    const target = post.repostOf ? await getPost(post.repostOf) : post;
+    if (!target) return res.status(404).json({ error: 'Post not found' });
+    if (target.author === me.username) return res.status(400).json({ error: "You can't repost your own post." });
+    const who = new Set(target.reposts || []);
+    const on = !who.has(me.username);
+    if (on) {
+      who.add(me.username);
+      const r = await createPost(me, '', []);
+      r.repostOf = target.id; await savePost(r);
+      await notify(target.author, { type: 'repost', from: me.username, postId: target.id, text: String(target.text || '').slice(0, 80) }, me.username).catch(() => {});
+    } else {
+      who.delete(me.username);
+      const mine = (await listPosts(300)).filter(p => p.author === me.username && p.repostOf === target.id);
+      for (const m of mine) await deletePost(m.id);
+    }
+    target.reposts = [...who];
+    await savePost(target);
+    return res.status(200).json({ reposted: on, repostCount: target.reposts.length, id: target.id });
+  }
+
+  if (action === 'edit') {
+    if (post.author !== me.username) return res.status(403).json({ error: 'You can only edit your own posts.' });
+    if (post.repostOf) return res.status(400).json({ error: 'Reposts can’t be edited.' });
+    if (!admin && Date.now() - Date.parse(post.createdAt) > 60 * 60 * 1000) return res.status(400).json({ error: 'Posts can only be edited for 1 hour after posting.' });
+    const text = cleanText(req.body.text);
+    if (!text && !(post.media || []).length) return res.status(400).json({ error: 'A post can’t be empty.' });
+    let verdict;
+    try { verdict = await check({ text }); } catch { return res.status(503).json({ error: 'The safety check is unavailable right now.' }); }
+    if (!verdict.ok) return blocked(verdict, text, { edit: true });
+    post.history = [...(post.history || []), { text: post.text, at: post.editedAt || post.createdAt }].slice(-10);
+    post.text = text; post.editedAt = new Date().toISOString();
+    await savePost(post);
+    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || [], await pinnedId(), await lookupFor([post])) });
   }
 
   if (action === 'react') {
@@ -418,7 +481,7 @@ export default async function handler(req, res) {
     post.reactions[emoji] = [...who];
     await savePost(post);
     if (adding) await notify(post.author, { type: 'react', emoji, postId: post.id, text: String(post.text || '').slice(0, 80) }, me.username).catch(() => {});
-    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || [], await pinnedId()) });
+    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || [], await pinnedId(), await lookupFor([post])) });
   }
 
   if (action === 'vote') {
@@ -428,7 +491,7 @@ export default async function handler(req, res) {
     for (const o of post.poll.options) o.votes = o.votes.filter(u => u !== me.username);
     post.poll.options[i].votes.push(me.username);
     await savePost(post);
-    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || [], await pinnedId()) });
+    return res.status(200).json({ post: shape(post, me.username, admin, me.saved || [], await pinnedId(), await lookupFor([post])) });
   }
 
   if (action === 'save') {

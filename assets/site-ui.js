@@ -63,11 +63,13 @@
             (u.title && u.title !== 'Member' ? '<em>' + escapeHtml(u.title) + '</em>' : '') + (u.mood ? '<small>' + escapeHtml(u.mood) + '</small>' : '') + '</span></a>' +
           '<a href="' + profileUrl + '" role="menuitem">👤 View my profile</a>' +
           '<a href="/account" role="menuitem">🎨 Edit profile &amp; settings</a>' +
+          (window.matchMedia && matchMedia('(display-mode: standalone)').matches ? '' : '<a href="#" role="menuitem" class="jr-getapp">📲 Get the app</a>') +
           '<a href="/wall" role="menuitem">🏠 The Revenge Wall</a>' +
           (data.admin ? '<a href="/admin" role="menuitem">🛡️ Admin</a>' : '') +
           '<a href="/api/auth/logout" role="menuitem" class="jr-out">↩ Sign out</a>' +
         '</div>';
       var trigger = bar.querySelector('.jr-trigger'), menu = bar.querySelector('.jr-menu');
+      var ga = bar.querySelector('.jr-getapp'); if (ga) ga.addEventListener('click', function (e) { e.preventDefault(); setOpen(false); window.JRInstall && window.JRInstall(); });
       function setOpen(open) { menu.hidden = !open; trigger.setAttribute('aria-expanded', open ? 'true' : 'false'); bar.classList.toggle('open', open); }
       trigger.addEventListener('click', function (e) { e.stopPropagation(); setOpen(menu.hidden); });
       document.addEventListener('click', function (e) { if (!bar.contains(e.target)) setOpen(false); });
@@ -120,4 +122,47 @@
   function escapeAttribute(value) {
     return escapeHtml(value).replace(/`/g, '&#96;');
   }
+})();
+
+// ---- Installable app (PWA) ----
+(function () {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/assets/sw.js', { scope: '/' }).catch(function () {}); });
+  }
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+  window.addEventListener('appinstalled', function () { deferred = null; try { localStorage.setItem('jr_app_installed', '1'); } catch (e) {} });
+
+  function sheet(html) {
+    var st = document.getElementById('jr-install-style');
+    if (!st) {
+      st = document.createElement('style'); st.id = 'jr-install-style';
+      st.textContent = '.jr-sheet-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;animation:jrfade .2s}' +
+        '@keyframes jrfade{from{opacity:0}}.jr-sheet{width:min(440px,100%);margin:12px;padding:22px;border-radius:22px;background:#fff;color:#0f1419;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.4);animation:jrup .25s ease-out}' +
+        '@keyframes jrup{from{transform:translateY(30px)}}.jr-sheet .hd{display:flex;gap:14px;align-items:center;margin-bottom:14px}.jr-sheet img{width:56px;height:56px;border-radius:14px}' +
+        '.jr-sheet h3{margin:0;font-size:19px}.jr-sheet .sub{color:#536471;font-size:14px}.jr-sheet ol{margin:8px 0 0;padding-left:22px}.jr-sheet li{margin:8px 0}' +
+        '.jr-sheet .row{display:flex;gap:10px;margin-top:18px}.jr-sheet button{flex:1;padding:13px;border-radius:999px;border:1px solid #cfd9de;background:#fff;font-weight:800;font-size:15px;cursor:pointer}.jr-sheet button.go{background:#0f1419;border-color:#0f1419;color:#fff}' +
+        '.jr-ico{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:#eef0f3;vertical-align:middle;font-size:14px}';
+      document.head.appendChild(st);
+    }
+    var bg = document.createElement('div'); bg.className = 'jr-sheet-bg';
+    bg.innerHTML = '<div class="jr-sheet" role="dialog" aria-label="Install the app"><div class="hd"><img src="/assets/icon-192.png" alt=""><div><h3>Get the JAVISREVENGE app</h3><div class="sub">The Revenge Wall on your home screen — full screen, one tap away.</div></div></div>' + html + '</div>';
+    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-close]')) bg.remove(); });
+    document.body.appendChild(bg);
+    return bg;
+  }
+  window.JRInstall = function () {
+    var ua = navigator.userAgent;
+    var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (deferred) {
+      var bg = sheet('<div class="row"><button data-close>Not now</button><button class="go" id="jrInstallGo">Install</button></div>');
+      bg.querySelector('#jrInstallGo').onclick = function () { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; bg.remove(); }); };
+    } else if (ios) {
+      sheet('<ol><li>Tap the <span class="jr-ico">⬆︎</span> <b>Share</b> button in Safari' + (/CriOS|FxiOS/.test(ua) ? ' (open this page in Safari first)' : '') + '.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. The app appears on your home screen.</li></ol><div class="row"><button class="go" data-close>Got it</button></div>');
+    } else if (/Android/.test(ua)) {
+      sheet('<ol><li>Tap the <span class="jr-ico">⋮</span> menu in Chrome.</li><li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li></ol><div class="row"><button class="go" data-close>Got it</button></div>');
+    } else {
+      sheet('<ol><li>In Chrome or Edge, click the <b>install</b> icon <span class="jr-ico">⊕</span> at the right of the address bar.</li><li>Or open the browser menu and choose <b>Install JAVISREVENGE</b>.</li></ol><p class="sub" style="margin:10px 0 0">On your phone, open javisrevenge.com and choose “Get the app” from your profile menu.</p><div class="row"><button class="go" data-close>Got it</button></div>');
+    }
+  };
 })();
