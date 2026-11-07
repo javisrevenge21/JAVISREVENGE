@@ -161,6 +161,8 @@ color: #fff;
 background: rgba(255,255,255,0.07);
 border-color: rgba(255,255,255,0.4);
 }
+.tipGo { display: block; margin-top: 14px; padding: 15px; border-radius: 12px; background: #fff; color: #000; text-align: center; text-decoration: none; font-weight: 800; letter-spacing: .2em; font-size: .85rem; }
+.tipGo:hover { opacity: .9; }
 .tipHeading {
 font-size: 0.72rem;
 letter-spacing: 0.18em;
@@ -250,21 +252,8 @@ display: none;
 
 <section class="card">
 <h2 class="tipHeading">Anonymous tip</h2>
-<p class="note" style="margin-top: 0; text-align: left;">Send a message, photo, video, or file without adding your name. Service providers may still process technical data; see the Privacy Notice.</p>
-<form id="tipForm" autocomplete="off">
-<div class="field">
-<label for="tipMessage">Message (optional)</label>
-<textarea id="tipMessage" placeholder="What do you want to share?"></textarea>
-</div>
-<div class="field">
-<label for="tipFiles">Photos, video, or files (optional)</label>
-<input id="tipFiles" type="file" multiple />
-</div>
-<button type="submit" id="tipSubmit">SEND TIP</button>
-</form>
-<ul class="tipProgress" id="tipProgress"></ul>
-<p class="sent" id="tipSent">Tip sent. Thank you.</p>
-<p class="tipError" id="tipError"></p>
+<p class="note" style="margin-top: 0; text-align: left;">Want to tell us something without your name on it? Anonymous tips now live on the Revenge Wall: messages, photos, videos and files go to a private inbox only the owner can read, saved without your username or email.</p>
+<a class="tipGo" href="/wall?view=tip">SEND AN ANONYMOUS TIP &rsaquo;</a>
 </section>
 </div>
 
@@ -300,94 +289,7 @@ window.location.href = href;
 })();
 </script>
 
-<script type="module">
-(function () {
-var GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSeL0oOiNioIqunM8qbGy-Nuss3xllzjfg7Y2yTMPDCvBfAj6g/formResponse';
-var MESSAGE_ENTRY = 'entry.1122931233';
 
-var form = document.getElementById('tipForm');
-if (!form) { return; }
-
-var msgEl = document.getElementById('tipMessage');
-var filesEl = document.getElementById('tipFiles');
-var submitBtn = document.getElementById('tipSubmit');
-var progressEl = document.getElementById('tipProgress');
-var sentEl = document.getElementById('tipSent');
-var errorEl = document.getElementById('tipError');
-
-form.addEventListener('submit', function (e) {
-e.preventDefault();
-handleSubmit();
-});
-
-async function handleSubmit() {
-var message = msgEl.value.trim();
-var files = filesEl.files ? Array.prototype.slice.call(filesEl.files) : [];
-
-if (!message && files.length === 0) { return; }
-
-submitBtn.disabled = true;
-submitBtn.textContent = 'SENDING…';
-errorEl.style.display = 'none';
-errorEl.textContent = '';
-progressEl.innerHTML = '';
-sentEl.classList.remove('show');
-
-var hadError = false;
-
-if (message) {
-try {
-await fetch(GOOGLE_FORM_ACTION, {
-method: 'POST',
-mode: 'no-cors',
-headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-body: MESSAGE_ENTRY + '=' + encodeURIComponent(message)
-});
-} catch (err) {
-hadError = true;
-}
-}
-
-if (files.length > 0) {
-try {
-var mod = await import('https://esm.sh/@vercel/blob@2.8.0/client');
-for (var i = 0; i < files.length; i++) {
-var file = files[i];
-var li = document.createElement('li');
-li.textContent = file.name + ' — uploading…';
-progressEl.appendChild(li);
-try {
-await mod.upload('tips/' + Date.now() + '-' + file.name, file, {
-access: 'private',
-handleUploadUrl: '/api/tip-upload'
-});
-li.textContent = file.name + ' — sent';
-li.className = 'done';
-} catch (err) {
-li.textContent = file.name + ' — failed to send';
-li.className = 'error';
-hadError = true;
-}
-}
-} catch (err) {
-hadError = true;
-}
-}
-
-if (hadError) {
-errorEl.textContent = 'Part of your tip may not have gone through. Feel free to try again.';
-errorEl.style.display = 'block';
-} else {
-sentEl.classList.add('show');
-form.reset();
-progressEl.innerHTML = '';
-}
-
-submitBtn.disabled = false;
-submitBtn.textContent = 'SEND TIP';
-}
-})();
-</script>
 
 <script>
 (function () {

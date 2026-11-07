@@ -29,6 +29,8 @@
     brush: '<svg viewBox="0 0 24 24"><path d="M18 3l3 3-9 9-3-3zM9 12l-3 3c-2 0-3 1.5-3 4 2.5 0 4-1 4-3l3-3"/></svg>',
     shield: '<svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>',
     megaphone: '<svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 8a5 5 0 0 1 0 8M18 5a9 9 0 0 1 0 14"/></svg>',
+    mask: '<svg viewBox="0 0 24 24"><path d="M3 6c3-1.5 6-1.5 9 0 3-1.5 6-1.5 9 0v4c0 5-4 9-9 9s-9-4-9-9z"/><path d="M8 11h2M14 11h2"/></svg>',
+    inbox: '<svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h5l1 3h6l1-3h5"/></svg>',
     star: '<svg viewBox="0 0 24 24"><path d="M12 2l2.6 6.9L22 9.3l-5.6 4.8L18.2 22 12 18l-6.2 4 1.8-7.9L2 9.3l7.4-.4z"/></svg>',
     sword: '<svg viewBox="0 0 24 24"><path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>'
   };
@@ -270,17 +272,18 @@
     setTop('Notifications', 'Follows, replies, reposts, mentions and reactions', false, false); setNav('notes'); $('composer').hidden = true; loading();
     getJSON('/api/community?view=notifications').then(function (d) {
       Object.keys(d.authors).forEach(function (k) { state.authors[k] = d.authors[k]; });
-      var ICON = { reply: '💬', mention: '📣', react: '', follow: '👤', media: '📷', repost: '🔁', quote: '💬' };
+      var ICON = { tip: '🕵️', reply: '💬', mention: '📣', react: '', follow: '👤', media: '📷', repost: '🔁', quote: '💬' };
       main.innerHTML = d.notifications.length ? d.notifications.map(function (n) {
         var a = n.from ? author(n.from) : null, line;
-        if (n.type === 'repost') line = '<b>' + esc(a.name) + '</b> reposted your post';
+        if (n.type === 'tip') line = '<b>New anonymous tip</b> in your Tips inbox';
+        else if (n.type === 'repost') line = '<b>' + esc(a.name) + '</b> reposted your post';
         else if (n.type === 'quote') line = '<b>' + esc(a.name) + '</b> quoted your post';
         else if (n.type === 'follow') line = '<b>' + esc(a.name) + '</b> followed you';
         else if (n.type === 'media') line = n.granted ? '<b>You can now post photos and videos</b> — the owner approved your request.' : 'Your photo &amp; video request was <b>declined</b>.';
         else if (n.type === 'react') line = '<b>' + (n.count > 1 ? n.count + ' people' : 'Someone') + '</b> reacted ' + esc(n.emoji) + ' to your post';
         else if (n.type === 'reply') line = '<b>' + esc(a.name) + '</b> replied to your post';
         else line = '<b>' + esc(a.name) + '</b> mentioned you';
-        return '<a class="note' + (n.read ? '' : ' unread') + '" href="' + (n.type === 'follow' ? '/u/' + encodeURIComponent(n.from) : n.type === 'media' ? '/wall' : '/wall?post=' + n.postId) + '" data-nav><span class="ico">' + (ICON[n.type] || esc(n.emoji)) + '</span><span class="body">' +
+        return '<a class="note' + (n.read ? '' : ' unread') + '" href="' + (n.type === 'tip' ? '/wall?view=tips' : n.type === 'follow' ? '/u/' + encodeURIComponent(n.from) : n.type === 'media' ? '/wall' : '/wall?post=' + n.postId) + '" data-nav><span class="ico">' + (ICON[n.type] || esc(n.emoji)) + '</span><span class="body">' +
           (a ? avatar(a, 'sm', false) : '') + '<div style="margin-top:6px">' + line + ' <time>· ' + ago(n.at) + '</time></div>' + (n.text ? '<p>' + esc(n.text) + '</p>' : '') + '</span></a>';
       }).join('') : '<div class="empty"><b>Nothing yet</b>When people reply to you, mention you or react to your posts, it shows up here.</div>';
       if (d.notifications.some(function (n) { return !n.read; })) api({ action: 'readNotifications' }).then(function () { setUnread(0); });
@@ -347,6 +350,60 @@
           return api({ action: 'saveAd', adId: editing, ad: ad });
         }).then(function () { toast('Ad saved'); showAds(); }).catch(function (e2) { st.textContent = e2.message; });
       };
+    }).catch(function () {});
+  }
+
+  function showTip() {
+    setTop('Anonymous tip', 'Only the owner reads these · nobody sees who sent it', true, false); setNav('tip'); $('composer').hidden = true;
+    main.innerHTML = '<div class="tipwrap"><div class="tiphead"><div class="tipicon">' + I.mask + '</div><div><b>Send something to the owner — anonymously.</b><div class="muted">Tips aren’t posted on the Wall. They go to a private inbox only the site owner can open, and they’re saved without your username, email or the exact time you sent them.</div></div></div>' +
+      '<textarea id="tipText" maxlength="5000" placeholder="What do you want to share?"></textarea>' +
+      '<div class="previews" id="tipPrev"></div>' +
+      '<div class="tiprow"><input type="file" id="tipFiles" multiple hidden accept="image/*,video/mp4,video/quicktime,video/webm,application/pdf,audio/mpeg,audio/mp4,audio/x-m4a,text/plain"><button class="btn" id="tipAttach" type="button">📎 Add photos, video or files</button><span class="muted" id="tipLeft"></span><button class="send" id="tipSend" type="button" disabled>Send tip</button></div>' +
+      '<p class="cstatus" id="tipStatus"></p><p class="muted" style="font-size:12px;margin:14px 0 0">Up to 5 files, 100 MB each. Want a reply? Include a way to reach you in your message — otherwise it stays fully anonymous.</p></div>';
+    var files = [], txt = $('tipText'), send = $('tipSend');
+    function upd() { var busy = files.some(function (f) { return !f.done; }); send.disabled = busy || (!txt.value.trim() && !files.length); $('tipLeft').textContent = txt.value.length > 4500 ? (5000 - txt.value.length) + ' left' : ''; }
+    txt.addEventListener('input', upd);
+    $('tipAttach').onclick = function () { $('tipFiles').click(); };
+    $('tipFiles').onchange = function () {
+      Array.prototype.forEach.call(this.files, function (file) {
+        if (files.length >= 5) return toast('Up to 5 files per tip', true);
+        if (file.size > 100 * 1048576) return toast(file.name + ' is over 100 MB', true);
+        var it = { name: file.name, done: false }, el = document.createElement('div'); el.className = 'pv';
+        el.innerHTML = /^image\//.test(file.type) ? '<img alt="">' : '<div class="fname">📄 ' + esc(file.name) + '</div>';
+        if (/^image\//.test(file.type)) el.firstChild.src = URL.createObjectURL(file);
+        el.insertAdjacentHTML('beforeend', '<button type="button" aria-label="Remove">✕</button><span class="prog" style="width:0"></span>');
+        el.querySelector('button').onclick = function () { files.splice(files.indexOf(it), 1); el.remove(); upd(); };
+        $('tipPrev').appendChild(el); files.push(it); upd();
+        var rnd = Math.random().toString(36).slice(2, 10) + '.' + ((file.name.split('.').pop() || 'bin').replace(/[^a-z0-9]/gi, '').slice(0, 5) || 'bin');
+        uploader().then(function (b) { return b.upload('anon-tips-media/' + rnd, file, { access: 'private', handleUploadUrl: '/api/community?upload=1', contentType: file.type || 'application/octet-stream', onUploadProgress: function (p) { el.querySelector('.prog').style.width = p.percentage + '%'; } }); })
+          .then(function (blob) { it.pathname = blob.pathname; it.done = true; el.querySelector('.prog').style.background = 'var(--green)'; upd(); })
+          .catch(function (e) { toast(file.name + ': ' + (e.message || 'upload failed'), true); files.splice(files.indexOf(it), 1); el.remove(); upd(); });
+      });
+      this.value = '';
+    };
+    send.onclick = function () {
+      send.disabled = true; var st = $('tipStatus'); st.className = 'cstatus'; st.textContent = 'Sending…';
+      api({ action: 'tip', text: txt.value, files: files.map(function (f) { return { pathname: f.pathname, name: f.name }; }) }).then(function () {
+        main.innerHTML = '<div class="empty"><b>Tip sent. Thank you. 🤝</b>It went straight to the owner’s private inbox — without your name.<br><br><a class="btn" href="/wall" data-nav style="text-decoration:none">Back to the Revenge Wall</a></div>';
+      }).catch(function (e) { st.className = 'cstatus err'; st.textContent = e.message; upd(); });
+    };
+  }
+
+  function showTips() {
+    setTop('Tips inbox', 'Only you see this · senders are anonymous', true, false); setNav('tips'); $('composer').hidden = true; loading();
+    getJSON('/api/community?view=tips').then(function (d) {
+      main.innerHTML = d.tips.length ? d.tips.map(function (t) {
+        return '<div class="tipcard' + (t.read ? '' : ' unread') + '" id="tip-' + t.id + '"><div class="who"><b>' + (t.read ? '' : '🟦 ') + 'Anonymous</b><span class="hd">· ' + esc(new Date(t.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })) + '</span>' +
+          '<span style="margin-left:auto;display:flex;gap:6px">' + (t.read ? '' : '<button class="btn" data-tipread="' + t.id + '">Mark read</button>') + '<button class="btn red" data-tipdel="' + t.id + '">Delete</button></span></div>' +
+          (t.text ? '<div class="text">' + linkify(t.text) + '</div>' : '') +
+          (t.files && t.files.length ? '<div class="tipfiles">' + t.files.map(function (f) {
+            return f.kind === 'image' ? '<a href="' + esc(f.url) + '" target="_blank" rel="noopener"><img src="' + esc(f.url) + '" alt=""></a>'
+              : f.kind === 'video' ? '<video src="' + esc(f.url) + '" controls preload="metadata"></video>'
+              : '<a class="filecard" href="' + esc(f.url) + '" target="_blank" rel="noopener"><span class="ic">FILE</span><span><b>' + esc(f.name) + '</b><small>' + Math.max(1, Math.round(f.size / 1024)) + ' KB</small></span></a>';
+          }).join('') + '</div>' : '') + '</div>';
+      }).join('') : '<div class="empty"><b>No tips yet</b>When members send an anonymous tip, it lands here.</div>';
+      main.querySelectorAll('[data-tipread]').forEach(function (b) { b.onclick = function () { api({ action: 'tipRead', tipId: b.dataset.tipread }).then(showTips); }; });
+      main.querySelectorAll('[data-tipdel]').forEach(function (b) { b.onclick = function () { if (confirm('Delete this tip and its files permanently?')) api({ action: 'tipDelete', tipId: b.dataset.tipdel }).then(function () { $('tip-' + b.dataset.tipdel).remove(); toast('Tip deleted'); }); }; });
     }).catch(function () {});
   }
 
@@ -428,7 +485,7 @@
       $('sideMe').innerHTML = avatar(state.me, 'sm', false) + '<span class="txt"><b>' + esc(state.me.name) + '</b><span>@' + esc(state.me.username) + '</span></span>';
       $('sideMe').href = $('navProfile').href = $('mobProfile').href = '/u/' + encodeURIComponent(state.me.username);
       if (state.admin) {
-        $('navProfile').insertAdjacentHTML('afterend', '<a class="nav" href="/admin">' + I.shield + '<span>Admin</span></a><a class="nav" href="/wall?view=ads" data-nav data-navkey="ads">' + I.megaphone + '<span>Sponsors</span></a>');
+        $('navProfile').insertAdjacentHTML('afterend', '<a class="nav" href="/admin">' + I.shield + '<span>Admin</span></a><a class="nav" href="/wall?view=ads" data-nav data-navkey="ads">' + I.megaphone + '<span>Sponsors</span></a><a class="nav" href="/wall?view=tips" data-nav data-navkey="tips">' + I.inbox + '<span>Tips</span></a>');
         loadOwnerBox();
       }
       if (!state.mediaEnabled) ['btnMedia', 'btnFile'].forEach(function (id) { $(id).disabled = true; $(id).title = 'Uploads switch on once automatic moderation is set up'; });
@@ -470,6 +527,8 @@
     if (route.post) return showPost(route.post);
     if (route.view === 'notifications') return showNotifications();
     if (route.view === 'plus') return showPlus();
+    if (route.view === 'tip') return showTip();
+    if (route.view === 'tips') return showTips();
     if (route.view === 'ads') return showAds();
     if (route.view === 'network') return showNetwork(new URLSearchParams(location.search).get('list') || 'following');
     showFeed();

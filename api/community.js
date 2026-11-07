@@ -6,6 +6,7 @@ import { isAdmin, requireSameOrigin, sessionFromRequest } from '../lib/session.j
 import { listPosts, getPost, savePost, createPost, deletePost, REACTIONS } from '../lib/wall.js';
 import { check, punish, hasAI, log, label } from '../lib/moderation.js';
 import { isPlus, billingOn, PRICE_CENTS, createCheckout, confirmCheckout, refreshPlus, portalUrl } from '../lib/billing.js';
+import { createTip, listTips, getTip, saveTip, deleteTip } from '../lib/tips.js';
 import { listAds, isLive, saveAd, getAd, deleteAd, bump, publicAd } from '../lib/ads.js';
 
 // The members community, in one function (the Hobby plan caps the site at 12).
@@ -131,7 +132,7 @@ async function blobToDataUrl(pathname, type) {
 }
 
 async function serveMedia(req, res, pathname) {
-  if (!/^(wall-media\/[a-z0-9_]{3,20}|ads-media)\/[\w.\-]+$/.test(pathname)) return res.status(400).end();
+  if (!/^(wall-media\/[a-z0-9_]{3,20}|ads-media|anon-tips-media)\/[\w.\-]+$/.test(pathname)) return res.status(400).end();
   const headers = req.headers.range ? { range: req.headers.range } : undefined;
   const r = await get(pathname, { access: 'private', headers }).catch(() => null);
   if (!r || !r.stream) return res.status(404).end();
@@ -179,7 +180,10 @@ export default async function handler(req, res) {
     return out;
   }
 
-  if (req.method === 'GET' && req.query.media) return serveMedia(req, res, String(req.query.media));
+  if (req.method === 'GET' && req.query.media) {
+    if (String(req.query.media).startsWith('anon-tips-media/') && !admin) return res.status(403).end();
+    return serveMedia(req, res, String(req.query.media));
+  }
 
   if (req.method === 'GET') {
     const view = String(req.query.view || 'wall');
@@ -283,6 +287,12 @@ export default async function handler(req, res) {
       });
     }
 
+    if (view === 'tips') {
+      if (!admin) return res.status(403).json({ error: 'Owner only' });
+      const tips = await listTips();
+      return res.status(200).json({ tips: tips.map(t => ({ ...t, files: (t.files || []).map(f => ({ name: f.name, kind: f.kind, size: f.size, url: '/api/community?media=' + encodeURIComponent(f.pathname) })) })) });
+    }
+
     if (view === 'ads') {
       if (!admin) return res.status(403).json({ error: 'Owner only' });
       return res.status(200).json({ ads: (await listAds()).map(a => ({ ...a, imageUrl: a.image ? '/api/community?media=' + encodeURIComponent(a.image) : '', live: isLive(a) })) });
@@ -301,12 +311,13 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   if (req.query.upload) {
-    if (!hasAI() && !admin) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
+    if (!hasAI() && !admin && !String(req.body?.payload?.pathname || '').startsWith('anon-tips-media/')) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
     const mediaOk = canMedia(me, admin);
     try {
       const json = await handleUpload({
         body: req.body, request: req,
         onBeforeGenerateToken: async (pathname) => {
+          if (pathname.startsWith('anon-tips-media/')) return { allowedContentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES, ...FILE_TYPES, 'audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'text/plain'], maximumSizeInBytes: LIMITS.video, addRandomSuffix: true };
           if (admin && pathname.startsWith('ads-media/')) return { allowedContentTypes: IMAGE_TYPES, maximumSizeInBytes: LIMITS.image, addRandomSuffix: true };
           if (!pathname.startsWith(`wall-media/${me.username}/`)) throw new Error('Bad upload path');
           return mediaOk
@@ -403,6 +414,36 @@ export default async function handler(req, res) {
     const fresh = await getAccount(me.email);
     fresh.inbox = (fresh.inbox || []).map(n => ({ ...n, read: true }));
     await saveAccount(fresh);
+    return res.status(200).json({ ok: true });
+  }
+
+  if (action === 'tip') {
+    const text = cleanText(req.body.text, 5000);
+    const wanted = Array.isArray(req.body.files) ? req.body.files.slice(0, 5) : [];
+    if (!text && !wanted.length) return res.status(400).json({ error: 'Write something or attach a file.' });
+    if (!admin && me.lastTipAt && Date.now() - Date.parse(me.lastTipAt) < 60 * 1000) return res.status(429).json({ error: 'Please wait a minute before sending another tip.' });
+    const files = [];
+    for (const w of wanted) {
+      const pathname = String(w?.pathname || '');
+      if (!/^anon-tips-media\/[\w.\-]+$/.test(pathname)) return res.status(400).json({ error: 'Invalid attachment' });
+      const info = await head(pathname).catch(() => null);
+      if (!info) return res.status(400).json({ error: 'An attachment failed to upload. Try again.' });
+      files.push({ pathname, name: String(w.name || 'file').slice(0, 80), kind: kindOf(info.contentType) || 'file', size: info.size });
+    }
+    await createTip(text, files);
+    // Only remember when (not what) for the 1-per-minute limit.
+    const fresh = await getAccount(me.email); fresh.lastTipAt = new Date().toISOString(); await saveAccount(fresh);
+    // Let the owner know a tip arrived — without saying who sent it.
+    for (const email of String(process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean)) {
+      const owner = await getAccount(email).catch(() => null);
+      if (owner) { owner.inbox = [{ type: 'tip', at: new Date().toISOString(), read: false }, ...(owner.inbox || [])].slice(0, 60); await saveAccount(owner).catch(() => {}); }
+    }
+    return res.status(200).json({ sent: true });
+  }
+  if (action === 'tipRead' || action === 'tipDelete') {
+    if (!admin) return res.status(403).json({ error: 'Owner only' });
+    if (action === 'tipDelete') { await deleteTip(String(req.body.tipId)); return res.status(200).json({ deleted: true }); }
+    const t = await getTip(String(req.body.tipId)); if (t) { t.read = true; await saveTip(t); }
     return res.status(200).json({ ok: true });
   }
 
