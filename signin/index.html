@@ -62,6 +62,7 @@
   border-radius: 16px;
 }
 .signin-shell .card.legal .muted { margin: 0; }
+.signin-shell .contact-line { margin-top: 18px; max-width: 560px; }
 .signin-shell .error { margin-top: 18px; } .signin-shell img.google { width: 20px; height: 20px; display: block; flex: none; }
 @media (prefers-reduced-motion: reduce) {
   .caret { animation: none; }
@@ -78,13 +79,15 @@
 <p class="lede">Sign in or create an account with Google to enter. No password is created or stored by this website.</p>
 
 <div class="actions">
-<a class="button" id="signin" href="/api/auth/login"><img class="google" src="https://developers.google.com/identity/images/g-logo.png" alt="" width="20" height="20">Sign in with Google</a>
-<a class="button secondary" id="signup" href="/api/auth/login?mode=signup"><img class="google" src="https://developers.google.com/identity/images/g-logo.png" alt="" width="20" height="20">Sign up with Google</a>
+<a class="button" id="signin" href="/api/auth/login"><img class="google" src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="20" height="20">Sign in with Google</a>
+<a class="button secondary" id="signup" href="/api/auth/login?mode=signup"><img class="google" src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="20" height="20">Sign up with Google</a>
 </div>
 
 <section class="card legal">
 <p class="muted">By continuing, you agree to the <a href="/terms">Terms</a> and acknowledge the <a href="/privacy">Privacy Notice</a> and <a href="/cookies">Cookie Notice</a>. After you sign in, we'll ask whether you'd like email notifications. They stay off unless you say yes.</p>
 </section>
+
+<p class="muted contact-line">Can't sign in, or rather not? <a href="mailto:contact@javisrevenge.com">Contact us at contact@javisrevenge.com</a></p>
 
 <p id="error" class="error" hidden>Google sign-in could not be completed. Please try again.</p>
 </main>

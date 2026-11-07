@@ -124,6 +124,7 @@ text-transform: uppercase;
 color: rgba(255,255,255,0.5);
 animation: fadeUp 1.2s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
+.disclaimer { margin: 10px auto 0; max-width: 40ch; font-size: 0.8rem; line-height: 1.5; letter-spacing: 0.03em; color: rgba(255,255,255,0.62); animation: fadeUp 1.2s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .meta .card-label { margin-bottom: 16px; }
 .lede {
@@ -166,7 +167,7 @@ transform: skewX(-18deg); opacity: 0;
 @keyframes sheen { 0% { left: -60%; opacity: 0; } 15% { opacity: 1; } 100% { left: 130%; opacity: 0; } }
 .fine { margin-top: 12px; text-align: center; font-size: 0.74rem; letter-spacing: 0.04em; color: rgba(255,255,255,0.38); }
 @media (prefers-reduced-motion: reduce) {
-.tagline, .ig-link::after { animation: none !important; }
+.tagline, .disclaimer, .ig-link::after { animation: none !important; }
 }
 </style>
 </head>
@@ -179,6 +180,7 @@ transform: skewX(-18deg); opacity: 0;
 <h1>ARCHIVES</h1>
 <div class="rule"></div>
 <p class="tagline">Private. By request. Since 2016.</p>
+<p class="disclaimer">Content posted on the archives is not all filmed or created by Ryan Javi.</p>
 <section class="card">
 <div class="meta"><p class="card-label">@javiarchives.jp</p><p class="card-label">Est. 2016</p></div>
 <p class="lede">The archive is the private side of JAVISREVENGE: photos, video, and updates from Ryan Javi's world, often before anyone else hears about them.</p>
