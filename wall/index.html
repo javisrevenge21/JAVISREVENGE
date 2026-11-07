@@ -1,48 +1,182 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>The Wall · JAVISREVENGE</title><link rel="stylesheet" href="/assets/community.css"></head><body>
-<main class="page">
-<a class="brand" href="/">← JAVISREVENGE</a>
-<header class="hero"><h1>THE WALL</h1><p>Members only. Say something.</p></header>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>The Wall · JAVISREVENGE</title><link rel="stylesheet" href="/assets/community.css"></head><body class="app">
+<div class="layout">
+  <nav class="side" aria-label="Main">
+    <a class="logo" href="/"><span>JAVISREVENGE</span></a>
+    <a class="nav on" href="/wall"><i>🏠</i><span>The Wall</span></a>
+    <a class="nav" href="/" ><i>⚔️</i><span>Home</span></a>
+    <a class="nav" id="navProfile" href="/account"><i>👤</i><span>Profile</span></a>
+    <a class="nav" href="/account"><i>🎨</i><span>Customize</span></a>
+    <a class="nav" id="navAdmin" href="/admin" hidden><i>🛡️</i><span>Admin</span></a>
+    <button class="postbtn" type="button" onclick="document.getElementById('text').focus()"><span>Post</span></button>
+  </nav>
 
-<section class="panel"><p class="label">Members <span id="count"></span></p><div class="strip" id="strip"><span class="muted">Loading…</span></div></section>
+  <main class="main">
+    <header class="topbar"><h1>The Wall</h1><p>Members only</p></header>
 
-<section class="panel">
-<textarea class="compose" id="text" maxlength="280" placeholder="What's on your mind? Mention someone with @username"></textarea>
-<div class="compose-row"><span class="muted" id="left">280</span><button class="btn" id="send" type="button" disabled>Post</button></div>
-<p class="status" id="status"></p>
-</section>
+    <section class="composer" aria-label="Write a post">
+      <span id="meAv"></span>
+      <div class="body">
+        <textarea id="text" maxlength="500" placeholder="What's happening?" rows="2"></textarea>
+        <div class="previews" id="previews"></div>
+        <div class="bar">
+          <input type="file" id="pickMedia" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" multiple hidden>
+          <input type="file" id="pickFile" accept="application/pdf" hidden>
+          <button class="iconbtn" type="button" id="btnMedia" title="Photo or video" aria-label="Add photo or video">🖼️</button>
+          <button class="iconbtn" type="button" id="btnFile" title="PDF file" aria-label="Add a PDF">📎</button>
+          <button class="iconbtn" type="button" id="btnEmoji" title="Emoji" aria-label="Add emoji">😀</button>
+          <span class="left" id="left">500</span>
+          <button class="send" id="send" type="button" disabled>Post</button>
+        </div>
+      </div>
+    </section>
+    <p class="cstatus" id="status" aria-live="polite"></p>
 
-<section id="feed" aria-live="polite"><p class="empty">Loading the Wall…</p></section>
-<p class="muted" style="text-align:center;margin-top:24px">Be decent. Posts that break the <a href="/terms">Terms</a> get removed, and accounts can be banned.</p>
-</main>
+    <section id="feed" aria-live="polite"><p class="empty">Loading…</p></section>
+  </main>
+
+  <aside class="right">
+    <div class="box"><h3>New members</h3><div id="members"><span class="muted">Loading…</span></div></div>
+    <div class="box"><h3>House rules</h3><ul>
+      <li>Be decent. Disagree without threats or slurs.</li>
+      <li>No nudity, gore, or anything illegal.</li>
+      <li>Serious violations are blocked automatically. 3 strikes = ban.</li>
+      <li>Use <b>Report</b> on anything that crosses the line.</li>
+    </ul><p class="muted" style="margin:10px 0 0">See the <a href="/terms">Terms</a>.</p></div>
+  </aside>
+</div>
+<nav class="mobnav" aria-label="Main"><a href="/wall" aria-label="The Wall">🏠</a><a href="/" aria-label="Home">⚔️</a><a href="#" onclick="document.getElementById('text').focus();scrollTo(0,0);return false" aria-label="New post">✏️</a><a id="mobProfile" href="/account" aria-label="Profile">👤</a></nav>
+
 <script src="/assets/community.js"></script>
 <script>
 (function () {
-  var feed = document.getElementById('feed'), text = document.getElementById('text'), send = document.getElementById('send'), status = document.getElementById('status');
-  var authors = {}, reactions = [];
-  JR.wire(feed, function (n) { return authors[n]; }, reactions);
+  var $ = function (id) { return document.getElementById(id); };
+  var feed = $('feed'), text = $('text'), send = $('send'), status = $('status'), previews = $('previews');
+  var authors = {}, reactions = [], me = null, admin = false, mediaEnabled = false;
+  var items = []; // { file, kind, pathname, name, done, frames, el }
+  var LIMITS = { image: 10 * 1024 * 1024, video: 100 * 1024 * 1024, file: 20 * 1024 * 1024 };
+
+  JR.wire(feed, function (n) { return authors[n]; }, reactions, function () { return admin; });
+
+  function say(msg, err) { status.className = 'cstatus' + (err ? ' err' : ''); status.textContent = msg || ''; }
+  function refreshSend() {
+    var n = 500 - text.value.length; $('left').textContent = n; $('left').className = 'left' + (n < 40 ? ' warn' : '');
+    var busy = items.some(function (i) { return !i.done; });
+    send.disabled = busy || (!text.value.trim() && !items.length);
+  }
 
   function load() {
     fetch('/api/community?view=wall').then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }).then(function (d) {
-      authors = d.authors; reactions.length = 0; Array.prototype.push.apply(reactions, d.reactions);
-      feed.innerHTML = d.posts.length ? d.posts.map(function (p) { return JR.postHtml(p, authors[p.author], reactions); }).join('') : '<p class="empty">Nobody has posted yet. Be the first. 🔥</p>';
+      me = d.me; admin = d.admin; mediaEnabled = d.mediaEnabled; authors = d.authors; authors[me.username] = me;
+      reactions.length = 0; Array.prototype.push.apply(reactions, d.reactions);
+      $('meAv').innerHTML = JR.avatar(me);
+      $('navProfile').href = $('mobProfile').href = '/u/' + encodeURIComponent(me.username);
+      $('navAdmin').hidden = !admin;
+      if (!mediaEnabled) { $('btnMedia').disabled = $('btnFile').disabled = true; $('btnMedia').title = $('btnFile').title = 'Uploads switch on once automatic moderation is set up'; }
+      feed.innerHTML = d.posts.length ? d.posts.map(function (p) { return JR.postHtml(p, authors[p.author], reactions, admin); }).join('') : '<p class="empty">Nobody has posted yet. Be the first. 🔥</p>';
     }).catch(function (s) { if (s === 401 || s === 403) location.replace('/signin?returnTo=/wall'); else feed.innerHTML = '<p class="empty">Could not load the Wall.</p>'; });
   }
   fetch('/api/community?view=members').then(function (r) { return r.json(); }).then(function (d) {
-    document.getElementById('count').textContent = '· ' + d.total;
-    document.getElementById('strip').innerHTML = d.members.slice(0, 40).map(function (m) { return '<a href="/u/' + encodeURIComponent(m.username) + '">' + JR.avatar(m).replace(/^<a /, '<span ').replace(/<\/a>$/, '</span>').replace(/ href="[^"]*"/, '') + '<span>@' + JR.esc(m.username) + '</span></a>'; }).join('') || '<span class="muted">No members yet.</span>';
+    $('members').innerHTML = d.members.slice(0, 6).map(function (m) {
+      return '<a class="who-row" href="/u/' + encodeURIComponent(m.username) + '">' + JR.avatar(m).replace(/^<a /, '<span ').replace(/<\/a>$/, '</span>').replace(/ href="[^"]*"/, '') + '<span><b>' + JR.esc(m.name) + '</b><span>@' + JR.esc(m.username) + '</span></span></a>';
+    }).join('') + '<p class="muted" style="margin:8px 0 0">' + d.total + ' members</p>';
   }).catch(function () {});
 
-  text.addEventListener('input', function () { var n = 280 - text.value.length; document.getElementById('left').textContent = n; send.disabled = !text.value.trim(); });
+  // ---- attachments ----
+  function kindOf(f) { return /^image\//.test(f.type) ? 'image' : /^video\//.test(f.type) ? 'video' : f.type === 'application/pdf' ? 'file' : null; }
+
+  function shrinkImage(file) {
+    if (file.type === 'image/gif') return Promise.resolve(file);
+    return createImageBitmap(file).then(function (bm) {
+      var scale = Math.min(1, 2048 / Math.max(bm.width, bm.height));
+      var c = document.createElement('canvas'); c.width = Math.round(bm.width * scale); c.height = Math.round(bm.height * scale);
+      c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height);
+      return new Promise(function (res) { c.toBlob(function (b) { res(new File([b], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' })); }, 'image/jpeg', 0.86); });
+    }).catch(function () { return file; });
+  }
+
+  // A few still frames from the video so the safety check can look at it.
+  function videoFrames(file) {
+    return new Promise(function (resolve, reject) {
+      var v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto';
+      var url = URL.createObjectURL(file); v.src = url;
+      var frames = [], points = [0.05, 0.3, 0.55, 0.8, 0.97], i = 0;
+      v.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Could not read that video')); };
+      v.onloadedmetadata = function () { next(); };
+      function next() { if (i >= points.length) { URL.revokeObjectURL(url); return resolve(frames); } v.currentTime = Math.max(0, (v.duration || 1) * points[i++]); }
+      v.onseeked = function () {
+        var w = 480, h = Math.round(w * (v.videoHeight / v.videoWidth || 0.5625));
+        var c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(v, 0, 0, w, h);
+        frames.push(c.toDataURL('image/jpeg', 0.7)); next();
+      };
+    });
+  }
+
+  var blobLib;
+  function uploader() { return blobLib || (blobLib = import('https://esm.sh/@vercel/blob@2.8.0/client')); }
+
+  function addFiles(list) {
+    say('');
+    Array.prototype.forEach.call(list, function (file) {
+      if (items.length >= 4) return say('Up to 4 attachments per post.', true);
+      var kind = kindOf(file);
+      if (!kind) return say(file.name + ': only photos, videos and PDFs.', true);
+      if (file.size > LIMITS[kind]) return say(file.name + ' is too large (max ' + LIMITS[kind] / 1048576 + ' MB for a ' + kind + ').', true);
+      var item = { kind: kind, name: file.name, done: false };
+      var el = document.createElement('div'); el.className = 'pv';
+      el.innerHTML = kind === 'image' ? '<img alt="">' : kind === 'video' ? '<video muted playsinline></video>' : '<div class="fname">📄 ' + JR.esc(file.name) + '</div>';
+      if (kind !== 'file') el.firstChild.src = URL.createObjectURL(file);
+      el.insertAdjacentHTML('beforeend', '<button type="button" aria-label="Remove">✕</button><span class="prog" style="width:0"></span>');
+      el.querySelector('button').onclick = function () { items.splice(items.indexOf(item), 1); el.remove(); refreshSend(); };
+      previews.appendChild(el); item.el = el; items.push(item); refreshSend();
+
+      var prep = kind === 'image' ? shrinkImage(file) : Promise.resolve(file);
+      var framesP = kind === 'video' ? videoFrames(file) : Promise.resolve(null);
+      Promise.all([prep, framesP, uploader()]).then(function (r) {
+        item.frames = r[1];
+        var safe = r[0].name.replace(/[^\w.\-]+/g, '_').slice(-60) || 'file';
+        return r[2].upload('wall-media/' + me.username + '/' + safe, r[0], {
+          access: 'private', handleUploadUrl: '/api/community?upload=1', contentType: r[0].type,
+          onUploadProgress: function (p) { el.querySelector('.prog').style.width = p.percentage + '%'; }
+        });
+      }).then(function (blob) {
+        item.pathname = blob.pathname; item.done = true; el.querySelector('.prog').style.background = '#34d399'; refreshSend();
+      }).catch(function (e) {
+        say(file.name + ': ' + (e.message || 'upload failed'), true); items.splice(items.indexOf(item), 1); el.remove(); refreshSend();
+      });
+    });
+  }
+  $('btnMedia').onclick = function () { $('pickMedia').click(); };
+  $('btnFile').onclick = function () { $('pickFile').click(); };
+  $('pickMedia').onchange = function () { addFiles(this.files); this.value = ''; };
+  $('pickFile').onchange = function () { addFiles(this.files); this.value = ''; };
+  var pop = document.createElement('div'); pop.className = 'emojipop'; pop.hidden = true;
+  pop.innerHTML = ['🔥','🇺🇸','😂','💯','👏','😤','🦅','🌴','⚔️','👑','😎','🙏','❤️','😭','🤣','👀','💪','🫡','🗽','📢','🎉','🤝','😡','🤔'].map(function (x) { return '<button type="button">' + x + '</button>'; }).join('');
+  $('btnEmoji').parentNode.appendChild(pop);
+  $('btnEmoji').onclick = function (e) { e.stopPropagation(); pop.hidden = !pop.hidden; };
+  pop.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; var s0 = text.selectionStart || text.value.length; text.value = text.value.slice(0, s0) + b.textContent + text.value.slice(s0); text.focus(); refreshSend(); };
+  document.addEventListener('click', function (e) { if (!pop.contains(e.target)) pop.hidden = true; });
+  text.addEventListener('input', function () { text.style.height = 'auto'; text.style.height = Math.min(text.scrollHeight, 300) + 'px'; refreshSend(); });
   text.addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !send.disabled) send.click(); });
+  document.addEventListener('dragover', function (e) { if (mediaEnabled) e.preventDefault(); });
+  document.addEventListener('drop', function (e) { if (!mediaEnabled) return; e.preventDefault(); addFiles(e.dataTransfer.files); });
+  text.addEventListener('paste', function (e) { if (mediaEnabled && e.clipboardData && e.clipboardData.files.length) addFiles(e.clipboardData.files); });
+
   send.addEventListener('click', function () {
-    send.disabled = true; status.className = 'status'; status.textContent = 'Posting…';
-    JR.api({ action: 'post', text: text.value }).then(function (d) {
+    send.disabled = true; say(items.length ? 'Checking and posting…' : 'Posting…');
+    var frames = [];
+    items.forEach(function (i) { if (i.frames) frames = frames.concat(i.frames); });
+    JR.api({ action: 'post', text: text.value, media: items.map(function (i) { return { pathname: i.pathname, name: i.name }; }), frames: frames }).then(function (d) {
       authors[d.author.username] = d.author;
       var empty = feed.querySelector('.empty'); if (empty) empty.remove();
-      feed.insertAdjacentHTML('afterbegin', JR.postHtml(d.post, d.author, reactions));
-      text.value = ''; document.getElementById('left').textContent = 280; status.textContent = 'Posted!';
-      setTimeout(function () { status.textContent = ''; }, 2000);
-    }).catch(function (e) { status.className = 'status err'; status.textContent = e.message; send.disabled = false; });
+      feed.insertAdjacentHTML('afterbegin', JR.postHtml(d.post, d.author, reactions, admin));
+      text.value = ''; text.style.height = ''; items = []; previews.innerHTML = ''; refreshSend();
+      say('Posted!'); setTimeout(function () { say(''); }, 2000);
+    }).catch(function (e) {
+      say(e.message, true);
+      if (e.data && e.data.banned) setTimeout(function () { location.replace('/signin?error=banned'); }, 3000);
+      if (/blocked/.test(e.message)) { items = []; previews.innerHTML = ''; }
+      refreshSend();
+    });
   });
   load();
 })();

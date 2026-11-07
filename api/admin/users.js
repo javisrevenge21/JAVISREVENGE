@@ -1,5 +1,6 @@
 import { listAccounts, getAccount, deleteAccount, banEmail, unbanEmail, listBans } from '../../lib/accounts.js';
 import { deletePostsBy } from '../../lib/wall.js';
+import { recentLog, hasAI } from '../../lib/moderation.js';
 import { countWaitlist } from '../../lib/waitlist.js';
 import { isAdmin, requireSameOrigin, sessionFromRequest } from '../../lib/session.js';
 
@@ -20,11 +21,13 @@ export default async function handler(req, res) {
       providers: account.providers || ['google'],
       notifications: account.notifications === true,
       createdAt: account.createdAt,
-      lastSignInAt: account.lastSignInAt
+      lastSignInAt: account.lastSignInAt,
+      strikes: account.strikes || 0
     }));
     const bans = await listBans().catch(() => []);
     const waitlistCount = await countWaitlist().catch(() => null);
-    return res.status(200).json({ users, bans, waitlistCount, me: session.email.toLowerCase() });
+    const modlog = await recentLog(60).catch(() => []);
+    return res.status(200).json({ users, bans, modlog, aiModeration: hasAI(), waitlistCount, me: session.email.toLowerCase() });
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });

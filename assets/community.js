@@ -25,38 +25,75 @@ window.JR = (function () {
   function linkify(text) {
     return esc(text).replace(/(^|[^\w])@([a-z0-9_]{3,20})\b/g, function (m, pre, name) { return pre + '<a class="mention" href="/u/' + name + '">@' + name + '</a>'; });
   }
-  function postHtml(p, author, reactions) {
+  function mediaHtml(list) {
+    if (!list || !list.length) return '';
+    var files = list.filter(function (m) { return m.kind === 'file'; });
+    var vis = list.filter(function (m) { return m.kind !== 'file'; });
+    var out = '';
+    if (vis.length) {
+      out += '<div class="media n' + vis.length + '">' + vis.map(function (m) {
+        return m.kind === 'video'
+          ? '<video src="' + esc(m.url) + '" controls playsinline preload="metadata"></video>'
+          : '<a href="' + esc(m.url) + '" target="_blank" rel="noopener"><img src="' + esc(m.url) + '" alt="" loading="lazy"></a>';
+      }).join('') + '</div>';
+    }
+    files.forEach(function (m) {
+      out += '<a class="filecard" href="' + esc(m.url) + '" target="_blank" rel="noopener"><span style="font-size:26px">📄</span><span><b>' + esc(m.name || 'Document.pdf') + '</b><small>PDF · ' + Math.max(1, Math.round((m.size || 0) / 1024)) + ' KB</small></span></a>';
+    });
+    return out;
+  }
+  function postHtml(p, author, reactions, isAdmin) {
     var a = author || { username: p.author, name: p.author, theme: 'silver' };
     var r = reactions.map(function (e) {
       var x = p.reactions[e] || { count: 0 };
-      return '<button class="react' + (x.mine ? ' on' : '') + '" data-id="' + p.id + '" data-emoji="' + e + '" type="button">' + e + (x.count ? '<b>' + x.count + '</b>' : '') + '</button>';
+      return '<button class="react' + (x.mine ? ' on' : '') + '" data-id="' + p.id + '" data-emoji="' + e + '" type="button" aria-label="React ' + e + '">' + e + (x.count ? '<b>' + x.count + '</b>' : '') + '</button>';
     }).join('');
-    return '<article class="post" id="p-' + p.id + '" style="--t:' + rgb(a.theme) + '">' + avatar(a) +
-      '<div class="body"><div class="who"><a href="/u/' + encodeURIComponent(a.username) + '">' + esc(a.name) + '</a><span class="handle">@' + esc(a.username) + '</span>' +
-      (a.title && a.title !== 'Member' ? '<span class="badge">' + esc(a.title) + '</span>' : '') + '<time datetime="' + esc(p.createdAt) + '">· ' + ago(p.createdAt) + '</time></div>' +
-      '<div class="text">' + linkify(p.text) + '</div><div class="reacts">' + r +
-      (p.canDelete ? '<button class="del" data-del="' + p.id + '" type="button">Delete</button>' : '') + '</div></div></article>';
+    var tools = '';
+    if (!p.canDelete) tools += '<button type="button" data-report="' + p.id + '"' + (p.reported ? ' disabled>Reported' : '>Report') + '</button>';
+    if (p.hidden && isAdmin) tools += '<button type="button" data-restore="' + p.id + '">Restore</button>';
+    if (p.canDelete) tools += '<button type="button" data-del="' + p.id + '">Delete</button>';
+    if (isAdmin && p.authorEmail) tools += '<button type="button" data-ban="' + esc(p.authorEmail) + '" data-user="' + esc(a.username) + '" data-id="' + p.id + '">Ban</button>';
+    return '<article class="post" id="p-' + p.id + '" style="--t:' + rgb(a.theme) + (p.hidden ? ';opacity:.55' : '') + '">' + avatar(a) +
+      '<div class="body"><div class="who"><a href="/u/' + encodeURIComponent(a.username) + '">' + esc(a.name) + '</a>' +
+      (a.title && a.title !== 'Member' ? '<span class="badge">' + esc(a.title) + '</span>' : '') +
+      '<span class="handle">@' + esc(a.username) + '</span><time datetime="' + esc(p.createdAt) + '">· ' + ago(p.createdAt) + '</time>' +
+      (p.hidden ? '<span class="badge" style="background:#f59e0b">Hidden · ' + (p.reports || 0) + ' reports</span>' : '') + '</div>' +
+      (p.text ? '<div class="text">' + linkify(p.text) + '</div>' : '') + mediaHtml(p.media) +
+      '<div class="reacts">' + r + '<span class="tool">' + tools + '</span></div></div></article>';
   }
   function api(body) {
     return fetch('/api/community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || 'Something went wrong'); return d; }); });
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) { var e = new Error(d.error || 'Something went wrong'); e.data = d; throw e; } return d; }); });
   }
-  // Wire reactions + delete on any container of posts.
-  function wire(container, getAuthor, reactions) {
+  // Wire reactions, report, delete and owner actions on any container of posts.
+  function wire(container, getAuthor, reactions, isAdmin) {
+    var adminOn = function () { return typeof isAdmin === 'function' ? isAdmin() : !!isAdmin; };
     container.addEventListener('click', function (ev) {
       var b = ev.target.closest('.react');
       if (b) {
         b.disabled = true;
         api({ action: 'react', id: b.dataset.id, emoji: b.dataset.emoji }).then(function (d) {
           var el = document.getElementById('p-' + d.post.id);
-          var tmp = document.createElement('div'); tmp.innerHTML = postHtml(d.post, getAuthor(d.post.author), reactions);
+          var tmp = document.createElement('div'); tmp.innerHTML = postHtml(d.post, getAuthor(d.post.author), reactions, adminOn());
           tmp.firstChild.style.animation = 'none'; el.replaceWith(tmp.firstChild);
         }).catch(function () { b.disabled = false; });
         return;
       }
-      var del = ev.target.closest('[data-del]');
-      if (del && confirm('Delete this post?')) {
-        api({ action: 'delete', id: del.dataset.del }).then(function () { var el = document.getElementById('p-' + del.dataset.del); if (el) el.remove(); });
+      var t;
+      if ((t = ev.target.closest('[data-del]')) && confirm('Delete this post?')) {
+        api({ action: 'delete', id: t.dataset.del }).then(function () { var el = document.getElementById('p-' + t.dataset.del); if (el) el.remove(); });
+      } else if ((t = ev.target.closest('[data-report]')) && confirm('Report this post to the site owner?')) {
+        t.disabled = true;
+        api({ action: 'report', id: t.dataset.report }).then(function () { t.textContent = 'Reported'; }).catch(function (e) { alert(e.message); t.disabled = false; });
+      } else if ((t = ev.target.closest('[data-restore]'))) {
+        api({ action: 'restore', id: t.dataset.restore }).then(function () { location.reload(); });
+      } else if ((t = ev.target.closest('[data-ban]'))) {
+        var reason = prompt('Ban @' + t.dataset.user + ' (' + t.dataset.ban + ')? Their account and all their posts will be deleted and they can never sign in again.\n\nOptional reason:', '');
+        if (reason === null) return;
+        fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'ban', email: t.dataset.ban, reason: reason }) })
+          .then(function (r) { return r.json().then(function (x) { if (!r.ok) throw new Error(x.error); return x; }); })
+          .then(function () { container.querySelectorAll('.post').forEach(function (el) { var bb = el.querySelector('[data-ban]'); if (bb && bb.dataset.ban === t.dataset.ban) el.remove(); }); })
+          .catch(function (e) { alert(e.message); });
       }
     });
   }
@@ -77,5 +114,5 @@ window.JR = (function () {
       '<span class="badge m-title">' + esc(u.title) + '</span>' + (u.mood ? '<div class="m-mood">' + esc(u.mood) + '</div>' : '') + '</div>' +
       '<p class="m-bio">' + esc(u.bio) + '</p><p class="m-quote">' + (u.quote ? '“' + esc(u.quote) + '”' : '') + '</p><div class="m-meta">' + meta + '</div></div>';
   }
-  return { esc: esc, rgb: rgb, avatar: avatar, postHtml: postHtml, api: api, wire: wire, card: card };
+  return { esc: esc, rgb: rgb, avatar: avatar, postHtml: postHtml, mediaHtml: mediaHtml, api: api, wire: wire, card: card };
 })();

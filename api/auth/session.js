@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   if (!account || await isBanned(account.email)) return res.status(401).json({ authenticated: false });
   return res.status(200).json({
     authenticated: true,
-    user: { email: account.email, username: account.username || '', name: account.name, picture: account.picture, avatar: account.profile?.avatar || '', theme: account.profile?.theme || 'silver', title: account.profile?.title || '' },
+    user: { email: account.email, username: account.username || '', name: account.name, picture: account.picture, avatar: account.profile?.avatar || '', theme: account.profile?.theme || 'silver', title: account.profile?.title || '', mood: account.profile?.mood || '' },
     notifications: account.notifications === true,
     notificationsAsked: account.notificationsAsked === true || account.notifications === true,
     admin: isAdmin(session)

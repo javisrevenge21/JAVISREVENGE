@@ -9,24 +9,24 @@
 <p class="muted" style="margin:8px 0 0">Remove deletes their account, frees the username and deletes their Wall posts. Ban does the same and blocks the email from ever signing in again.</p>
 <p class="status" id="aStatus"></p>
 </section>
-<section class="panel"><p class="label">Posts</p><div id="posts"></div></section>
+<section class="panel" style="padding:0;overflow:hidden"><p class="label" style="padding:16px 16px 0">Posts</p><div id="posts"></div></section>
 </main>
 <script src="/assets/community.js"></script>
 <script>
 (function () {
   var name = decodeURIComponent(location.pathname.split('/')[2] || '').toLowerCase();
   var postsEl = document.getElementById('posts'), author;
-  var reactions = [];
-  JR.wire(postsEl, function () { return author; }, reactions);
+  var reactions = [], isAdmin = false;
+  JR.wire(postsEl, function () { return author; }, reactions, function () { return isAdmin; });
   if (!name) { location.replace('/wall'); return; }
   fetch('/api/community?view=profile&u=' + encodeURIComponent(name)).then(function (r) {
     if (r.status === 401 || r.status === 403) { location.replace('/signin?returnTo=' + encodeURIComponent(location.pathname)); throw 0; }
     return r.json().then(function (d) { if (!r.ok) throw new Error(d.error); return d; });
   }).then(function (d) {
-    var u = d.profile; author = u; Array.prototype.push.apply(reactions, d.reactions);
+    var u = d.profile; author = u; isAdmin = d.admin; Array.prototype.push.apply(reactions, d.reactions);
     document.title = '@' + u.username + ' · JAVISREVENGE';
     document.getElementById('card').innerHTML = JR.card(u) + (d.me === u.username ? '<p style="text-align:center;margin-top:12px"><a class="btn ghost small" href="/account" style="text-decoration:none">Edit my profile</a></p>' : '');
-    postsEl.innerHTML = d.posts.length ? d.posts.map(function (p) { return JR.postHtml(p, u, reactions); }).join('') : '<p class="empty">No posts yet.</p>';
+    postsEl.innerHTML = d.posts.length ? d.posts.map(function (p) { return JR.postHtml(p, u, reactions, d.admin); }).join('') : '<p class="empty">No posts yet.</p>';
     if (d.admin && d.email && d.me !== u.username) {
       document.getElementById('admin').hidden = false;
       document.getElementById('aEmail').textContent = d.email;
