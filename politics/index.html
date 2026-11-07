@@ -242,7 +242,7 @@ var s = document.createElement('script');
 s.async = true; s.src = 'https://www.instagram.com/embed.js';
 document.body.appendChild(s);
 }
-fetch('/api/latest-instagram').then(function (r) { return r.json(); })
+fetch('/api/latest-post?network=instagram').then(function (r) { return r.json(); })
 .then(function (d) { render(d.posts || []); })
 .catch(function () { feed.innerHTML = '<p class="fine">Couldn\'t load posts. See them on Instagram.</p>'; });
 })();

@@ -30,7 +30,7 @@ test('every other page redirects signed-out visitors to sign in', () => {
 });
 
 test('member APIs still return 401 when signed out', async () => {
-  for (const path of ['/api/account', '/api/account/preferences', '/api/admin/users', '/api/admin/send', '/api/tip-upload', '/api/waitlist', '/api/latest-post', '/api/latest-instagram']) {
+  for (const path of ['/api/account', '/api/account/preferences', '/api/admin/users', '/api/admin/send', '/api/tip-upload', '/api/waitlist', '/api/latest-post']) {
     const response = middleware(request(path));
     assert.equal(response.status, 401, path);
     assert.deepEqual(await response.json(), { error: 'Authentication required' });
