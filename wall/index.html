@@ -6,7 +6,6 @@
     <a class="nav" href="/" ><i>⚔️</i><span>Home</span></a>
     <a class="nav" id="navProfile" href="/account"><i>👤</i><span>Profile</span></a>
     <a class="nav" href="/account"><i>🎨</i><span>Customize</span></a>
-    <a class="nav" id="navAdmin" href="/admin" hidden><i>🛡️</i><span>Admin</span></a>
     <button class="postbtn" type="button" onclick="document.getElementById('text').focus()"><span>Post</span></button>
   </nav>
 
@@ -35,7 +34,7 @@
   </main>
 
   <aside class="right">
-    <div class="box"><h3>New members</h3><div id="members"><span class="muted">Loading…</span></div></div>
+    <div class="box" id="ownerBox" hidden><h3>Newest members <span class="muted" style="font-weight:400;font-size:12px">· only you see this</span></h3><div id="members"></div></div>
     <div class="box"><h3>House rules</h3><ul>
       <li>Be decent. Disagree without threats or slurs.</li>
       <li>No nudity, gore, or anything illegal.</li>
@@ -70,16 +69,18 @@
       reactions.length = 0; Array.prototype.push.apply(reactions, d.reactions);
       $('meAv').innerHTML = JR.avatar(me);
       $('navProfile').href = $('mobProfile').href = '/u/' + encodeURIComponent(me.username);
-      $('navAdmin').hidden = !admin;
+      if (admin) $('navProfile').insertAdjacentHTML('afterend', '<a class="nav" href="/admin"><i>🛡️</i><span>Admin</span></a>');
       if (!mediaEnabled) { $('btnMedia').disabled = $('btnFile').disabled = true; $('btnMedia').title = $('btnFile').title = 'Uploads switch on once automatic moderation is set up'; }
+      if (admin) loadMembers();
       feed.innerHTML = d.posts.length ? d.posts.map(function (p) { return JR.postHtml(p, authors[p.author], reactions, admin); }).join('') : '<p class="empty">Nobody has posted yet. Be the first. 🔥</p>';
     }).catch(function (s) { if (s === 401 || s === 403) location.replace('/signin?returnTo=/wall'); else feed.innerHTML = '<p class="empty">Could not load the Wall.</p>'; });
   }
-  fetch('/api/community?view=members').then(function (r) { return r.json(); }).then(function (d) {
+  function loadMembers() { fetch('/api/community?view=members').then(function (r) { return r.json(); }).then(function (d) {
     $('members').innerHTML = d.members.slice(0, 6).map(function (m) {
       return '<a class="who-row" href="/u/' + encodeURIComponent(m.username) + '">' + JR.avatar(m).replace(/^<a /, '<span ').replace(/<\/a>$/, '</span>').replace(/ href="[^"]*"/, '') + '<span><b>' + JR.esc(m.name) + '</b><span>@' + JR.esc(m.username) + '</span></span></a>';
-    }).join('') + '<p class="muted" style="margin:8px 0 0">' + d.total + ' members</p>';
-  }).catch(function () {});
+    }).join('') + '<p class="muted" style="margin:8px 0 0">' + d.total + ' members total</p>';
+    $('ownerBox').hidden = false;
+  }).catch(function () {}); }
 
   // ---- attachments ----
   function kindOf(f) { return /^image\//.test(f.type) ? 'image' : /^video\//.test(f.type) ? 'video' : f.type === 'application/pdf' ? 'file' : null; }

@@ -102,13 +102,22 @@ export default async function handler(req, res) {
     }
     if (view === 'profile') {
       const account = await accountByUsername(req.query.u);
-      if (!account || !account.username) return res.status(404).json({ error: 'No member with that username' });
-      const posts = (await listPosts(200)).filter(p => p.author === account.username && (!p.hidden || admin || p.author === me.username)).slice(0, 20);
+      // A profile is only visible once that person has posted something, so
+      // browsing usernames can't reveal who has signed up. You can always see
+      // your own, and the owner can see everyone's.
+      const notFound = () => res.status(404).json({ error: 'No member with that username' });
+      if (!account || !account.username) return notFound();
+      const all = (await listPosts(200)).filter(p => p.author === account.username);
+      const isSelf = account.username === me.username;
+      if (!admin && !isSelf && !all.some(p => !p.hidden)) return notFound();
+      const posts = all.filter(p => !p.hidden || admin || isSelf).slice(0, 20);
       const out = { me: me.username, admin, reactions: REACTIONS, profile: publicProfile(account), posts: posts.map(p => shape(p, me.username, admin)) };
       if (admin) { out.email = account.email; out.strikes = account.strikes || 0; }
       return res.status(200).json(out);
     }
     if (view === 'members') {
+      // Who has signed up is private: only the owner can list members.
+      if (!admin) return res.status(403).json({ error: 'Owner only' });
       const members = (await listAccounts()).filter(a => a.username)
         .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
         .slice(0, 200).map(a => ({ ...mini(a), createdAt: a.createdAt }));

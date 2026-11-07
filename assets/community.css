@@ -149,3 +149,5 @@ body.app { background: #000; }
 .emojipop button { width: 36px; height: 36px; border: 0; border-radius: 8px; background: none; font-size: 20px; cursor: pointer; }
 .emojipop button:hover { background: rgba(255,255,255,.1); }
 @media (max-width: 600px) { .emojipop { left: 0; grid-template-columns: repeat(6, 36px); } }
+
+[hidden] { display: none !important; }
