@@ -96,8 +96,8 @@
   audio.addEventListener('play', draw); audio.addEventListener('pause', draw);
 
   // Try right away (works if the browser allows it), then on first interaction.
-  function firstTouch() { play(); ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { document.removeEventListener(ev, firstTouch, true); }); }
-  ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, firstTouch, true); });
+  function firstTouch() { play(); ['pointerdown', 'pointerup', 'click', 'keydown', 'touchstart', 'touchend'].forEach(function (ev) { document.removeEventListener(ev, firstTouch, true); }); }
+  ['pointerdown', 'pointerup', 'click', 'keydown', 'touchstart', 'touchend'].forEach(function (ev) { document.addEventListener(ev, firstTouch, true); });
 
   // Pause the music while any video on the page is playing, then resume.
   var pausedForVideo = false;
