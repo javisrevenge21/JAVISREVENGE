@@ -161,8 +161,11 @@ color: #fff;
 background: rgba(255,255,255,0.07);
 border-color: rgba(255,255,255,0.4);
 }
-.tipGo { display: block; margin-top: 14px; padding: 15px; border-radius: 12px; background: #fff; color: #000; text-align: center; text-decoration: none; font-weight: 800; letter-spacing: .2em; font-size: .85rem; }
-.tipGo:hover { opacity: .9; }
+.tipGo { display: flex; align-items: center; gap: 10px; width: max-content; margin: 16px auto 0; padding: 6px 16px 6px 6px; border-radius: 999px; background: #fff; color: #000; text-decoration: none; font-weight: 800; letter-spacing: .16em; font-size: .72rem; border: 1px solid rgba(255,255,255,.9); transition: transform .15s, box-shadow .2s; }
+.tipGo:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,255,255,.18); }
+.tipGoIcon { width: 30px; height: 30px; border-radius: 50%; background: #000; display: grid; place-items: center; flex: none; }
+.tipGoIcon svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.tipGoArrow { font-size: 1.1rem; line-height: 1; margin-left: -2px; }
 .tipHeading {
 font-size: 0.72rem;
 letter-spacing: 0.18em;
@@ -253,7 +256,7 @@ display: none;
 <section class="card">
 <h2 class="tipHeading">Anonymous tip</h2>
 <p class="note" style="margin-top: 0; text-align: left;">Want to tell us something without your name on it? Anonymous tips now live on the Revenge Wall: messages, photos, videos and files go to a private inbox only the owner can read, saved without your username or email.</p>
-<a class="tipGo" href="/wall?view=tip">SEND AN ANONYMOUS TIP &rsaquo;</a>
+<a class="tipGo" href="/wall?view=tip"><span class="tipGoIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6c3-1.5 6-1.5 9 0 3-1.5 6-1.5 9 0v4c0 5-4 9-9 9s-9-4-9-9z"/><path d="M8 11h2M14 11h2"/></svg></span>SEND A TIP<span class="tipGoArrow" aria-hidden="true">&rsaquo;</span></a>
 </section>
 </div>
 
