@@ -5,6 +5,7 @@ import { createSession, SESSION_COOKIE } from '../lib/session.js';
 
 const secret = 'test-secret-that-is-long-enough-for-tests';
 process.env.SESSION_SECRET = secret;
+process.env.MAINTENANCE_MODE = 'off';
 const user = { sub: 'google-123', email: 'person@example.com', name: 'Person', username: 'person' };
 
 function request(path, cookie) {
@@ -62,4 +63,19 @@ test('signed-in people without a username are sent to pick one', () => {
   assert.equal(middleware(request('/api/account/preferences', cookie)), undefined);
   assert.equal(middleware(request('/api/auth/logout', cookie)), undefined);
   assert.equal(middleware(request('/api/admin/users', cookie)).status, 403);
+});
+
+test('maintenance mode sends everyone except the owner to /maintenance', () => {
+  delete process.env.MAINTENANCE_MODE;
+  process.env.ADMIN_EMAILS = 'owner@example.com';
+  const member = `${SESSION_COOKIE}=${encodeURIComponent(createSession(user, secret))}`;
+  const owner = `${SESSION_COOKIE}=${encodeURIComponent(createSession({ ...user, email: 'owner@example.com' }, secret))}`;
+  assert.equal(new URL(middleware(request('/wall')).headers.get('location')).pathname, '/maintenance');
+  assert.equal(new URL(middleware(request('/wall', member)).headers.get('location')).pathname, '/maintenance');
+  assert.equal(new URL(middleware(request('/signin')).headers.get('location')).pathname, '/maintenance');
+  assert.equal(middleware(request('/signin?owner=1')), undefined);
+  assert.equal(middleware(request('/maintenance')), undefined);
+  assert.equal(middleware(request('/wall', owner)), undefined);
+  assert.equal(middleware(request('/api/community', member)).status, 503);
+  process.env.MAINTENANCE_MODE = 'off';
 });
