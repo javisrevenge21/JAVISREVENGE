@@ -327,3 +327,14 @@ body.app .jr-menu a.jr-out { color: var(--red) !important; border-top-color: var
 .adrow { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .adrow img { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; } .adrow .body { flex: 1; min-width: 200px; font-size: 14px; }
 @media (max-width: 640px) { .adform .two { grid-template-columns: 1fr; } }
+
+/* White brick wall background for the Revenge Wall */
+html:has(body.app), body.app { background: #f4f4f6 url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2296%22%20height%3D%2248%22%3E%3Crect%20width%3D%2296%22%20height%3D%2248%22%20fill%3D%22%23e7e7ea%22/%3E%3Cg%20fill%3D%22%23fbfbfc%22%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%2249.5%22%20y%3D%221.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%22-22.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%2225.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%2273.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23000%22%20opacity%3D%22.025%22%3E%3Crect%20x%3D%221.5%22%20y%3D%2218%22%20width%3D%2245%22%20height%3D%224.5%22/%3E%3Crect%20x%3D%2249.5%22%20y%3D%2218%22%20width%3D%2245%22%20height%3D%224.5%22/%3E%3Crect%20x%3D%2225.5%22%20y%3D%2242%22%20width%3D%2245%22%20height%3D%224.5%22/%3E%3C/g%3E%3C/svg%3E") 0 0 / 96px 48px fixed; }
+body.app .main { background: #fff; box-shadow: 0 0 0 1px var(--line), 0 0 40px rgba(0,0,0,.06); }
+body.app .topbar { background: rgba(255,255,255,.9); }
+body.app .box { background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+body.app .search input { background: #fff; border-color: var(--line); }
+body.app .side .nav, body.app .side .me, body.app .side .logo { background: rgba(255,255,255,.82); backdrop-filter: blur(2px); margin-bottom: 4px; width: max-content; padding-right: 22px; }
+body.app .side .nav:hover { background: #fff; }
+body.app .foot { background: rgba(255,255,255,.85); border-radius: 12px; padding: 8px 10px; }
+@media (max-width: 1240px) { body.app .side .nav, body.app .side .me { padding-right: 16px; } }

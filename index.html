@@ -138,6 +138,18 @@ animation: sweep 13s cubic-bezier(0.45, 0, 0.25, 1) 0.6s infinite;
 
 .tile.tile-wall { padding: 24px 18px; font-size: 1.15rem; color: #fff; border-color: rgba(255,255,255,.5); background: linear-gradient(180deg, #17171b, #000); box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 0 34px rgba(255,255,255,.12); }
 .tile.tile-wall { flex-direction: column; gap: 6px; }
+.tile.tile-wall small { position: relative; z-index: 2; }
+/* Brick wall builds up row by row on hover */
+.tile-wall .bricks { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column-reverse; pointer-events: none; }
+.tile-wall .bricks b { flex: 1; background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2264%22%20height%3D%2232%22%3E%3Crect%20width%3D%2264%22%20height%3D%2232%22%20fill%3D%22%232b2b30%22/%3E%3Cg%20fill%3D%22%230b0b0d%22%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2230%22%20height%3D%2214%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%2233%22%20y%3D%221%22%20width%3D%2230%22%20height%3D%2214%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%22-15%22%20y%3D%2217%22%20width%3D%2230%22%20height%3D%2214%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%2230%22%20height%3D%2214%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%2249%22%20y%3D%2217%22%20width%3D%2230%22%20height%3D%2214%22%20rx%3D%221.5%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23ffffff%22%20opacity%3D%22.05%22%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2230%22%20height%3D%222%22/%3E%3Crect%20x%3D%2233%22%20y%3D%221%22%20width%3D%2230%22%20height%3D%222%22/%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%2230%22%20height%3D%222%22/%3E%3C/g%3E%3C/svg%3E") 0 0 / 64px 32px; opacity: 0; transform: translateY(-140%); transition: transform .32s cubic-bezier(.3,1.4,.5,1), opacity .2s; }
+.tile-wall .bricks b:nth-child(2) { background-position: 32px 0; } .tile-wall .bricks b:nth-child(4) { background-position: 32px 0; }
+.tile-wall:hover .bricks b, .tile-wall:focus-visible .bricks b { opacity: 1; transform: none; }
+.tile-wall:hover .bricks b:nth-child(1) { transition-delay: 0s; } .tile-wall:hover .bricks b:nth-child(2) { transition-delay: .08s; }
+.tile-wall:hover .bricks b:nth-child(3) { transition-delay: .16s; } .tile-wall:hover .bricks b:nth-child(4) { transition-delay: .24s; }
+.tile-wall:hover span, .tile-wall:focus-visible span { text-shadow: 0 2px 0 #000, 0 0 18px rgba(0,0,0,.9), 0 0 26px rgba(255,255,255,.35); }
+.tile-wall:hover small { color: rgba(255,255,255,.8); text-shadow: 0 1px 6px #000; }
+@media (prefers-reduced-motion: reduce) { .tile-wall .bricks b { transition: opacity .2s !important; transform: none !important; } }
+
 .tile.tile-wall small { display: block; font-size: .55rem; letter-spacing: .3em; color: rgba(255,255,255,.5); font-weight: 600; }
 .tile {
 position: relative;
@@ -278,7 +290,7 @@ transition: background 0.25s, color 0.25s, box-shadow 0.3s, opacity 0.25s;
 
 
 <nav class="tiles">
-<a class="tile tile-wall reveal d1" href="/wall"><span>THE REVENGE WALL</span><small>BREAK THE WALLS DOWN · NO LIMITS</small></a>
+<a class="tile tile-wall reveal d1" href="/wall"><i class="bricks" aria-hidden="true"><b></b><b></b><b></b><b></b></i><span>THE REVENGE WALL</span><small>BREAK THE WALLS DOWN · NO LIMITS</small></a>
 <a class="tile reveal d2" href="/shop"><span>SHOP</span></a>
 <a class="tile reveal d3" href="/contact"><span>CONTACT</span></a>
 <div class="reveal d4">
