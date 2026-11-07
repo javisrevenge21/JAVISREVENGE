@@ -3,6 +3,10 @@
     {
       "source": "/api/waitlist",
       "destination": "/api/unsubscribe?action=join-waitlist"
+    },
+    {
+      "source": "/u/:name",
+      "destination": "/u/index.html"
     }
   ],
   "headers": [

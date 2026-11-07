@@ -93,7 +93,7 @@
 
 <p class="muted contact-line">Can't sign in, or rather not? <a href="mailto:contact@javisrevenge.com">Contact us at contact@javisrevenge.com</a></p>
 
-<p id="error" class="error" hidden>Google sign-in could not be completed. Please try again.</p>
+<p id="error" class="error" hidden>Sign-in could not be completed. Please try again.</p>
 </main>
 
 <script>
@@ -104,7 +104,7 @@
     document.getElementById('signin').href = '/api/auth/login?returnTo=' + encodeURIComponent(r);
     document.getElementById('signup').href = '/api/auth/login?mode=signup&returnTo=' + encodeURIComponent(r);
   }
-  if (p.get('error')) document.getElementById('error').hidden = false;
+  if (p.get('error')) { var er = document.getElementById('error'); er.hidden = false; if (p.get('error') === 'banned') er.textContent = 'This account has been banned from JAVISREVENGE. If you think this is a mistake, email contact@javisrevenge.com.'; }
 })();
 </script>
 

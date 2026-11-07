@@ -1,5 +1,5 @@
 import { createSession, sessionCookie, clearCookie, parseCookies, safeReturnTo } from '../../lib/session.js';
-import { upsertAccount } from '../../lib/accounts.js';
+import { upsertAccount, isBanned } from '../../lib/accounts.js';
 import { PROVIDERS, isEnabled } from '../../lib/oauth.js';
 
 export default async function handler(req, res) {
@@ -17,6 +17,10 @@ export default async function handler(req, res) {
   try {
     const origin = `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
     const profile = await PROVIDERS[provider].profile(String(req.query.code), `${origin}/api/auth/callback`);
+    if (await isBanned(profile.email)) {
+      res.setHeader('Set-Cookie', [clearCookie('jr_oauth_state'), clearCookie('jr_oauth_provider'), clearCookie('jr_return_to')]);
+      return res.redirect(302, '/signin?error=banned');
+    }
     const account = await upsertAccount(profile, provider);
     const token = createSession(account, process.env.SESSION_SECRET);
     res.setHeader('Set-Cookie', [sessionCookie(token), clearCookie('jr_oauth_state'), clearCookie('jr_oauth_provider'), clearCookie('jr_return_to')]);

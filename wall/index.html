@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>The Wall · JAVISREVENGE</title><link rel="stylesheet" href="/assets/community.css"></head><body>
+<main class="page">
+<a class="brand" href="/">← JAVISREVENGE</a>
+<header class="hero"><h1>THE WALL</h1><p>Members only. Say something.</p></header>
+
+<section class="panel"><p class="label">Members <span id="count"></span></p><div class="strip" id="strip"><span class="muted">Loading…</span></div></section>
+
+<section class="panel">
+<textarea class="compose" id="text" maxlength="280" placeholder="What's on your mind? Mention someone with @username"></textarea>
+<div class="compose-row"><span class="muted" id="left">280</span><button class="btn" id="send" type="button" disabled>Post</button></div>
+<p class="status" id="status"></p>
+</section>
+
+<section id="feed" aria-live="polite"><p class="empty">Loading the Wall…</p></section>
+<p class="muted" style="text-align:center;margin-top:24px">Be decent. Posts that break the <a href="/terms">Terms</a> get removed, and accounts can be banned.</p>
+</main>
+<script src="/assets/community.js"></script>
+<script>
+(function () {
+  var feed = document.getElementById('feed'), text = document.getElementById('text'), send = document.getElementById('send'), status = document.getElementById('status');
+  var authors = {}, reactions = [];
+  JR.wire(feed, function (n) { return authors[n]; }, reactions);
+
+  function load() {
+    fetch('/api/community?view=wall').then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }).then(function (d) {
+      authors = d.authors; reactions.length = 0; Array.prototype.push.apply(reactions, d.reactions);
+      feed.innerHTML = d.posts.length ? d.posts.map(function (p) { return JR.postHtml(p, authors[p.author], reactions); }).join('') : '<p class="empty">Nobody has posted yet. Be the first. 🔥</p>';
+    }).catch(function (s) { if (s === 401 || s === 403) location.replace('/signin?returnTo=/wall'); else feed.innerHTML = '<p class="empty">Could not load the Wall.</p>'; });
+  }
+  fetch('/api/community?view=members').then(function (r) { return r.json(); }).then(function (d) {
+    document.getElementById('count').textContent = '· ' + d.total;
+    document.getElementById('strip').innerHTML = d.members.slice(0, 40).map(function (m) { return '<a href="/u/' + encodeURIComponent(m.username) + '">' + JR.avatar(m).replace(/^<a /, '<span ').replace(/<\/a>$/, '</span>').replace(/ href="[^"]*"/, '') + '<span>@' + JR.esc(m.username) + '</span></a>'; }).join('') || '<span class="muted">No members yet.</span>';
+  }).catch(function () {});
+
+  text.addEventListener('input', function () { var n = 280 - text.value.length; document.getElementById('left').textContent = n; send.disabled = !text.value.trim(); });
+  text.addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !send.disabled) send.click(); });
+  send.addEventListener('click', function () {
+    send.disabled = true; status.className = 'status'; status.textContent = 'Posting…';
+    JR.api({ action: 'post', text: text.value }).then(function (d) {
+      authors[d.author.username] = d.author;
+      var empty = feed.querySelector('.empty'); if (empty) empty.remove();
+      feed.insertAdjacentHTML('afterbegin', JR.postHtml(d.post, d.author, reactions));
+      text.value = ''; document.getElementById('left').textContent = 280; status.textContent = 'Posted!';
+      setTimeout(function () { status.textContent = ''; }, 2000);
+    }).catch(function (e) { status.className = 'status err'; status.textContent = e.message; send.disabled = false; });
+  });
+  load();
+})();
+</script>
+<script src="/assets/site-ui.js"></script><script src="/assets/beta-banner.js"></script></body></html>

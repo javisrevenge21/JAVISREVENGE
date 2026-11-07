@@ -38,7 +38,7 @@
         ? '<span class="jr-emoji" style="background:rgba(' + rgb + ',.3)">' + escapeHtml(data.user.avatar) + '</span>'
         : (data.user.picture ? '<img src="' + escapeAttribute(data.user.picture) + '" alt="">' : '');
       var admin = data.admin ? '<a href="/admin">Admin</a><span aria-hidden="true">·</span>' : '';
-      bar.innerHTML = picture + '<a class="jr-account-name" href="/account">' + escapeHtml(data.user.name) + '</a><span aria-hidden="true">·</span>' + admin + '<a href="/api/auth/logout">Sign out</a>';
+      bar.innerHTML = picture + '<a class="jr-account-name" href="/account">' + escapeHtml(data.user.username ? '@' + data.user.username : data.user.name) + '</a><span aria-hidden="true">·</span><a href="/wall">Wall</a><span aria-hidden="true">·</span>' + admin + '<a href="/api/auth/logout">Sign out</a>';
       document.body.appendChild(bar);
       if (!data.notificationsAsked) askForNotifications(data.user.email);
     })
