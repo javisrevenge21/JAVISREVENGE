@@ -2,12 +2,14 @@ import { deleteAccount, getAccount, PROFILE_OPTIONS, scrubUsername } from '../..
 import { purgeMember, exportMember } from '../../lib/wall.js';
 import { isPlus } from '../../lib/billing.js';
 import { clearCookie, requireSameOrigin, sessionFromRequest, SESSION_COOKIE } from '../../lib/session.js';
+import { queryOf } from '../../lib/query.js';
 
 export default async function handler(req, res) {
+  const query = queryOf(req);
   const session = sessionFromRequest(req);
   if (!session) return res.status(401).json({ error: 'Authentication required' });
 
-  if (req.method === 'GET' && req.query.export) {
+  if (req.method === 'GET' && query.export) {
     // "Download my data": everything stored about this person, as a file.
     const account = await getAccount(session.email);
     if (!account) return res.status(404).json({ error: 'Account not found' });

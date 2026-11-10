@@ -1,10 +1,12 @@
 import { sessionFromRequest, isAdmin, clearCookie, SESSION_COOKIE } from '../../lib/session.js';
 import { getAccount, isBanned } from '../../lib/accounts.js';
+import { queryOf } from '../../lib/query.js';
 
 export default async function handler(req, res) {
+  const query = queryOf(req);
   // /api/auth/logout is rewritten here (vercel.json) so sign-out doesn't need
   // its own function; the Hobby plan allows 12 including middleware.
-  if (req.query.logout) {
+  if (query.logout) {
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' });
     res.setHeader('Set-Cookie', clearCookie(SESSION_COOKIE));
     return res.redirect(303, '/signin');

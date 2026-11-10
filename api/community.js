@@ -8,6 +8,7 @@ import { check, punish, hasAI, log, label } from '../lib/moderation.js';
 import { isPlus, billingOn, PRICE_CENTS, createCheckout, confirmCheckout, refreshPlus, portalUrl } from '../lib/billing.js';
 import { createTip, listTips, getTip, saveTip, deleteTip } from '../lib/tips.js';
 import { listAds, isLive, saveAd, getAd, deleteAd, bump, publicAd } from '../lib/ads.js';
+import { queryOf } from '../lib/query.js';
 
 // The members community, in one function (the Hobby plan caps the site at 12).
 //
@@ -162,6 +163,7 @@ function trending(posts) {
 }
 
 export default async function handler(req, res) {
+  const query = queryOf(req);
   res.setHeader('Cache-Control', 'no-store');
   const session = sessionFromRequest(req);
   if (!session) return res.status(401).json({ error: 'Authentication required' });
@@ -180,18 +182,18 @@ export default async function handler(req, res) {
     return out;
   }
 
-  if (req.method === 'GET' && req.query.media) {
-    if (String(req.query.media).startsWith('anon-tips-media/') && !admin) return res.status(403).end();
-    return serveMedia(req, res, String(req.query.media));
+  if (req.method === 'GET' && query.media) {
+    if (String(query.media).startsWith('anon-tips-media/') && !admin) return res.status(403).end();
+    return serveMedia(req, res, String(query.media));
   }
 
   if (req.method === 'GET') {
-    const view = String(req.query.view || 'wall');
+    const view = String(query.view || 'wall');
 
     if (view === 'wall') {
-      const tab = String(req.query.tab || 'latest');
-      const tag = String(req.query.tag || '').toLowerCase().replace(/^#/, '');
-      const q = String(req.query.q || '').toLowerCase().trim().slice(0, 60);
+      const tab = String(query.tab || 'latest');
+      const tag = String(query.tag || '').toLowerCase().replace(/^#/, '');
+      const q = String(query.q || '').toLowerCase().trim().slice(0, 60);
       const pool = (await listPosts(150)).filter(visible);
       const pin = await pinnedId();
       let posts;
@@ -234,7 +236,7 @@ export default async function handler(req, res) {
     }
 
     if (view === 'post') {
-      const post = await getPost(String(req.query.id || ''));
+      const post = await getPost(String(query.id || ''));
       if (!post || !visible(post)) return res.status(404).json({ error: 'Post not found' });
       const replies = (post.replies || []).map(r => shapeReply(r, me.username, admin));
       const lk = await lookupFor([post]);
@@ -251,7 +253,7 @@ export default async function handler(req, res) {
     }
 
     if (view === 'profile') {
-      const account = await accountByUsername(req.query.u);
+      const account = await accountByUsername(query.u);
       const notFound = () => res.status(404).json({ error: 'No member with that username' });
       if (!account || !account.username) return notFound();
       const all = (await listPosts(150)).filter(p => p.author === account.username);
@@ -275,7 +277,7 @@ export default async function handler(req, res) {
 
     if (view === 'network') {
       // Only you can see who follows you and who you follow.
-      const which = req.query.list === 'followers' ? (me.followers || []) : req.query.list === 'blocked' ? [...new Set([...(me.blocked || []), ...(me.muted || [])])] : (me.following || []);
+      const which = query.list === 'followers' ? (me.followers || []) : query.list === 'blocked' ? [...new Set([...(me.blocked || []), ...(me.muted || [])])] : (me.following || []);
       const authors = await authorsFor(which.slice(0, 300));
       return res.status(200).json({ list: which.filter(n => authors[n]).map(n => ({ ...authors[n], blocked: (me.blocked || []).includes(n), muted: (me.muted || []).includes(n), following: (me.following || []).includes(n) })) });
     }
@@ -310,7 +312,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (req.query.upload) {
+  if (query.upload) {
     if (!hasAI() && !admin && !String(req.body?.payload?.pathname || '').startsWith('anon-tips-media/')) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
     const mediaOk = canMedia(me, admin);
     try {

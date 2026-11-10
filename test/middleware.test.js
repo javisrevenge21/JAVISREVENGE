@@ -79,3 +79,11 @@ test('maintenance mode sends everyone except the owner to /maintenance', () => {
   assert.equal(middleware(request('/api/community', member)).status, 503);
   process.env.MAINTENANCE_MODE = 'off';
 });
+
+test('maintenance mode leaves the legal pages and crawler files (robots.txt, sitemap.xml) open', () => {
+  delete process.env.MAINTENANCE_MODE;
+  for (const path of ['/terms', '/privacy', '/cookies', '/robots.txt', '/sitemap.xml', '/favicon.ico']) {
+    assert.equal(middleware(request(path)), undefined, path);
+  }
+  process.env.MAINTENANCE_MODE = 'off';
+});

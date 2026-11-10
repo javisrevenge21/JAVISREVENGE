@@ -16,6 +16,8 @@
 // Successful answers are cached at Vercel's edge for 5 minutes (and served stale
 // for up to a day while refreshing), so upstream gets at most a few hits an hour.
 
+import { queryOf } from '../lib/query.js';
+
 const SCREEN_NAME = 'javisrevenge';
 const FALLBACK_ID = '2107929864095621344';
 const UA = 'Mozilla/5.0 (compatible; javisrevenge.com latest-post; +https://www.javisrevenge.com)';
@@ -169,6 +171,7 @@ async function instagramHandler(req, res) {
 }
 
 export default function handler(req, res) {
-  const network = String((req.query && req.query.network) || '');
+  const query = queryOf(req);
+  const network = String(query.network || '');
   return network === 'instagram' ? instagramHandler(req, res) : xHandler(req, res);
 }
