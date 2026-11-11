@@ -83,13 +83,17 @@
     var playing = !audio.paused;
     btn.className = 'jr-music' + (muted ? ' off' : playing ? '' : ' wait');
     btn.innerHTML = (muted ? OFF : ON) + '<span class="jr-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="jr-lbl">' + (muted ? 'MUSIC OFF' : playing ? 'OFF THE GRID · KANYE WEST' : 'TAP FOR MUSIC') + '</span>';
-    btn.setAttribute('aria-label', muted ? 'Turn music on' : 'Turn music off');
-    btn.setAttribute('aria-pressed', muted ? 'false' : 'true');
+    // Screen readers hear the same state the button shows: pressed only while
+    // the song is actually playing, and a name that matches the visible label.
+    btn.setAttribute('aria-label', muted ? 'Music off' : playing ? 'Music on, ' + TRACK.title + ' by ' + TRACK.artist : 'Tap for music');
+    btn.setAttribute('aria-pressed', playing ? 'true' : 'false');
   }
   function play() { if (muted) return; audio.play().then(draw, draw); }
 
   btn.addEventListener('click', function (e) {
     e.stopPropagation();
+    // "Tap for music" (on, but the browser hasn't let it start yet): a tap starts it.
+    if (!muted && audio.paused) { play(); draw(); return; }
     muted = !muted; store.set('jr_music_muted', muted ? '1' : '0');
     if (muted) audio.pause(); else play();
     draw();
@@ -97,7 +101,9 @@
   audio.addEventListener('play', draw); audio.addEventListener('pause', draw);
 
   // Try right away (works if the browser allows it), then on first interaction.
-  function firstTouch() { play(); ['pointerdown', 'pointerup', 'click', 'keydown', 'touchstart', 'touchend'].forEach(function (ev) { document.removeEventListener(ev, firstTouch, true); }); }
+  // A tap on the music buttons themselves is left to their own handlers, so
+  // tapping "Tap for music" starts the song instead of starting and then muting it.
+  function firstTouch(e) { if (e && e.target && e.target.nodeType === 1 && wrap.contains(e.target)) return; play(); ['pointerdown', 'pointerup', 'click', 'keydown', 'touchstart', 'touchend'].forEach(function (ev) { document.removeEventListener(ev, firstTouch, true); }); }
   ['pointerdown', 'pointerup', 'click', 'keydown', 'touchstart', 'touchend'].forEach(function (ev) { document.addEventListener(ev, firstTouch, true); });
 
   // Pause the music while any video on the page is playing, then resume.

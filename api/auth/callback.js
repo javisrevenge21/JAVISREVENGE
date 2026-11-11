@@ -1,13 +1,15 @@
 import { isAdmin, createSession, sessionCookie, clearCookie, parseCookies, safeReturnTo } from '../../lib/session.js';
 import { upsertAccount, isBanned } from '../../lib/accounts.js';
 import { PROVIDERS, isEnabled } from '../../lib/oauth.js';
+import { queryOf } from '../../lib/query.js';
 
 export default async function handler(req, res) {
+  const query = queryOf(req);
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   const cookies = parseCookies(req.headers.cookie || '');
   // Sign-ins started before this change have no provider cookie: they were Google.
   const provider = cookies.jr_oauth_provider || 'google';
-  if (!req.query.code || !req.query.state || req.query.state !== cookies.jr_oauth_state || !PROVIDERS[provider]) {
+  if (!query.code || !query.state || query.state !== cookies.jr_oauth_state || !PROVIDERS[provider]) {
     return res.redirect(302, '/signin?error=oauth');
   }
   if (!isEnabled(provider) || !process.env.SESSION_SECRET) {
@@ -16,7 +18,7 @@ export default async function handler(req, res) {
 
   try {
     const origin = `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
-    const profile = await PROVIDERS[provider].profile(String(req.query.code), `${origin}/api/auth/callback`);
+    const profile = await PROVIDERS[provider].profile(String(query.code), `${origin}/api/auth/callback`);
     const closed = String(process.env.MAINTENANCE_MODE || 'on').toLowerCase() !== 'off';
     if (closed && !isAdmin({ email: profile.email })) {
       res.setHeader('Set-Cookie', [clearCookie('jr_oauth_state'), clearCookie('jr_oauth_provider'), clearCookie('jr_return_to')]);

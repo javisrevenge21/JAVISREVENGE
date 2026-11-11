@@ -4,7 +4,7 @@ import { verifySession, parseCookies, SESSION_COOKIE, isAdmin } from './lib/sess
 // While on, everyone sees /maintenance. Only the owner (ADMIN_EMAILS) can sign
 // in, using /signin?owner=1, and use the site normally.
 export function maintenanceOn() { return String(process.env.MAINTENANCE_MODE || 'on').toLowerCase() !== 'off'; }
-const MAINT_OPEN = new Set(['/maintenance', '/maintenance/', '/terms', '/terms/', '/privacy', '/privacy/', '/cookies', '/cookies/', '/robots.txt', '/favicon.ico']);
+const MAINT_OPEN = new Set(['/maintenance', '/maintenance/', '/terms', '/terms/', '/privacy', '/privacy/', '/cookies', '/cookies/', '/robots.txt', '/sitemap.xml', '/favicon.ico']);
 
 // The whole site requires a valid Google sign-in session. Only these stay open:
 // the sign-in page, the legal pages (Terms, Privacy, Cookies), the Google OAuth flow, static assets the sign-in page needs

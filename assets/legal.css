@@ -26,3 +26,5 @@ textarea { min-height:150px;resize:vertical; }
 .user strong,.user span { display:block;overflow-wrap:anywhere; }
 .user span { color:rgba(255,255,255,.58);font-size:13px;margin-top:5px; }
 @media(max-width:520px){.shell{padding:38px 0}.card{padding:24px}}
+/* Room under the last line of text so the fixed music buttons (bottom left, about 60px tall with their gap) never sit on top of it. */
+.shell { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
