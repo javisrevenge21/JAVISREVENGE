@@ -51,7 +51,9 @@
         : (data.user.picture ? '<img src="' + escapeAttribute(data.user.picture) + '" alt="">' : '');
       var u = data.user;
       var handle = u.username ? '@' + u.username : u.name;
-      var profileUrl = u.username ? '/u/' + encodeURIComponent(u.username) : '/account';
+      // data.wall is false while the Revenge Wall is switched off (lib/features.js).
+      var wall = data.wall !== false;
+      var profileUrl = u.username && wall ? '/u/' + encodeURIComponent(u.username) : '/account';
       var bigPic = u.avatar ? escapeHtml(u.avatar) : (u.picture ? '<img src="' + escapeAttribute(u.picture) + '" alt="">' : escapeHtml((u.name || '?').charAt(0).toUpperCase()));
       bar.innerHTML =
         '<button class="jr-trigger" type="button" aria-haspopup="true" aria-expanded="false">' + (picture || '<span class="jr-emoji" style="background:rgba(' + rgb + ',.3)">' + escapeHtml((u.name || '?').charAt(0).toUpperCase()) + '</span>') +
@@ -61,10 +63,10 @@
             '<span class="jr-mini-av">' + bigPic + '</span>' +
             '<span class="jr-mini-txt"><b>' + escapeHtml(u.name) + '</b><span>' + escapeHtml(u.username ? '@' + u.username : '') + '</span>' +
             (u.title && u.title !== 'Member' ? '<em>' + escapeHtml(u.title) + '</em>' : '') + (u.mood ? '<small>' + escapeHtml(u.mood) + '</small>' : '') + '</span></a>' +
-          '<a href="' + profileUrl + '" role="menuitem">👤 View my profile</a>' +
+          (wall ? '<a href="' + profileUrl + '" role="menuitem">👤 View my profile</a>' : '') +
           '<a href="/account" role="menuitem">🎨 Edit profile &amp; settings</a>' +
           (window.matchMedia && matchMedia('(display-mode: standalone)').matches ? '' : '<a href="#" role="menuitem" class="jr-getapp">📲 Get the app</a>') +
-          '<a href="/wall" role="menuitem">🏠 The Revenge Wall</a>' +
+          (wall ? '<a href="/wall" role="menuitem">🏠 The Revenge Wall</a>' : data.admin ? '<a href="/wall" role="menuitem">🧱 The Revenge Wall (hidden, only you)</a>' : '') +
           (data.admin ? '<a href="/admin" role="menuitem">🛡️ Admin</a>' : '') +
           '<a href="/api/auth/logout" role="menuitem" class="jr-out">↩ Sign out</a>' +
         '</div>';
@@ -146,7 +148,7 @@
       document.head.appendChild(st);
     }
     var bg = document.createElement('div'); bg.className = 'jr-sheet-bg';
-    bg.innerHTML = '<div class="jr-sheet" role="dialog" aria-label="Install the app"><div class="hd"><img src="/assets/icon-192.png" alt=""><div><h3>Get the JAVISREVENGE app</h3><div class="sub">The Revenge Wall on your home screen — full screen, one tap away.</div></div></div>' + html + '</div>';
+    bg.innerHTML = '<div class="jr-sheet" role="dialog" aria-label="Install the app"><div class="hd"><img src="/assets/icon-192.png" alt=""><div><h3>Get the JAVISREVENGE app</h3><div class="sub">JAVISREVENGE on your home screen — full screen, one tap away.</div></div></div>' + html + '</div>';
     bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-close]')) bg.remove(); });
     document.body.appendChild(bg);
     return bg;
