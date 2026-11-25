@@ -66,6 +66,9 @@
       .replace(/(^|[^\w&])@([a-z0-9_]{3,20})\b/g, function (m, pre, n) { return pre + '<a href="/u/' + n + '" data-nav>@' + n + '</a>'; })
       .replace(/(^|\s)#([a-zA-Z0-9_]{2,30})\b/g, function (m, pre, t) { return pre + '<a href="/wall?tag=' + t.toLowerCase() + '" data-nav>#' + t + '</a>'; });
   }
+  // The Wall can be switched off (lib/features.js); REVENGE+ and tips still use this page.
+  function wallShown() { return !document.documentElement.classList.contains('wall-off'); }
+  function wallLive() { return !window.JR_WALL || !!window.JR_WALL.on; }
   function api(body) {
     return fetch('/api/community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().then(function (d) { if (!r.ok) { var e = new Error(d.error || 'Something went wrong'); e.data = d; throw e; } return d; }); });
@@ -296,7 +299,7 @@
     var q = new URLSearchParams(location.search), sid = q.get('session_id');
     var confirmP = sid ? api({ action: 'confirmPlus', sessionId: sid }).then(function () { toast('Welcome to REVENGE+ ✦'); history.replaceState(null, '', '/wall?view=plus'); }).catch(function (e) { toast(e.message, true); }) : Promise.resolve();
     confirmP.then(function () { return getJSON('/api/community?view=plus'); }).then(function (d) {
-      var perks = [['✦', 'REVENGE+ badge', 'A ✦ next to your name on every post and your profile.'], ['🚫', 'No ads', 'The Revenge Wall with zero sponsored posts.'], ['📝', 'Longer posts', 'Up to 1,000 characters per post and 600 per reply.'], ['🎨', 'Exclusive themes', 'Obsidian and Cyber profile colors, members only.'], ['❤️', 'Keep it independent', 'Your membership pays for the site, so it stays ad-light and free of big platforms.']];
+      var perks = !wallLive() ? [['🎨', 'Exclusive themes', 'Obsidian and Cyber profile colors, members only.'], ['❤️', 'Keep it independent', 'Your membership pays for the site, so it stays free of big platforms.']] : [['✦', 'REVENGE+ badge', 'A ✦ next to your name on every post and your profile.'], ['🚫', 'No ads', 'The Revenge Wall with zero sponsored posts.'], ['📝', 'Longer posts', 'Up to 1,000 characters per post and 600 per reply.'], ['🎨', 'Exclusive themes', 'Obsidian and Cyber profile colors, members only.'], ['❤️', 'Keep it independent', 'Your membership pays for the site, so it stays ad-light and free of big platforms.']];
       var status = '';
       if (d.member) {
         var p = d.plus || {};
@@ -483,7 +486,7 @@
       boot.done = true;
       $('meAv').innerHTML = avatar(state.me, '', false);
       $('sideMe').innerHTML = avatar(state.me, 'sm', false) + '<span class="txt"><b>' + esc(state.me.name) + '</b><span>@' + esc(state.me.username) + '</span></span>';
-      $('sideMe').href = $('navProfile').href = $('mobProfile').href = '/u/' + encodeURIComponent(state.me.username);
+      $('sideMe').href = $('navProfile').href = $('mobProfile').href = wallShown() ? '/u/' + encodeURIComponent(state.me.username) : '/account';
       if (state.admin) {
         $('navProfile').insertAdjacentHTML('afterend', '<a class="nav" href="/admin">' + I.shield + '<span>Admin</span></a><a class="nav" href="/wall?view=ads" data-nav data-navkey="ads">' + I.megaphone + '<span>Sponsors</span></a><a class="nav" href="/wall?view=tips" data-nav data-navkey="tips">' + I.inbox + '<span>Tips</span></a>');
         loadOwnerBox();
@@ -523,6 +526,7 @@
   }
   function render() {
     parse(); closeMenus(); window.scrollTo(0, 0);
+    if (!wallShown() && ['plus', 'tip', 'tips', 'ads'].indexOf(route.view) < 0) { location.replace('/'); return; }
     if (route.user) return showProfile(route.user);
     if (route.post) return showPost(route.post);
     if (route.view === 'notifications') return showNotifications();
@@ -872,7 +876,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     main = $('feed');
     document.querySelectorAll('[data-icon]').forEach(function (el) { el.insertAdjacentHTML('afterbegin', I[el.dataset.icon]); });
-    $('backBtn').onclick = function () { if (history.length > 1) history.back(); else go('/wall'); };
+    $('backBtn').onclick = function () { if (history.length > 1) history.back(); else if (wallShown()) go('/wall'); else location.href = '/'; };
     $('searchForm').onsubmit = function (e) { e.preventDefault(); var q = $('searchInput').value.trim(); if (q) go(q.charAt(0) === '#' ? '/wall?tag=' + encodeURIComponent(q.slice(1)) : '/wall?q=' + encodeURIComponent(q)); };
     $('fab').onclick = $('postBtn').onclick = function () { if (route.user || route.post || route.view || route.tab === 'saved' || route.q) go('/wall'); setTimeout(function () { $('text').focus(); }, 60); };
     initComposer();
@@ -884,7 +888,7 @@
       var snooze = +localStorage.getItem('jr_app_banner') || 0;
       if (!standalone && /Android|iPhone|iPad|iPod/.test(navigator.userAgent) && Date.now() - snooze > 7 * 864e5) {
         var bn = document.createElement('div'); bn.className = 'appbanner';
-        bn.innerHTML = '<img src="/assets/icon-192.png" alt=""><span><b>Get the JAVISREVENGE app</b><small>The Revenge Wall on your home screen</small></span><button class="send" type="button">Get</button><button class="x" type="button" aria-label="Dismiss">✕</button>';
+        bn.innerHTML = '<img src="/assets/icon-192.png" alt=""><span><b>Get the JAVISREVENGE app</b><small>' + (wallLive() ? 'The Revenge Wall' : 'JAVISREVENGE') + ' on your home screen</small></span><button class="send" type="button">Get</button><button class="x" type="button" aria-label="Dismiss">✕</button>';
         bn.querySelector('.send').onclick = function () { window.JRInstall && window.JRInstall(); };
         bn.querySelector('.x').onclick = function () { bn.remove(); try { localStorage.setItem('jr_app_banner', String(Date.now())); } catch (e) {} };
         document.querySelector('.topbar').insertAdjacentElement('afterend', bn);
@@ -893,7 +897,7 @@
     // Views other than the feed still need the sidebar (trending, unread count).
     if (route.user || route.post || route.view) getJSON('/api/community?view=wall').then(function (d) { boot(d); renderTrending(d.trending); d.posts.forEach(function (p) { state.posts[p.id] = state.posts[p.id] || p; }); }).catch(function () {});
     // Light polling: show a "new posts" bar instead of jumping the feed.
-    setInterval(function () {
+    if (wallShown()) setInterval(function () {
       if (document.hidden || route.user || route.post || route.view || route.tag || route.q || (route.tab || 'latest') !== 'latest') return;
       getJSON('/api/community?view=wall').then(function (d) {
         setUnread(d.unread);

@@ -9,6 +9,7 @@ import { isPlus, billingOn, PRICE_CENTS, createCheckout, confirmCheckout, refres
 import { createTip, listTips, getTip, saveTip, deleteTip } from '../lib/tips.js';
 import { listAds, isLive, saveAd, getAd, deleteAd, bump, publicAd } from '../lib/ads.js';
 import { queryOf } from '../lib/query.js';
+import { wallOn, NON_WALL_ACTIONS } from '../lib/features.js';
 
 // The members community, in one function (the Hobby plan caps the site at 12).
 //
@@ -170,6 +171,10 @@ export default async function handler(req, res) {
   const me = await getAccount(session.email);
   if (!me || !me.username || await isBanned(me.email)) return res.status(403).json({ error: 'Not allowed' });
   const admin = isAdmin(session);
+  // While the Wall is hidden (lib/features.js), only the owner can use it.
+  // REVENGE+ and anonymous tips keep working for everyone.
+  const wallOpen = admin || wallOn();
+  const wallClosed = () => res.status(404).json({ error: 'The Revenge Wall isn’t open right now.', wallClosed: true });
   try { const fresh = await refreshPlus(me); if (fresh) { me.plus = fresh; await saveAccount(me); } } catch (e) {}
   const plus = isPlus(me);
   const origin = `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
@@ -184,11 +189,23 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET' && query.media) {
     if (String(query.media).startsWith('anon-tips-media/') && !admin) return res.status(403).end();
+    if (!wallOpen && String(query.media).startsWith('wall-media/')) return res.status(404).end();
     return serveMedia(req, res, String(query.media));
   }
 
   if (req.method === 'GET') {
     const view = String(query.view || 'wall');
+
+    if (!wallOpen && ['wall', 'post', 'notifications', 'profile', 'network'].includes(view)) {
+      // The page still asks view=wall for the sidebar while showing REVENGE+ or
+      // a tip; answer with just the account basics and no posts.
+      if (view !== 'wall') return wallClosed();
+      return res.status(200).json({
+        wall: false, ads: [], plusInfo: { on: billingOn(), price: PRICE_CENTS() },
+        me: mini(me), admin, mediaEnabled: hasAI(), mediaAccess: me.mediaAccess || 'none', reactions: REACTIONS,
+        following: 0, unread: 0, trending: [], authors: {}, posts: []
+      });
+    }
 
     if (view === 'wall') {
       const tab = String(query.tab || 'latest');
@@ -313,6 +330,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   if (query.upload) {
+    if (!wallOpen && !String(req.body?.payload?.pathname || '').startsWith('anon-tips-media/')) return wallClosed();
     if (!hasAI() && !admin && !String(req.body?.payload?.pathname || '').startsWith('anon-tips-media/')) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
     const mediaOk = canMedia(me, admin);
     try {
@@ -336,6 +354,7 @@ export default async function handler(req, res) {
 
   if (!requireSameOrigin(req)) return res.status(403).json({ error: 'Invalid origin' });
   const action = req.body?.action;
+  if (!wallOpen && !NON_WALL_ACTIONS.has(action)) return wallClosed();
 
   async function blocked(verdict, text, extra = {}) {
     // Banned words: the post is simply refused, no strike.

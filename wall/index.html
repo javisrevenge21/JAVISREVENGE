@@ -1,24 +1,24 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>The Revenge Wall · JAVISREVENGE</title><meta name="description" content="The Revenge Wall — Break the walls down. No limits."><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/assets/community.css"><link rel="manifest" href="/assets/app.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="REVENGE"><meta name="apple-mobile-web-app-status-bar-style" content="black"></head><body class="app">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>The Revenge Wall · JAVISREVENGE</title><meta name="description" content="The Revenge Wall — Break the walls down. No limits."><link rel="icon" href="/favicon.ico"><script src="/assets/flags.js"></script><link rel="stylesheet" href="/assets/community.css"><link rel="manifest" href="/assets/app.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="REVENGE"><meta name="apple-mobile-web-app-status-bar-style" content="black"></head><body class="app">
 <div class="layout">
   <nav class="side" aria-label="Main">
     <a class="logo" href="/"><img src="/assets/favicon.png" alt=""><span>JAVISREVENGE</span></a>
-    <a class="nav" href="/wall" data-nav data-navkey="wall" data-icon="home"><span>Revenge Wall</span></a>
-    <a class="nav" href="#" id="navSearch" data-navkey="search" data-icon="search" onclick="document.getElementById('searchInput').focus();return false"><span>Explore</span></a>
-    <a class="nav" href="/wall?view=notifications" data-nav data-navkey="notes" data-icon="bell"><span>Notifications</span><b class="dot unread-dot" hidden></b></a>
-    <a class="nav" href="/wall?tab=saved" data-nav data-navkey="saved" data-icon="bookmark"><span>Saved</span></a>
+    <a class="nav" href="/wall" data-nav data-navkey="wall" data-icon="home" data-wall><span>Revenge Wall</span></a>
+    <a class="nav" data-wall href="#" id="navSearch" data-navkey="search" data-icon="search" onclick="document.getElementById('searchInput').focus();return false"><span>Explore</span></a>
+    <a class="nav" data-wall href="/wall?view=notifications" data-nav data-navkey="notes" data-icon="bell"><span>Notifications</span><b class="dot unread-dot" hidden></b></a>
+    <a class="nav" data-wall href="/wall?tab=saved" data-nav data-navkey="saved" data-icon="bookmark"><span>Saved</span></a>
     <a class="nav" href="/wall?view=plus" data-nav data-navkey="plus" data-icon="star"><span>REVENGE+</span></a>
     <a class="nav" href="/wall?view=tip" data-nav data-navkey="tip" data-icon="mask"><span>Anonymous tip</span></a>
-    <a class="nav" href="/account" id="navProfile" data-nav data-navkey="profile" data-icon="user"><span>Profile</span></a>
+    <a class="nav" data-wall href="/account" id="navProfile" data-nav data-navkey="profile" data-icon="user"><span>Profile</span></a>
     <a class="nav" href="/account" data-icon="brush"><span>Customize</span></a>
     <a class="nav" href="/" data-icon="sword"><span>JAVISREVENGE</span></a>
-    <button class="postbtn" id="postBtn" type="button"><span>Post</span></button>
-    <a class="me" id="sideMe" href="/account" data-nav></a>
+    <button class="postbtn" data-wall id="postBtn" type="button"><span>Post</span></button>
+    <a class="me" data-wall id="sideMe" href="/account" data-nav></a>
   </nav>
 
   <main class="main">
     <header class="topbar">
       <div class="title"><button class="back" id="backBtn" type="button" aria-label="Back" hidden>←</button><div><h1 id="topTitle">The Revenge Wall</h1><div class="sub" id="topSub">Break the walls down. No limits.</div></div></div>
-      <div class="tabs" id="tabs" role="tablist">
+      <div class="tabs" data-wall id="tabs" role="tablist">
         <button class="tab on" data-tab="latest" role="tab">Latest</button>
         <button class="tab" data-tab="following" role="tab">Following</button>
         <button class="tab" data-tab="top" role="tab">Top this week</button>
@@ -26,7 +26,7 @@
       </div>
     </header>
 
-    <section class="composer" id="composer" aria-label="Write a post">
+    <section class="composer" data-wall id="composer" aria-label="Write a post">
       <span id="meAv"></span>
       <div class="body">
         <textarea id="text" maxlength="500" placeholder="What's happening?" rows="1"></textarea>
@@ -50,17 +50,17 @@
       </div>
     </section>
     <p class="cstatus" id="status" aria-live="polite"></p>
-    <button class="newbar" id="newbar" hidden></button>
+    <button class="newbar" data-wall id="newbar" hidden></button>
 
     <section id="feed" aria-live="polite"><p class="empty">Loading…</p></section>
   </main>
 
   <aside class="right">
-    <form class="search" id="searchForm" role="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="searchInput" type="search" placeholder="Search posts, #tags, @people" maxlength="60"></form>
+    <form class="search" data-wall id="searchForm" role="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="searchInput" type="search" placeholder="Search posts, #tags, @people" maxlength="60"></form>
     <div class="box owner" id="ownerBox" hidden><h3><small>ONLY YOU SEE THIS</small>Newest members</h3><div id="ownerMembers"></div></div>
-    <div class="box"><h3>Trending</h3><div id="trending"><div class="pad muted">Loading…</div></div></div>
-    <div class="box sidead" id="sideAd" hidden></div>
-    <div class="box"><h3>House rules</h3><ul>
+    <div class="box" data-wall><h3>Trending</h3><div id="trending"><div class="pad muted">Loading…</div></div></div>
+    <div class="box sidead" data-wall id="sideAd" hidden></div>
+    <div class="box" data-wall><h3>House rules</h3><ul>
       <li>Say what you want — this is an open space.</li>
       <li>A few words are banned site-wide.</li>
       <li>No photos or videos of the owner.</li>
@@ -68,7 +68,7 @@
       <li>Nothing illegal. Tap ⋯ then <b>Report</b> if you see it.</li>
       <li>Need to tell the owner something privately? Send an <a href="/wall?view=tip" data-nav>anonymous tip</a>.</li>
     </ul></div>
-    <div class="box"><h3>Your privacy</h3><ul>
+    <div class="box" data-wall><h3>Your privacy</h3><ul>
       <li>Nobody can see a list of members.</li>
       <li>Your profile only shows up once you post.</li>
       <li>Reactions and poll votes are anonymous.</li>
@@ -80,13 +80,16 @@
 </div>
 
 <nav class="mobnav" aria-label="Main">
-  <a href="/wall" data-nav data-navkey="wall" aria-label="The Revenge Wall" data-icon="home"></a>
-  <a href="#" aria-label="Search" data-icon="search" onclick="var q=prompt('Search posts, #tags or @people');if(q)location.href=q[0]==='#'?'/wall?tag='+encodeURIComponent(q.slice(1)):'/wall?q='+encodeURIComponent(q);return false"></a>
-  <a href="/wall?view=notifications" data-nav data-navkey="notes" aria-label="Notifications" data-icon="bell"><b class="dot unread-dot" hidden></b></a>
-  <a href="/wall?tab=saved" data-nav data-navkey="saved" aria-label="Saved" data-icon="bookmark"></a>
+  <a href="/wall" data-wall data-nav data-navkey="wall" aria-label="The Revenge Wall" data-icon="home"></a>
+  <a href="/" data-nowall aria-label="JAVISREVENGE home" data-icon="sword"></a>
+  <a href="/wall?view=plus" data-nowall data-nav data-navkey="plus" aria-label="REVENGE+" data-icon="star"></a>
+  <a href="/wall?view=tip" data-nowall data-nav data-navkey="tip" aria-label="Anonymous tip" data-icon="mask"></a>
+  <a href="#" data-wall aria-label="Search" data-icon="search" onclick="var q=prompt('Search posts, #tags or @people');if(q)location.href=q[0]==='#'?'/wall?tag='+encodeURIComponent(q.slice(1)):'/wall?q='+encodeURIComponent(q);return false"></a>
+  <a href="/wall?view=notifications" data-wall data-nav data-navkey="notes" aria-label="Notifications" data-icon="bell"><b class="dot unread-dot" hidden></b></a>
+  <a href="/wall?tab=saved" data-wall data-nav data-navkey="saved" aria-label="Saved" data-icon="bookmark"></a>
   <a href="/account" id="mobProfile" data-nav data-navkey="profile" aria-label="Profile" data-icon="user"></a>
 </nav>
-<button class="fab" id="fab" type="button" aria-label="New post">+</button>
+<button class="fab" data-wall id="fab" type="button" aria-label="New post">+</button>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/assets/community.js"></script>

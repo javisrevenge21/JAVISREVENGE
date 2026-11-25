@@ -1,4 +1,5 @@
 import { verifySession, parseCookies, SESSION_COOKIE, isAdmin } from './lib/session.js';
+import { wallOn, isWallUrl, flagsScript, MANIFEST_WITHOUT_WALL } from './lib/features.js';
 
 // MAINTENANCE MODE: on unless MAINTENANCE_MODE=off is set in Vercel.
 // While on, everyone sees /maintenance. Only the owner (ADMIN_EMAILS) can sign
@@ -19,6 +20,11 @@ const PUBLIC_PREFIXES = ['/assets/', '/api/auth/', '/api/unsubscribe'];
 
 const USERNAME_SETUP = ['/username', '/api/account', '/api/auth', '/account'];
 
+function ownerOf(request) {
+  const s = verifySession(parseCookies(request.headers.get('cookie') || '')[SESSION_COOKIE], process.env.SESSION_SECRET);
+  return !!(s && isAdmin(s));
+}
+
 export const config = { runtime: 'nodejs', matcher: '/(.*)' };
 
 export default function middleware(request) {
@@ -26,6 +32,17 @@ export default function middleware(request) {
   const path = url.pathname;
   if (path === '/kirk' || path.startsWith('/kirk/')) {
     return new Response('Not Found', { status: 404 });
+  }
+  // The Wall switch (lib/features.js). Answered here so it needs no extra function.
+  if (path === '/assets/flags.js') {
+    return new Response(flagsScript({ on: wallOn(), owner: ownerOf(request) }), {
+      headers: { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'private, no-store' }
+    });
+  }
+  if (path === '/assets/app.webmanifest' && !wallOn()) {
+    return new Response(JSON.stringify(MANIFEST_WITHOUT_WALL), {
+      headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'public, max-age=0, must-revalidate' }
+    });
   }
   if (maintenanceOn()) {
     if (MAINT_OPEN.has(path) || path.startsWith('/assets/') || path.startsWith('/api/auth/')) return;
@@ -37,6 +54,10 @@ export default function middleware(request) {
       return Response.redirect(new URL('/maintenance', request.url), 307);
     }
   } else if (path === '/maintenance' || path === '/maintenance/') {
+    return Response.redirect(new URL('/', request.url), 307);
+  }
+  // While the Wall is hidden, its pages send everyone but the owner home.
+  if (!wallOn() && isWallUrl(url) && !ownerOf(request)) {
     return Response.redirect(new URL('/', request.url), 307);
   }
   if (PUBLIC_EXACT.has(path) || PUBLIC_PREFIXES.some(prefix => path.startsWith(prefix))) return;

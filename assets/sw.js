@@ -2,7 +2,7 @@
 // (they're members-only and change constantly); if the network is down the
 // offline screen is shown. Static files are cached for speed. Nothing from
 // /api/ and no media is ever cached, so private data never sits on the device.
-const VERSION = 'jr-v1';
+const VERSION = 'jr-v2';
 const CORE = ['/assets/offline.html', '/assets/icon-192.png', '/assets/community.css', '/assets/community.js', '/assets/site-ui.js'];
 
 self.addEventListener('install', e => {
@@ -20,6 +20,8 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(req).catch(() => caches.match('/assets/offline.html')));
     return;
   }
+  // flags.js and the manifest change with the Wall switch, so never cache them.
+  if (url.pathname === '/assets/flags.js' || url.pathname === '/assets/app.webmanifest') return;
   if (url.pathname.startsWith('/assets/') && !/\.(mp3|mp4|webm|mov)$/i.test(url.pathname) && !req.headers.get('range')) {
     e.respondWith(caches.open(VERSION).then(async cache => {
       const hit = await cache.match(req);

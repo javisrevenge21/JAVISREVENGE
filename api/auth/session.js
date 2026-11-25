@@ -1,6 +1,7 @@
 import { sessionFromRequest, isAdmin, clearCookie, SESSION_COOKIE } from '../../lib/session.js';
 import { getAccount, isBanned } from '../../lib/accounts.js';
 import { queryOf } from '../../lib/query.js';
+import { wallOn } from '../../lib/features.js';
 
 export default async function handler(req, res) {
   const query = queryOf(req);
@@ -21,6 +22,7 @@ export default async function handler(req, res) {
     user: { email: account.email, username: account.username || '', name: account.name, picture: account.picture, avatar: account.profile?.avatar || '', theme: account.profile?.theme || 'silver', title: account.profile?.title || '', mood: account.profile?.mood || '' },
     notifications: account.notifications === true,
     notificationsAsked: account.notificationsAsked === true || account.notifications === true,
-    admin: isAdmin(session)
+    admin: isAdmin(session),
+    wall: wallOn()
   });
 }
