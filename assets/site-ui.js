@@ -76,6 +76,12 @@
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
       document.body.appendChild(bar);
       if (!data.notificationsAsked) askForNotifications(data.user.email);
+      // "Ask Ryan" voice chat for members (not on the admin and settings pages).
+      if (!/^\/(admin|account)(\/|$)/.test(location.pathname)) {
+        window.JR_THEME_RGB = rgb;
+        var vc = document.createElement('script'); vc.src = '/assets/voice-chat.js'; vc.defer = true;
+        document.body.appendChild(vc);
+      }
     })
     .catch(function () {
       var returnTo = encodeURIComponent(location.pathname + location.search);
