@@ -83,7 +83,7 @@
   function render() {
     if (!log) return;
     var html = '';
-    if (!state.msgs.length) html += '<div class="jrv-msg a">Yo, it’s Ryan’s AI. Ask me anything about JAVISREVENGE, the Wall, politics or REVENGE+, and I’ll answer out loud.</div>';
+    if (!state.msgs.length) html += '<div class="jrv-msg a">Yo, it’s Ryan’s AI. Ask me anything about JAVISREVENGE, politics or REVENGE+, and I’ll answer out loud.</div>';
     state.msgs.forEach(function (m, i) {
       html += '<div class="jrv-msg ' + (m.role === 'user' ? 'u' : m.role === 'assistant' ? 'a' : 's') + '">' + esc(m.content) +
         (m.role === 'assistant' ? '<button class="jrv-play" type="button" data-i="' + i + '" aria-label="Play answer">▶</button>' : '') + '</div>';
