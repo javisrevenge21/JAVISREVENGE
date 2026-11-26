@@ -48,6 +48,18 @@
     var top = source.cloneNode(true);
     top.classList.add('jr-back-top');
     document.body.appendChild(top);
+    function clearHeader() {
+      var btn = document.querySelector('a.jr-back-top');
+      var view = document.querySelector('main.view') || document.querySelector('.view');
+      if (!btn || !view) return;
+      var need = Math.ceil(btn.getBoundingClientRect().bottom - view.getBoundingClientRect().top + 16);
+      var current = parseFloat(window.getComputedStyle(view).paddingTop) || 0;
+      if (need > current) view.style.paddingTop = need + 'px';
+    }
+    clearHeader();
+    window.addEventListener('resize', clearHeader);
+    // beta-banner.js runs right after this file and changes the button's top offset
+    setTimeout(clearHeader, 0);
   })();
 
   fetch('/api/auth/session', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
