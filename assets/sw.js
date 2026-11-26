@@ -2,7 +2,7 @@
 // (they're members-only and change constantly); if the network is down the
 // offline screen is shown. Static files are cached for speed. Nothing from
 // /api/ and no media is ever cached, so private data never sits on the device.
-const VERSION = 'jr-v3';
+const VERSION = 'jr-v4';
 const CORE = ['/assets/offline.html', '/assets/icon-192.png', '/assets/community.css', '/assets/community.js', '/assets/site-ui.js'];
 
 self.addEventListener('install', e => {

@@ -5,7 +5,7 @@
   var isPublic = !!(script && script.hasAttribute('data-public'));
   var style = document.createElement('style');
   style.textContent = [
-    '.jr-account{position:fixed;z-index:50;top:16px;right:16px;display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(8,8,10,.82);border:1px solid rgba(255,255,255,.16);border-radius:999px;backdrop-filter:blur(14px);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff}',
+    '.jr-account{position:fixed;z-index:50;top:calc(16px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(8,8,10,.82);border:1px solid rgba(255,255,255,.16);border-radius:999px;backdrop-filter:blur(14px);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff}',
     '.jr-emoji{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:17px}',
     '.jr-account img{width:30px;height:30px;border-radius:50%;object-fit:cover;background:#222}',
     '.jr-account a{color:#fff;text-decoration:none}.jr-account a:hover{text-decoration:underline}',
@@ -31,7 +31,7 @@
     '.jr-menu a.jr-out{color:#fca5a5;border-top:1px solid rgba(255,255,255,.08);border-radius:0 0 10px 10px;margin-top:4px}',
     '@media(max-width:600px){.jr-account-name{display:none}.jr-menu{width:min(290px,calc(100vw - 24px))}}',
     // Top-left twin of the bottom <a class="back"> link. Same look, fixed so it
-    // clears the beta banner, account chip, and device safe-area insets.
+    // sits with the account chip and respects device safe-area insets.
     'a.jr-back-top{position:fixed;z-index:50;top:calc(16px + env(safe-area-inset-top,0px));left:calc(16px + env(safe-area-inset-left,0px));margin-top:0;animation:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(8,8,10,.82);max-width:calc(100vw - 160px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px))}',
     'a.jr-back-top:hover{background:rgba(255,255,255,.10)}'
   ].join('');
@@ -58,7 +58,6 @@
     }
     clearHeader();
     window.addEventListener('resize', clearHeader);
-    // beta-banner.js runs right after this file and changes the button's top offset
     setTimeout(clearHeader, 0);
   })();
 
