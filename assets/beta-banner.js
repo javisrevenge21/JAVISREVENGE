@@ -23,8 +23,8 @@
     style.textContent = [
       '#jr-beta{position:relative;z-index:70;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:8px 14px;text-align:center;background:rgba(10,10,12,.92);border-bottom:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.78);font:500 12px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;letter-spacing:.04em}',
       '#jr-beta b{padding:2px 8px;border:1px solid rgba(255,255,255,.4);border-radius:999px;color:#fff;font-size:10px;letter-spacing:.2em}',
-      '.jr-account{top:56px!important}',
-      '@media(max-width:600px){#jr-beta{font-size:11px;padding:7px 10px;gap:6px}.jr-account{top:72px!important}}'
+      '.jr-account,.jr-back-top{top:calc(56px + env(safe-area-inset-top,0px))!important}',
+      '@media(max-width:600px){#jr-beta{font-size:11px;padding:7px 10px;gap:6px}.jr-account,.jr-back-top{top:calc(72px + env(safe-area-inset-top,0px))!important}}'
     ].join('');
     document.head.appendChild(style);
     var bar = document.createElement('div');
