@@ -275,10 +275,11 @@
     setTop('Notifications', 'Follows, replies, reposts, mentions and reactions', false, false); setNav('notes'); $('composer').hidden = true; loading();
     getJSON('/api/community?view=notifications').then(function (d) {
       Object.keys(d.authors).forEach(function (k) { state.authors[k] = d.authors[k]; });
-      var ICON = { tip: '🕵️', reply: '💬', mention: '📣', react: '', follow: '👤', media: '📷', repost: '🔁', quote: '💬' };
+      var ICON = { tip: '🕵️', submission: '📥', reply: '💬', mention: '📣', react: '', follow: '👤', media: '📷', repost: '🔁', quote: '💬' };
       main.innerHTML = d.notifications.length ? d.notifications.map(function (n) {
         var a = n.from ? author(n.from) : null, line;
         if (n.type === 'tip') line = '<b>New anonymous tip</b> in your Tips inbox';
+        else if (n.type === 'submission') line = '<b>New fan upload</b>' + (n.from ? ' from @' + esc(n.from) : '') + ' on the Archives page';
         else if (n.type === 'repost') line = '<b>' + esc(a.name) + '</b> reposted your post';
         else if (n.type === 'quote') line = '<b>' + esc(a.name) + '</b> quoted your post';
         else if (n.type === 'follow') line = '<b>' + esc(a.name) + '</b> followed you';
@@ -286,7 +287,7 @@
         else if (n.type === 'react') line = '<b>' + (n.count > 1 ? n.count + ' people' : 'Someone') + '</b> reacted ' + esc(n.emoji) + ' to your post';
         else if (n.type === 'reply') line = '<b>' + esc(a.name) + '</b> replied to your post';
         else line = '<b>' + esc(a.name) + '</b> mentioned you';
-        return '<a class="note' + (n.read ? '' : ' unread') + '" href="' + (n.type === 'tip' ? '/wall?view=tips' : n.type === 'follow' ? '/u/' + encodeURIComponent(n.from) : n.type === 'media' ? '/wall' : '/wall?post=' + n.postId) + '" data-nav><span class="ico">' + (ICON[n.type] || esc(n.emoji)) + '</span><span class="body">' +
+        return '<a class="note' + (n.read ? '' : ' unread') + '" href="' + (n.type === 'tip' ? '/wall?view=tips' : n.type === 'submission' ? '/archives#fan-inbox' : n.type === 'follow' ? '/u/' + encodeURIComponent(n.from) : n.type === 'media' ? '/wall' : '/wall?post=' + n.postId) + '"' + (n.type === 'submission' ? '' : ' data-nav') + '><span class="ico">' + (ICON[n.type] || esc(n.emoji)) + '</span><span class="body">' +
           (a ? avatar(a, 'sm', false) : '') + '<div style="margin-top:6px">' + line + ' <time>· ' + ago(n.at) + '</time></div>' + (n.text ? '<p>' + esc(n.text) + '</p>' : '') + '</span></a>';
       }).join('') : '<div class="empty"><b>Nothing yet</b>When people reply to you, mention you or react to your posts, it shows up here.</div>';
       if (d.notifications.some(function (n) { return !n.read; })) api({ action: 'readNotifications' }).then(function () { setUnread(0); });

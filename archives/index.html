@@ -181,6 +181,61 @@ transform: skewX(-18deg); opacity: 0;
 .ig-link:hover, .ig-link:focus-visible { box-shadow: 0 14px 40px rgba(var(--theme),0.35) !important; }
 @media (max-width: 600px) { .view { padding-left: 10px !important; padding-right: 10px !important; } .card { border-radius: 14px; } }
 </style>
+<style id="fan-submit-style">
+[hidden] { display: none !important; }
+.fan .lede { margin-bottom: 4px; }
+.fan-form { margin-top: 18px; display: grid; gap: 14px; }
+.fan-drop {
+display: block; padding: 22px 16px; text-align: center; cursor: pointer;
+border: 1px dashed rgba(var(--theme),0.7); border-radius: 12px; background: rgba(0,0,0,0.55);
+color: rgba(255,255,255,0.9); font-weight: 600; letter-spacing: 0.08em; transition: background 0.25s, border-color 0.25s;
+}
+.fan-drop:hover, .fan-drop:focus-within { background: rgba(var(--theme),0.12); border-color: rgba(var(--theme),1); }
+.fan-drop small { display: block; margin-top: 6px; font-weight: 400; letter-spacing: 0.03em; color: rgba(255,255,255,0.55); }
+.fan-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.fan-previews { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.fan-previews:empty { display: none; }
+.fan-pv { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.14); }
+.fan-pv img, .fan-pv video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fan-pv .fan-fname { display: flex; align-items: center; justify-content: center; height: 100%; padding: 8px; font-size: 0.72rem; text-align: center; word-break: break-all; color: rgba(255,255,255,0.8); }
+.fan-pv .fan-size { position: absolute; left: 6px; bottom: 8px; font-size: 0.66rem; padding: 2px 5px; border-radius: 6px; background: rgba(0,0,0,0.7); }
+.fan-pv button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(0,0,0,0.75); color: #fff; cursor: pointer; }
+.fan-prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: rgba(var(--theme),1); transition: width 0.2s; }
+.fan-pv.done .fan-prog { width: 100% !important; background: #3ecf6e; }
+.fan-field { display: grid; gap: 6px; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.fan-field input, .fan-field textarea {
+width: 100%; padding: 12px 14px; font: inherit; font-size: 16px; letter-spacing: 0; text-transform: none; color: #fff;
+background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; resize: vertical;
+}
+.fan-field input:focus, .fan-field textarea:focus { outline: none; border-color: rgba(var(--theme),1); }
+.fan-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 0.86rem; line-height: 1.5; color: rgba(255,255,255,0.82); cursor: pointer; }
+.fan-consent input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: rgb(var(--theme)); }
+.fan-send { width: 100%; margin-top: 0; font-family: inherit; cursor: pointer; }
+.fan-send:disabled { opacity: 0.45; cursor: not-allowed; }
+.fine.err { color: #ff9c9c; }
+.fan-done { margin-top: 18px; text-align: center; }
+.fan-done .lede { margin-bottom: 8px; }
+.fan-done button { margin-top: 14px; padding: 10px 18px; font: inherit; font-size: 0.85rem; letter-spacing: 0.14em; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; cursor: pointer; }
+.fan-inbox-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fan-muted { color: rgba(255,255,255,0.5); font-size: 0.82rem; }
+.fan-sub { margin-top: 14px; padding: 14px; border-radius: 12px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.12); }
+.fan-sub.fan-new { border-color: rgba(var(--theme),0.9); }
+.fan-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 0.88rem; }
+.fan-badge { font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.3); }
+.fan-new .fan-badge { border-color: rgba(var(--theme),1); color: rgb(var(--theme)); }
+.fan-posted .fan-badge { border-color: #3ecf6e; color: #3ecf6e; }
+.fan-credit, .fan-caption { margin-top: 8px; font-size: 0.9rem; line-height: 1.5; color: rgba(255,255,255,0.82); white-space: pre-wrap; }
+.fan-credit a { color: #fff; }
+.fan-files { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.fan-file { display: grid; gap: 6px; }
+.fan-file img, .fan-file video { width: 100%; max-height: 260px; object-fit: contain; background: #000; border-radius: 8px; display: block; }
+.fan-file audio { width: 100%; }
+.fan-file .fan-fname { display: block; padding: 18px 10px; text-align: center; font-size: 0.78rem; word-break: break-all; color: #fff; border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; }
+.fan-dl { font-size: 0.76rem; letter-spacing: 0.08em; color: rgb(var(--theme)); text-decoration: none; }
+.fan-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.fan-actions button { padding: 8px 14px; font: inherit; font-size: 0.8rem; letter-spacing: 0.08em; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,0.28); border-radius: 8px; cursor: pointer; }
+.fan-actions .fan-del { border-color: #713232; color: #ffdede; }
+</style>
 <link rel="manifest" href="/assets/app.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="REVENGE"><meta name="apple-mobile-web-app-status-bar-style" content="black"></head>
 <body>
 <canvas id="bg"></canvas>
@@ -207,6 +262,34 @@ transform: skewX(-18deg); opacity: 0;
 <a class="ig-link" href="https://www.instagram.com/javiarchives.jp/" target="_blank" rel="noopener">REQUEST ACCESS &rsaquo;</a>
 <p class="fine">Requests go through Instagram @javiarchives.jp.</p>
 </section>
+<section class="card fan" id="fan-submit">
+<p class="card-label">Send it in</p>
+<p class="lede">Got a photo, video or file for the archive?</p>
+<div class="text"><p>Send it here. If it makes the cut, it gets posted on Instagram.</p></div>
+<form class="fan-form" id="fanForm" novalidate>
+<label class="fan-drop">Tap to add photos, videos or files
+<input type="file" id="fanFiles" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,application/pdf,audio/mpeg,audio/mp4,audio/x-m4a,.heic,.heif,.mov,.m4a">
+<small>Up to 5 files, 100 MB each</small></label>
+<div class="fan-previews" id="fanPrev"></div>
+<label class="fan-field">Instagram handle for credit (optional)
+<input type="text" id="fanHandle" maxlength="60" placeholder="@yourhandle" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+<label class="fan-field">Caption or context (optional)
+<textarea id="fanCaption" rows="3" maxlength="500" placeholder="What is it? When and where was it taken?"></textarea></label>
+<label class="fan-consent"><input type="checkbox" id="fanConsent"><span>I took this or have the rights to it, and I allow JAVISREVENGE to post it on Instagram, with or without credit.</span></label>
+<button class="ig-link fan-send" id="fanSend" type="submit" disabled>SEND IT IN &rsaquo;</button>
+<p class="fine" id="fanStatus" role="status" aria-live="polite">Only the owner sees what you send, along with your username. Nothing illegal, and nothing showing someone who didn't agree to it.</p>
+</form>
+<div class="fan-done" id="fanDone" hidden>
+<p class="lede">Got it. Thank you.</p>
+<p class="fine">Your upload went to the owner. Not everything gets posted.</p>
+<button type="button" id="fanAgain">SEND MORE</button>
+</div>
+</section>
+<section class="card" id="fan-inbox" hidden>
+<div class="fan-inbox-head"><p class="card-label">Fan uploads (only you see this)</p><p class="card-label" id="fanInboxCount"></p></div>
+<div id="fanInboxList"></div>
+</section>
+<script src="/assets/fan-submit.js" defer></script>
 <a class="back" href="/">&lsaquo; BACK</a>
 </div>
 </main>
