@@ -7,6 +7,7 @@ import { listPosts, getPost, savePost, createPost, deletePost, REACTIONS } from 
 import { check, punish, hasAI, log, label } from '../lib/moderation.js';
 import { isPlus, billingOn, PRICE_CENTS, createCheckout, confirmCheckout, refreshPlus, portalUrl } from '../lib/billing.js';
 import { createTip, listTips, getTip, saveTip, deleteTip } from '../lib/tips.js';
+import * as fan from '../lib/submissions.js';
 import { listAds, isLive, saveAd, getAd, deleteAd, bump, publicAd } from '../lib/ads.js';
 import { queryOf } from '../lib/query.js';
 import { wallOn, NON_WALL_ACTIONS } from '../lib/features.js';
@@ -18,8 +19,10 @@ import { wallOn, NON_WALL_ACTIONS } from '../lib/features.js';
 // GET  ?view=profile&u=         a member's profile (only once they've posted)
 // GET  ?view=notifications      your notifications
 // GET  ?view=members            OWNER ONLY
-// GET  ?media=<pathname>        serve an attachment (members only)
+// GET  ?media=<pathname>[&dl=1] serve an attachment (members only)
+// GET  ?view=submissions        OWNER ONLY: fan uploads from the Archives page
 // POST ?upload=1                Blob client-upload token
+// POST { action: submit }       send photos/videos/files from the Archives page
 // POST { action: post | react | delete | report | restore | reply | deleteReply | save | pin | vote | readNotifications }
 //
 // Privacy rules: nobody but the owner can list members or see sign-up counts;
@@ -133,8 +136,8 @@ async function blobToDataUrl(pathname, type) {
   return `data:${type};base64,${buf.toString('base64')}`;
 }
 
-async function serveMedia(req, res, pathname) {
-  if (!/^(wall-media\/[a-z0-9_]{3,20}|ads-media|anon-tips-media)\/[\w.\-]+$/.test(pathname)) return res.status(400).end();
+async function serveMedia(req, res, pathname, download = false) {
+  if (!/^(wall-media\/[a-z0-9_]{3,20}|ads-media|anon-tips-media|fan-submissions-media)\/[\w.\-]+$/.test(pathname)) return res.status(400).end();
   const headers = req.headers.range ? { range: req.headers.range } : undefined;
   const r = await get(pathname, { access: 'private', headers }).catch(() => null);
   if (!r || !r.stream) return res.status(404).end();
@@ -143,7 +146,8 @@ async function serveMedia(req, res, pathname) {
   }
   res.setHeader('Cache-Control', 'private, max-age=86400');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  if (r.blob?.contentType === 'application/pdf') res.setHeader('Content-Disposition', 'inline');
+  if (download) res.setHeader('Content-Disposition', `attachment; filename="${pathname.split('/').pop()}"`);
+  else if (r.blob?.contentType === 'application/pdf') res.setHeader('Content-Disposition', 'inline');
   res.status(r.headers.get('content-range') ? 206 : 200);
   const reader = r.stream.getReader();
   for (;;) { const { done, value } = await reader.read(); if (done) break; res.write(Buffer.from(value)); }
@@ -188,9 +192,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET' && query.media) {
-    if (String(query.media).startsWith('anon-tips-media/') && !admin) return res.status(403).end();
+    if ((String(query.media).startsWith('anon-tips-media/') || String(query.media).startsWith(fan.MEDIA_PREFIX)) && !admin) return res.status(403).end();
     if (!wallOpen && String(query.media).startsWith('wall-media/')) return res.status(404).end();
-    return serveMedia(req, res, String(query.media));
+    return serveMedia(req, res, String(query.media), !!query.dl);
   }
 
   if (req.method === 'GET') {
@@ -312,6 +316,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ tips: tips.map(t => ({ ...t, files: (t.files || []).map(f => ({ name: f.name, kind: f.kind, size: f.size, url: '/api/community?media=' + encodeURIComponent(f.pathname) })) })) });
     }
 
+    if (view === 'submissions') {
+      if (!admin) return res.status(403).json({ error: 'Owner only' });
+      const media = p => '/api/community?media=' + encodeURIComponent(p);
+      const subs = await fan.listSubmissions();
+      return res.status(200).json({ submissions: subs.map(s => ({ ...s, files: (s.files || []).map(f => ({ name: f.name, kind: f.kind, type: f.type, size: f.size, url: media(f.pathname), download: media(f.pathname) + '&dl=1' })) })) });
+    }
+
     if (view === 'ads') {
       if (!admin) return res.status(403).json({ error: 'Owner only' });
       return res.status(200).json({ ads: (await listAds()).map(a => ({ ...a, imageUrl: a.image ? '/api/community?media=' + encodeURIComponent(a.image) : '', live: isLive(a) })) });
@@ -330,13 +341,16 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   if (query.upload) {
-    if (!wallOpen && !String(req.body?.payload?.pathname || '').startsWith('anon-tips-media/')) return wallClosed();
-    if (!hasAI() && !admin && !String(req.body?.payload?.pathname || '').startsWith('anon-tips-media/')) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
+    const upPath = String(req.body?.payload?.pathname || '');
+    const privateDrop = upPath.startsWith('anon-tips-media/') || upPath.startsWith(fan.MEDIA_PREFIX);
+    if (!wallOpen && !privateDrop) return wallClosed();
+    if (!hasAI() && !admin && !privateDrop) return res.status(403).json({ error: 'Photo and video uploads switch on once automatic moderation is set up.' });
     const mediaOk = canMedia(me, admin);
     try {
       const json = await handleUpload({
         body: req.body, request: req,
         onBeforeGenerateToken: async (pathname) => {
+          if (pathname.startsWith(fan.MEDIA_PREFIX)) return { allowedContentTypes: fan.ALLOWED_TYPES, maximumSizeInBytes: fan.MAX_FILE_BYTES, addRandomSuffix: true };
           if (pathname.startsWith('anon-tips-media/')) return { allowedContentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES, ...FILE_TYPES, 'audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'text/plain'], maximumSizeInBytes: LIMITS.video, addRandomSuffix: true };
           if (admin && pathname.startsWith('ads-media/')) return { allowedContentTypes: IMAGE_TYPES, maximumSizeInBytes: LIMITS.image, addRandomSuffix: true };
           if (!pathname.startsWith(`wall-media/${me.username}/`)) throw new Error('Bad upload path');
@@ -461,6 +475,33 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ sent: true });
   }
+  if (action === 'submit') {
+    // Fan uploads from the Archives page. Files are already in Blob (uploaded
+    // straight from the browser); here we check them and save the record.
+    if (!admin && me.lastSubmissionAt && Date.now() - Date.parse(me.lastSubmissionAt) < fan.GAP_MS) return res.status(429).json({ error: 'Please wait a minute before sending more.' });
+    const wanted = Array.isArray(req.body.files) ? req.body.files.slice(0, fan.MAX_FILES + 1) : [];
+    const heads = {};
+    for (const w of wanted) {
+      const p = String(w?.pathname || '');
+      if (fan.isSubmissionMedia(p)) heads[p] = await head(p).catch(() => null);
+    }
+    const checked = fan.validateSubmission({ files: wanted, consent: req.body.consent }, heads);
+    if (checked.error) return res.status(400).json({ error: checked.error });
+    await fan.createSubmission(me, { handle: req.body.handle, caption: req.body.caption, files: checked.files });
+    const fresh = await getAccount(me.email); fresh.lastSubmissionAt = new Date().toISOString(); await saveAccount(fresh);
+    for (const email of String(process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean)) {
+      const owner = await getAccount(email).catch(() => null);
+      if (owner) { owner.inbox = [{ type: 'submission', from: me.username, at: new Date().toISOString(), read: false }, ...(owner.inbox || [])].slice(0, 60); await saveAccount(owner).catch(() => {}); }
+    }
+    return res.status(200).json({ sent: true });
+  }
+  if (action === 'submissionMark' || action === 'submissionDelete') {
+    if (!admin) return res.status(403).json({ error: 'Owner only' });
+    if (action === 'submissionDelete') return res.status(200).json({ deleted: await fan.deleteSubmission(String(req.body.id)) });
+    const s = await fan.markSubmission(String(req.body.id), String(req.body.status));
+    return s ? res.status(200).json({ ok: true, status: s.status }) : res.status(404).json({ error: 'Not found' });
+  }
+
   if (action === 'tipRead' || action === 'tipDelete') {
     if (!admin) return res.status(403).json({ error: 'Owner only' });
     if (action === 'tipDelete') { await deleteTip(String(req.body.tipId)); return res.status(200).json({ deleted: true }); }
