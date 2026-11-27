@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Pick your username · JAVISREVENGE</title><link rel="stylesheet" href="/assets/legal.css">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script src="/assets/i18n.js"></script><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Pick your username · JAVISREVENGE</title><link rel="stylesheet" href="/assets/legal.css">
 <style>
 .shell { width: min(560px, calc(100% - 24px)); }
 .handle { display: flex; align-items: center; border: 1px solid rgba(255,255,255,.22); border-radius: 12px; background: rgba(255,255,255,.05); overflow: hidden; transition: border-color .2s; }
@@ -9,10 +9,14 @@
 #msg.ok { color: #6ee7b7; } #msg.bad { color: #fca5a5; }
 .rules { font-size: 13px; color: rgba(255,255,255,.5); margin-top: 6px; }
 .button[disabled] { opacity: .4; cursor: not-allowed; }
+#lang { margin-bottom: 0; }
 </style><link rel="manifest" href="/assets/app.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="REVENGE"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#000000"></head><body>
 <main class="shell"><span class="brand">JAVISREVENGE</span>
 <section class="card">
 <h1>Pick your username</h1>
+<label for="lang">Site language</label>
+<select id="lang"></select>
+<p class="rules">The whole site shows in this language. You can change it any time in Settings.</p>
 <p>Everyone on JAVISREVENGE has a username. It's how people will know you here. <strong>Choose carefully, you can't change it later.</strong></p>
 <label for="u">Username</label>
 <div class="handle" id="box"><span>@</span><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></div>
@@ -26,6 +30,12 @@
   var input = document.getElementById('u'), box = document.getElementById('box'), msg = document.getElementById('msg'), go = document.getElementById('go');
   var timer, seq = 0, lastOk = null;
   document.getElementById('agree').addEventListener('change', function () { go.disabled = lastOk !== true || !this.checked; });
+  // Site language: saved to the account right away, then the page reloads in it.
+  if (window.JRI18N && JRI18N.picker) JRI18N.picker(document.getElementById('lang'), function (code) {
+    JRI18N.remember(code);
+    fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: code }) })
+      .catch(function () {}).then(function () { location.reload(); });
+  });
   var p = new URLSearchParams(location.search).get('returnTo');
   var returnTo = p && p.charAt(0) === '/' && p.slice(0, 2) !== '//' ? p : '/';
 
@@ -54,7 +64,7 @@
 
   go.addEventListener('click', function () {
     go.disabled = true; msg.className = ''; msg.textContent = 'Claiming…';
-    fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: input.value, agree: document.getElementById('agree').checked }) })
+    fetch('/api/account/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: input.value, agree: document.getElementById('agree').checked, lang: window.JRI18N ? JRI18N.lang : 'en' }) })
       .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error); return d; }); })
       .then(function (d) { show(true, 'You are @' + d.username + '. Welcome!'); setTimeout(function () { location.replace(returnTo); }, 700); })
       .catch(function (e) { show(false, e.message || 'Could not claim that username.'); });

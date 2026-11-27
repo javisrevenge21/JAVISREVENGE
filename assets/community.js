@@ -418,7 +418,7 @@
       main.innerHTML = '<div class="tabs" style="border-bottom:1px solid var(--line)">' + ['following', 'followers', 'blocked'].map(function (k) { return '<a class="tab' + (k === list ? ' on' : '') + '" href="/wall?view=network&list=' + k + '" data-nav style="text-decoration:none;text-align:center">' + titles[k] + '</a>'; }).join('') + '</div>' +
         (d.list.length ? d.list.map(function (m) {
           var btn = list === 'blocked'
-            ? (m.blocked ? '<button class="btn red" data-block="' + esc(m.username) + '">Unblock</button>' : '<button class="btn" data-mute="' + esc(m.username) + '">Unmute</button>')
+            ? (m.blocked ? '<button class="btn red" data-unblock data-block="' + esc(m.username) + '">Unblock</button>' : '<button class="btn" data-mute="' + esc(m.username) + '">Unmute</button>')
             : '<button class="btn ' + (m.following ? '' : 'dark') + '" data-follow="' + esc(m.username) + '">' + (m.following ? 'Following' : 'Follow') + '</button>';
           return '<div class="who-row" style="padding:12px 16px;border-bottom:1px solid var(--line)">' + avatar(m) + '<a href="/u/' + encodeURIComponent(m.username) + '" data-nav style="flex:1;text-decoration:none;min-width:0"><b>' + esc(m.name) + '</b><span style="display:block;color:var(--ink2);font-size:14px">@' + esc(m.username) + '</span></a>' + btn + '</div>';
         }).join('') : '<div class="empty"><b>' + (list === 'followers' ? 'No followers yet' : list === 'blocked' ? 'Nobody blocked or muted' : 'You’re not following anyone yet') + '</b>' + (list === 'following' ? 'Open someone’s profile and tap Follow.' : '') + '</div>');
@@ -447,7 +447,7 @@
       var html = '<div class="cover ' + esc(u.finish) + '" style="--t:' + t + '">' + (PATTERNS[u.banner] ? '<svg aria-hidden="true"><defs>' + PATTERNS[u.banner] + '</defs><rect width="100%" height="100%" fill="url(#pt)"/></svg>' : '') + '</div>' +
         '<div class="phead" style="--t:' + t + '">' + avatar(u, 'lg', false) +
         (d.me === u.username ? '<a class="edit" href="/account">Edit profile</a>'
-          : '<div class="pbtns">' + (d.relation.blocked ? '<button class="btn red" data-block="' + esc(u.username) + '">Unblock</button>'
+          : '<div class="pbtns">' + (d.relation.blocked ? '<button class="btn red" data-unblock data-block="' + esc(u.username) + '">Unblock</button>'
             : '<button class="btn more2" data-pmenu="' + esc(u.username) + '" aria-label="More">⋯</button><button class="btn ' + (d.relation.following ? '' : 'dark') + '" data-follow="' + esc(u.username) + '">' + (d.relation.following ? 'Following' : 'Follow') + '</button>') + '</div>') +
         '<div class="pname f-' + esc(u.font) + ' e-' + esc(u.effect) + '">' + esc(u.name) + (u.plus ? ' ' + PLUS : '') + '</div>' +
         '<div class="phandle">@' + esc(u.username) + (u.pronouns ? ' · ' + esc(u.pronouns) : '') + (d.relation && d.relation.followsYou ? ' <span class="fy">Follows you</span>' : '') + '</div>' +
@@ -669,7 +669,7 @@
     if ((el = t.closest('[data-block]'))) {
       ev.preventDefault(); ev.stopPropagation(); closeMenus();
       var u0 = el.dataset.block;
-      if (el.textContent.indexOf('Unblock') < 0 && !confirm('Block @' + u0 + '?\n\nThey won’t be able to see your posts, follow you, reply or react to you, and you won’t see theirs.')) return;
+      if (!el.hasAttribute('data-unblock') && !confirm('Block @' + u0 + '?\n\nThey won’t be able to see your posts, follow you, reply or react to you, and you won’t see theirs.')) return;
       api({ action: 'block', username: u0 }).then(function (d) { toast(d.blocked ? 'Blocked @' + u0 : 'Unblocked @' + u0); render(); }).catch(function (e) { toast(e.message, true); });
       return;
     }

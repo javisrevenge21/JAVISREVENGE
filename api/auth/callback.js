@@ -2,6 +2,7 @@ import { isAdmin, createSession, sessionCookie, clearCookie, parseCookies, safeR
 import { upsertAccount, isBanned } from '../../lib/accounts.js';
 import { PROVIDERS, isEnabled } from '../../lib/oauth.js';
 import { queryOf } from '../../lib/query.js';
+import { languageCookie } from '../../lib/translate.js';
 
 export default async function handler(req, res) {
   const query = queryOf(req);
@@ -30,7 +31,10 @@ export default async function handler(req, res) {
     }
     const account = await upsertAccount(profile, provider);
     const token = createSession(account, process.env.SESSION_SECRET);
-    res.setHeader('Set-Cookie', [sessionCookie(token), clearCookie('jr_oauth_state'), clearCookie('jr_oauth_provider'), clearCookie('jr_return_to')]);
+    const cookies = [sessionCookie(token), clearCookie('jr_oauth_state'), clearCookie('jr_oauth_provider'), clearCookie('jr_return_to')];
+    // Show the site in the member's language on this device too.
+    if (account.language) cookies.push(languageCookie(account.language));
+    res.setHeader('Set-Cookie', cookies);
     return res.redirect(302, safeReturnTo(cookies.jr_return_to));
   } catch (error) {
     console.error(`${provider} sign-in failed:`, error && error.message);

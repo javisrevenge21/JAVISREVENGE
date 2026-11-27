@@ -31,6 +31,7 @@ export default async function handler(req, res) {
       plus: isPlus(account),
       picture: account.picture,
       notifications: account.notifications === true,
+      language: account.language || 'en',
       createdAt: account.createdAt,
       lastSignInAt: account.lastSignInAt,
       providers: account.providers || ['google'],
