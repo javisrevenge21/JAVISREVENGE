@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#000000" />
+<link rel="icon" type="image/png" href="data:image/png;base64,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" />
+<meta name="robots" content="noindex"><title>Archives &middot; JAVISREVENGE</title>
+<meta name="description" content="The JAVISREVENGE archive: a private, invite-only account running since 2016. What it is, the rules, and how to request access." />
+<link rel="canonical" href="https://www.javisrevenge.com/archives" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="JAVISREVENGE" />
+<meta property="og:title" content="Archives · JAVISREVENGE" />
+<meta property="og:description" content="The JAVISREVENGE archive: a private, invite-only account running since 2016. What it is, the rules, and how to request access." />
+<meta property="og:url" content="https://www.javisrevenge.com/archives" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@javisrevenge" />
+<meta name="twitter:title" content="Archives · JAVISREVENGE" />
+<meta name="twitter:description" content="The JAVISREVENGE archive: a private, invite-only account running since 2016. What it is, the rules, and how to request access." />
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { min-height: 100%; background: #000; }
+body {
+color: #fff;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+overflow-x: hidden;
+}
+#bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.glow {
+position: fixed;
+left: 50%; top: 50%;
+transform: translate(-50%, -50%);
+width: min(95vw, 950px);
+height: min(95vw, 950px);
+background: radial-gradient(circle, rgba(255,255,255,0.045) 0%, rgba(0,0,0,0) 66%);
+pointer-events: none;
+z-index: 1;
+animation: breathe 9s ease-in-out infinite;
+}
+@keyframes breathe {
+0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+50% { opacity: 1; transform: translate(-50%, -50%) scale(1.09); }
+}
+.view {
+position: relative;
+z-index: 2;
+min-height: 100vh;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 48px 24px;
+}
+.wrap { width: 100%; max-width: 560px; text-align: center; }
+h1 {
+font-size: clamp(1.8rem, 8vw, 3.6rem);
+font-weight: 600;
+letter-spacing: 0.16em;
+text-shadow: 0 0 30px rgba(255,255,255,0.28), 0 0 90px rgba(255,255,255,0.12);
+animation: fadeUp 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes fadeUp {
+from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
+to { opacity: 1; transform: none; filter: none; }
+}
+.rule {
+width: min(320px, 70vw);
+height: 1px;
+margin: 22px auto 0;
+background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+animation: fadeUp 1.2s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.card {
+margin-top: 22px;
+padding: 18px;
+background: rgba(255,255,255,0.04);
+border: 1px solid rgba(255,255,255,0.12);
+border-radius: 16px;
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+text-align: left;
+animation: fadeUp 1.2s 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.card:first-of-type { margin-top: 34px; }
+.card-label {
+font-size: 0.72rem;
+letter-spacing: 0.22em;
+text-transform: uppercase;
+color: rgba(255,255,255,0.45);
+margin-bottom: 12px;
+}
+.back {
+display: inline-block;
+margin-top: 24px;
+padding: 12px 20px;
+font-size: 0.9rem;
+letter-spacing: 0.16em;
+color: rgba(255,255,255,0.75);
+text-decoration: none;
+background: rgba(255,255,255,0.03);
+border: 1px solid rgba(255,255,255,0.14);
+border-radius: 10px;
+transition: color 0.25s, border-color 0.25s, background 0.25s;
+animation: fadeUp 1.2s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.back:hover {
+color: #fff;
+background: rgba(255,255,255,0.07);
+border-color: rgba(255,255,255,0.4);
+}
+@media (prefers-reduced-motion: reduce) {
+.glow, h1, .rule, .card, .back { animation: none !important; }
+}
+.tagline {
+margin-top: 18px;
+font-size: 0.78rem;
+letter-spacing: 0.28em;
+text-transform: uppercase;
+color: rgba(255,255,255,0.5);
+animation: fadeUp 1.2s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.disclaimer { margin: 10px auto 0; max-width: 40ch; font-size: 0.8rem; line-height: 1.5; letter-spacing: 0.03em; color: rgba(255,255,255,0.62); animation: fadeUp 1.2s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.meta .card-label { margin-bottom: 16px; }
+.lede {
+font-family: Georgia, "Times New Roman", Times, serif;
+font-size: clamp(1.15rem, 3.6vw, 1.4rem);
+line-height: 1.45;
+color: #fff;
+text-shadow: 0 0 26px rgba(255,255,255,0.18);
+}
+.text { margin-top: 16px; font-size: 0.96rem; line-height: 1.7; color: rgba(255,255,255,0.74); }
+.text p + p { margin-top: 12px; }
+.rules { list-style: none; margin-top: 20px; display: grid; gap: 8px; }
+.rules li {
+padding: 12px 14px;
+font-size: 0.88rem;
+letter-spacing: 0.03em;
+line-height: 1.5;
+color: rgba(255,255,255,0.82);
+background: #000000;
+border: 1px solid rgba(255,255,255,0.10);
+border-left: 2px solid rgba(255,255,255,0.34);
+border-radius: 10px;
+}
+.rules li strong { display: block; margin-bottom: 2px; font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 600; }
+.ig-link {
+position: relative; display: block; margin-top: 22px; padding: 16px 18px;
+text-align: center; font-size: 0.86rem; font-weight: 700; letter-spacing: 0.24em;
+color: rgba(255,255,255,0.9); text-decoration: none;
+background: #000000; border: 1px solid rgba(255,255,255,0.18); border-radius: 12px;
+overflow: hidden;
+transition: border-color 0.3s, box-shadow 0.35s, color 0.3s;
+}
+.ig-link::after {
+content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%;
+background: linear-gradient(100deg, transparent, rgba(255,255,255,0.10), transparent);
+transform: skewX(-18deg); opacity: 0;
+}
+.ig-link:hover, .ig-link:focus-visible { color: #fff; border-color: rgba(255,255,255,0.45); box-shadow: 0 14px 40px rgba(255,255,255,0.12); outline: none; }
+.ig-link:hover::after, .ig-link:focus-visible::after { animation: sheen 0.85s ease-out; }
+@keyframes sheen { 0% { left: -60%; opacity: 0; } 15% { opacity: 1; } 100% { left: 130%; opacity: 0; } }
+.fine { margin-top: 12px; text-align: center; font-size: 0.74rem; letter-spacing: 0.04em; color: rgba(255,255,255,0.38); }
+@media (prefers-reduced-motion: reduce) {
+.tagline, .disclaimer, .ig-link::after { animation: none !important; }
+}
+</style>
+<style id="page-theme">
+:root { --theme: 212,160,23; }
+.view { padding-left: 16px !important; padding-right: 16px !important; }
+.wrap, .wrap.wide { max-width: 1200px !important; width: 100%; }
+.card {
+  width: 100%;
+  background: linear-gradient(160deg, rgba(var(--theme),0.22), rgba(var(--theme),0.08)) !important;
+  border: 1px solid rgba(var(--theme),0.55) !important;
+  box-shadow: 0 0 40px rgba(var(--theme),0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+  padding: clamp(18px, 4vw, 40px) !important;
+}
+.card-label { color: rgba(var(--theme),1) !important; filter: brightness(1.5); }
+.rule { background: linear-gradient(90deg, transparent, rgba(var(--theme),0.9), transparent) !important; }
+.ig-link { border-color: rgba(var(--theme),0.6) !important; }
+.ig-link:hover, .ig-link:focus-visible { box-shadow: 0 14px 40px rgba(var(--theme),0.35) !important; }
+@media (max-width: 600px) { .view { padding-left: 10px !important; padding-right: 10px !important; } .card { border-radius: 14px; } }
+</style>
+<style id="fan-submit-style">
+[hidden] { display: none !important; }
+.fan .lede { margin-bottom: 4px; }
+.fan-form { margin-top: 18px; display: grid; gap: 14px; }
+.fan-drop {
+display: block; padding: 22px 16px; text-align: center; cursor: pointer;
+border: 1px dashed rgba(var(--theme),0.7); border-radius: 12px; background: rgba(0,0,0,0.55);
+color: rgba(255,255,255,0.9); font-weight: 600; letter-spacing: 0.08em; transition: background 0.25s, border-color 0.25s;
+}
+.fan-drop:hover, .fan-drop:focus-within { background: rgba(var(--theme),0.12); border-color: rgba(var(--theme),1); }
+.fan-drop small { display: block; margin-top: 6px; font-weight: 400; letter-spacing: 0.03em; color: rgba(255,255,255,0.55); }
+.fan-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.fan-previews { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.fan-previews:empty { display: none; }
+.fan-pv { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.14); }
+.fan-pv img, .fan-pv video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fan-pv .fan-fname { display: flex; align-items: center; justify-content: center; height: 100%; padding: 8px; font-size: 0.72rem; text-align: center; word-break: break-all; color: rgba(255,255,255,0.8); }
+.fan-pv .fan-size { position: absolute; left: 6px; bottom: 8px; font-size: 0.66rem; padding: 2px 5px; border-radius: 6px; background: rgba(0,0,0,0.7); }
+.fan-pv button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(0,0,0,0.75); color: #fff; cursor: pointer; }
+.fan-prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: rgba(var(--theme),1); transition: width 0.2s; }
+.fan-pv.done .fan-prog { width: 100% !important; background: #3ecf6e; }
+.fan-field { display: grid; gap: 6px; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.fan-field input, .fan-field textarea {
+width: 100%; padding: 12px 14px; font: inherit; font-size: 16px; letter-spacing: 0; text-transform: none; color: #fff;
+background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; resize: vertical;
+}
+.fan-field input:focus, .fan-field textarea:focus { outline: none; border-color: rgba(var(--theme),1); }
+.fan-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 0.86rem; line-height: 1.5; color: rgba(255,255,255,0.82); cursor: pointer; }
+.fan-consent input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: rgb(var(--theme)); }
+.fan-send { width: 100%; margin-top: 0; font-family: inherit; cursor: pointer; }
+.fan-send:disabled { opacity: 0.45; cursor: not-allowed; }
+.fine.err { color: #ff9c9c; }
+.fan-done { margin-top: 18px; text-align: center; }
+.fan-done .lede { margin-bottom: 8px; }
+.fan-done button { margin-top: 14px; padding: 10px 18px; font: inherit; font-size: 0.85rem; letter-spacing: 0.14em; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; cursor: pointer; }
+.fan-inbox-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fan-muted { color: rgba(255,255,255,0.5); font-size: 0.82rem; }
+.fan-sub { margin-top: 14px; padding: 14px; border-radius: 12px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.12); }
+.fan-sub.fan-new { border-color: rgba(var(--theme),0.9); }
+.fan-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 0.88rem; }
+.fan-badge { font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.3); }
+.fan-new .fan-badge { border-color: rgba(var(--theme),1); color: rgb(var(--theme)); }
+.fan-posted .fan-badge { border-color: #3ecf6e; color: #3ecf6e; }
+.fan-credit, .fan-caption { margin-top: 8px; font-size: 0.9rem; line-height: 1.5; color: rgba(255,255,255,0.82); white-space: pre-wrap; }
+.fan-credit a { color: #fff; }
+.fan-files { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.fan-file { display: grid; gap: 6px; }
+.fan-file img, .fan-file video { width: 100%; max-height: 260px; object-fit: contain; background: #000; border-radius: 8px; display: block; }
+.fan-file audio { width: 100%; }
+.fan-file .fan-fname { display: block; padding: 18px 10px; text-align: center; font-size: 0.78rem; word-break: break-all; color: #fff; border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; }
+.fan-dl { font-size: 0.76rem; letter-spacing: 0.08em; color: rgb(var(--theme)); text-decoration: none; }
+.fan-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.fan-actions button { padding: 8px 14px; font: inherit; font-size: 0.8rem; letter-spacing: 0.08em; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,0.28); border-radius: 8px; cursor: pointer; }
+.fan-actions .fan-del { border-color: #713232; color: #ffdede; }
+</style>
+<style id="arch-hero-style">
+/* Animated hero at the top of the Archives page: the @javiarchives.jp building,
+   a slow push into its doorway, a run of exhibits inside, then back out. One
+   22s loop; every layer shares the duration so they stay in step. */
+.arch-hero {
+--hh: 100vh;
+--door-x: 49.5%; --door-y: 77.5%;
+--loop: 22s;
+position: relative; z-index: 2;
+height: var(--hh);
+overflow: hidden;
+background: #000;
+-webkit-mask-image: linear-gradient(#000 84%, transparent);
+mask-image: linear-gradient(#000 84%, transparent);
+}
+@supports (height: 100svh) { .arch-hero { --hh: 100svh; } }
+/* Portrait screens: keep the whole @javiarchives.jp line in frame. */
+@media (max-aspect-ratio: 1/1) {
+.arch-hero { --hh: min(100vh, 120vw); }
+@supports (height: 100svh) { .arch-hero { --hh: min(100svh, 120vw); } }
+}
+.arch-ext {
+--side: max(100vw, var(--hh));
+position: absolute;
+width: var(--side); height: var(--side);
+left: 50%; margin-left: calc(var(--side) / -2);
+top: calc((var(--hh) - var(--side)) * 0.58);
+transform-origin: var(--door-x) var(--door-y);
+will-change: transform, opacity;
+}
+.arch-ext img { display: block; width: 100%; height: 100%; }
+.arch-inside {
+position: absolute; inset: 0;
+display: grid; place-items: center;
+background: radial-gradient(ellipse 70% 60% at 50% 46%, rgba(70,48,12,0.55) 0%, rgba(14,10,4,0.9) 55%, #000 100%);
+opacity: 0;
+will-change: opacity;
+}
+.arch-inside::before {
+content: ''; position: absolute; inset: 0; pointer-events: none;
+background: radial-gradient(ellipse 34% 75% at 50% -8%, rgba(255,214,140,0.24), rgba(255,214,140,0) 70%);
+}
+.arch-ex {
+grid-area: 1 / 1;
+position: relative;
+width: min(80vw, 680px, calc(var(--hh) * 1.25));
+padding: 6px;
+background: linear-gradient(160deg, rgba(212,160,23,0.35), rgba(212,160,23,0.08));
+border: 1px solid rgba(212,160,23,0.6);
+border-radius: 4px;
+box-shadow: 0 0 70px rgba(212,160,23,0.22), 0 30px 80px rgba(0,0,0,0.8);
+opacity: 0;
+will-change: transform, opacity;
+}
+.arch-ex.tall { width: min(46vw, 380px, calc(var(--hh) * 0.6)); }
+.arch-ex img { display: block; width: 100%; height: auto; border-radius: 2px; }
+.arch-ex::after {
+content: ''; position: absolute; inset: 6px; border-radius: 2px; pointer-events: none;
+background: radial-gradient(ellipse at 50% 35%, transparent 45%, rgba(0,0,0,0.55) 100%);
+}
+.arch-ex::before {
+content: ''; position: absolute; left: 12%; right: 12%; bottom: -26px; height: 1px;
+background: linear-gradient(90deg, transparent, rgba(212,160,23,0.9), transparent);
+}
+.arch-cue {
+position: absolute; left: 50%; bottom: 9%; width: 28px; height: 28px; margin-left: -14px;
+fill: none; stroke: rgba(255,255,255,0.75); stroke-width: 2;
+filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));
+animation: archCue 2.4s ease-in-out infinite;
+}
+@keyframes archCue { 0%, 100% { transform: translateY(0); opacity: 0.55; } 50% { transform: translateY(7px); opacity: 1; } }
+
+.arch-hero.is-ready .arch-ext { animation: archExt var(--loop) infinite; }
+.arch-hero.is-ready .arch-inside { animation: archInside var(--loop) linear infinite; }
+.arch-hero.is-ready .arch-ex { animation: archEx var(--loop) linear infinite; animation-delay: calc(var(--k) * var(--loop) / 10); }
+.arch-hero.is-paused .arch-ext, .arch-hero.is-paused .arch-inside, .arch-hero.is-paused .arch-ex, .arch-hero.is-paused .arch-cue { animation-play-state: paused; }
+
+/* Outside: a slow push in, then a fast dive through the doorway. */
+@keyframes archExt {
+0% { transform: scale(1); opacity: 1; animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); }
+20% { transform: scale(1.1); opacity: 1; animation-timing-function: cubic-bezier(0.6, 0, 0.95, 0.5); }
+34% { transform: scale(11); opacity: 1; }
+35% { transform: scale(12); opacity: 0; }
+86% { transform: scale(1.5); opacity: 0; animation-timing-function: cubic-bezier(0.15, 0.6, 0.25, 1); }
+100% { transform: scale(1); opacity: 1; }
+}
+/* Inside: the hall lights up as the doorway fills the screen. */
+@keyframes archInside {
+0%, 29% { opacity: 0; }
+34%, 85% { opacity: 1; }
+90%, 100% { opacity: 0; }
+}
+/* Each exhibit: fade in, drift and settle, crossfade to the next. */
+@keyframes archEx {
+0%, 35% { opacity: 0; transform: translateX(var(--dx)) scale(1.1); }
+37.5% { opacity: 1; }
+45% { opacity: 1; }
+47% { opacity: 0; transform: translateX(0) scale(1); }
+100% { opacity: 0; transform: translateX(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+.arch-hero .arch-ext, .arch-hero .arch-inside, .arch-hero .arch-ex, .arch-cue { animation: none !important; }
+.arch-hero .arch-ext { transform: none; opacity: 1; }
+.arch-hero .arch-inside { display: none; }
+}
+</style>
+<link rel="manifest" href="/assets/app.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="REVENGE"><meta name="apple-mobile-web-app-status-bar-style" content="black"></head>
+<body>
+<canvas id="bg"></canvas>
+<div class="glow"></div>
+<header class="arch-hero" id="archHero" role="img" aria-label="@javiarchives.jp" translate="no">
+<div class="arch-ext"><img id="archExtImg" src="/assets/archives/building-1254.webp" srcset="/assets/archives/building-1254.webp 1254w, /assets/archives/building-2048.webp 2048w" sizes="(max-aspect-ratio: 1/1) 120vw, 100vw" width="1254" height="1254" alt="" fetchpriority="high" decoding="async"></div>
+<div class="arch-inside" aria-hidden="true">
+<figure class="arch-ex" style="--k:0;--dx:-3%"><img src="/assets/archives/exhibit-1.webp" width="780" height="396" alt="" decoding="async"></figure>
+<figure class="arch-ex" style="--k:1;--dx:3%"><img src="/assets/archives/exhibit-2.webp" width="960" height="405" alt="" decoding="async"></figure>
+<figure class="arch-ex tall" style="--k:2;--dx:-4%"><img src="/assets/archives/exhibit-3.webp" width="405" height="420" alt="" decoding="async"></figure>
+<figure class="arch-ex" style="--k:3;--dx:3%"><img src="/assets/archives/exhibit-4.webp" width="810" height="375" alt="" decoding="async"></figure>
+<figure class="arch-ex tall" style="--k:4;--dx:4%"><img src="/assets/archives/exhibit-5.webp" width="360" height="330" alt="" decoding="async"></figure>
+</div>
+<svg class="arch-cue" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</header>
+<script>
+(function () {
+var hero = document.getElementById('archHero');
+var img = document.getElementById('archExtImg');
+if (!hero || !img) return;
+function ready() { hero.classList.add('is-ready'); }
+if (img.complete && img.naturalWidth) ready(); else { img.addEventListener('load', ready); img.addEventListener('error', ready); }
+if ('IntersectionObserver' in window) {
+new IntersectionObserver(function (e) { hero.classList.toggle('is-paused', !e[0].isIntersecting); }).observe(hero);
+}
+})();
+</script>
+
+<main class="view">
+<div class="wrap">
+<h1>ARCHIVES</h1>
+<div class="rule"></div>
+<p class="tagline">Private. By request. Since 2016.</p>
+<p class="disclaimer">Content posted on the archives is not all filmed or created by Ryan Javi.</p>
+<section class="card">
+<div class="meta"><p class="card-label">@javiarchives.jp</p><p class="card-label">Est. 2016</p></div>
+<p class="lede">The archive is the private side of JAVISREVENGE: photos, video, and updates from Ryan Javi's world, often before anyone else hears about them.</p>
+<div class="text">
+<p>It started in 2016 as one place to share everything around Ryan Javi. A lot of it is sent in by people close to the scene or through anonymous tips. Some call it the greatest spam account of all time, for the quality and the sheer volume of posts.</p>
+<p>It shows a lot of what can't be posted publicly, but not everything. Only content that is legal to post goes up, and not every post is made by Ryan or is about him. It's a shared space with very few limits, and that's the point.</p>
+</div>
+<ul class="rules">
+<li><strong>Private</strong>It's for a small group, not the public.</li>
+<li><strong>Don't share</strong>Reposting or spreading what you see breaks the rules.</li>
+<li><strong>Leaks</strong>Anything that leaks gets removed from the account.</li>
+</ul>
+<a class="ig-link" href="https://www.instagram.com/javiarchives.jp/" target="_blank" rel="noopener">REQUEST ACCESS &rsaquo;</a>
+<p class="fine">Requests go through Instagram @javiarchives.jp.</p>
+</section>
+<section class="card fan" id="fan-submit">
+<p class="card-label">Send it in</p>
+<p class="lede">Got a photo, video or file for the archive?</p>
+<div class="text"><p>Send it here. If it makes the cut, it gets posted on Instagram.</p></div>
+<form class="fan-form" id="fanForm" novalidate>
+<label class="fan-drop">Tap to add photos, videos or files
+<input type="file" id="fanFiles" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,application/pdf,audio/mpeg,audio/mp4,audio/x-m4a,.heic,.heif,.mov,.m4a">
+<small>Up to 5 files, 100 MB each</small></label>
+<div class="fan-previews" id="fanPrev"></div>
+<label class="fan-field">Instagram handle for credit (optional)
+<input type="text" id="fanHandle" maxlength="60" placeholder="@yourhandle" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+<label class="fan-field">Caption or context (optional)
+<textarea id="fanCaption" rows="3" maxlength="500" placeholder="What is it? When and where was it taken?"></textarea></label>
+<label class="fan-consent"><input type="checkbox" id="fanConsent"><span>I took this or have the rights to it, and I allow JAVISREVENGE to post it on Instagram, with or without credit.</span></label>
+<button class="ig-link fan-send" id="fanSend" type="submit" disabled>SEND IT IN &rsaquo;</button>
+<p class="fine" id="fanStatus" role="status" aria-live="polite">Only the owner sees what you send, along with your username. Nothing illegal, and nothing showing someone who didn't agree to it.</p>
+</form>
+<div class="fan-done" id="fanDone" hidden>
+<p class="lede">Got it. Thank you.</p>
+<p class="fine">Your upload went to the owner. Not everything gets posted.</p>
+<button type="button" id="fanAgain">SEND MORE</button>
+</div>
+</section>
+<section class="card" id="fan-inbox" hidden>
+<div class="fan-inbox-head"><p class="card-label">Fan uploads (only you see this)</p><p class="card-label" id="fanInboxCount"></p></div>
+<div id="fanInboxList"></div>
+</section>
+
+<a class="back" href="/">&lsaquo; BACK</a>
+</div>
+</main>
+<script>
+(function () {
+var c = document.getElementById('bg');
+var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var FALLBACK = 'radial-gradient(ellipse at 50% 40%, #0d0d0f 0%, #050505 45%, #000000 100%)';
+
+if (!gl) { document.body.style.background = FALLBACK; return; }
+
+var vs = 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }';
+
+var fs = [
+'precision highp float;',
+'uniform vec2 u_res;',
+'uniform float u_time;',
+'float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }',
+'float noise(vec2 p) {',
+'  vec2 i = floor(p), f = fract(p);',
+'  vec2 u = f * f * (3.0 - 2.0 * f);',
+'  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),',
+'             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);',
+'}',
+'float fbm(vec2 p) {',
+'  float v = 0.0, a = 0.5;',
+'  mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
+'  for (int i = 0; i < 6; i++) { v += a * noise(p); p = m * p; a *= 0.5; }',
+'  return v;',
+'}',
+'void main() {',
+'  vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / min(u_res.x, u_res.y);',
+'  float t = u_time * 0.06;',
+'  vec2 p = uv * 1.6;',
+'  vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(5.2, 1.3) - t * 0.5));',
+'  vec2 r = vec2(fbm(p + 3.0 * q + vec2(1.7, 9.2) + t * 0.7),',
+'                fbm(p + 3.0 * q + vec2(8.3, 2.8) - t * 0.6));',
+'  float f = fbm(p + 3.0 * r);',
+'  vec3 col = vec3(0.0);',
+'  col = mix(col, vec3(0.06, 0.06, 0.07), clamp(f * f * 2.4, 0.0, 1.0));',
+'  col = mix(col, vec3(0.36, 0.36, 0.39), clamp(length(q) * 0.75, 0.0, 1.0) * 0.48);',
+'  col = mix(col, vec3(0.10, 0.11, 0.12), clamp(r.x * 0.85, 0.0, 1.0) * 0.26);',
+'  col += vec3(0.90, 0.92, 1.00) * pow(clamp(f, 0.0, 1.0), 7.5) * 0.46;',
+'  float d = length(uv * vec2(1.0, 1.15));',
+'  col *= smoothstep(1.12, 0.04, d);',
+'  col = col * col * 2.6;',
+'  col *= 0.90 + 0.10 * sin(u_time * 0.25);',
+'  col += (hash(gl_FragCoord.xy + fract(u_time)) - 0.5) * 0.02;',
+'  gl_FragColor = vec4(max(col, 0.0), 1.0);',
+'}'
+].join('\n');
+
+function compile(type, src) {
+var s = gl.createShader(type);
+gl.shaderSource(s, src);
+gl.compileShader(s);
+return s;
+}
+
+var prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+document.body.style.background = FALLBACK;
+return;
+}
+gl.useProgram(prog);
+
+var buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+var loc = gl.getAttribLocation(prog, 'p');
+gl.enableVertexAttribArray(loc);
+gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+var uRes = gl.getUniformLocation(prog, 'u_res');
+var uTime = gl.getUniformLocation(prog, 'u_time');
+
+function resize() {
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+c.width = Math.floor(window.innerWidth * dpr);
+c.height = Math.floor(window.innerHeight * dpr);
+gl.viewport(0, 0, c.width, c.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function draw(t) {
+gl.uniform2f(uRes, c.width, c.height);
+gl.uniform1f(uTime, t);
+gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+if (reduced) { draw(14.0); return; }
+
+var t0 = performance.now();
+var elapsed = 0;
+var raf = null;
+
+function frame(now) {
+elapsed = (now - t0) / 1000;
+draw(elapsed);
+raf = requestAnimationFrame(frame);
+}
+raf = requestAnimationFrame(frame);
+
+document.addEventListener('visibilitychange', function () {
+if (document.hidden) {
+if (raf) { cancelAnimationFrame(raf); raf = null; }
+} else if (!raf) {
+t0 = performance.now() - elapsed * 1000;
+raf = requestAnimationFrame(frame);
+}
+});
+})();
+</script>
+
+</body>
+</html>
