@@ -236,103 +236,41 @@ background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.18); border-ra
 .fan-actions button { padding: 8px 14px; font: inherit; font-size: 0.8rem; letter-spacing: 0.08em; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,0.28); border-radius: 8px; cursor: pointer; }
 .fan-actions .fan-del { border-color: #713232; color: #ffdede; }
 </style>
-<style id="archives-plain">
-/* Plain, open layout: no boxes, sections split by a thin gold line, text
-   set in a collegiate style: Graduate (varsity block) for headings and
-   labels, Libre Caslon Text for reading. Both SIL Open Font License,
-   served from /assets/fonts. */
-@font-face { font-family: 'Graduate'; font-style: normal; font-weight: 400; font-display: swap; src: url(/assets/fonts/graduate-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
-@font-face { font-family: 'Libre Caslon Text'; font-style: normal; font-weight: 400; font-display: swap; src: url(/assets/fonts/libre-caslon-text-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
-@font-face { font-family: 'Libre Caslon Text'; font-style: italic; font-weight: 400; font-display: swap; src: url(/assets/fonts/libre-caslon-text-italic-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
-:root { --display: 'Graduate', 'Rockwell', Georgia, serif; --serif: 'Libre Caslon Text', Georgia, 'Times New Roman', serif; }
-.wrap, .wrap.wide { max-width: 720px !important; }
-body { font-family: var(--serif); }
-h1 { font-family: var(--display); font-weight: 400; letter-spacing: 0.12em; }
-.tagline { font-family: var(--display); font-size: 0.82rem; letter-spacing: 0.2em; color: rgba(var(--theme),0.95); }
-.disclaimer { font-size: 0.92rem; letter-spacing: 0.01em; font-style: italic; }
-.card, .card:first-of-type {
-  position: relative; margin: 0 !important; padding: 44px 0 !important;
-  background: none !important; border: 0 !important; border-radius: 0 !important;
-  box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  text-align: start; animation: none;
+<style id="cream-cards">
+/* Cream text boxes: the boxes stay, filled cream with dark ink. */
+.card {
+  --ink: 43,33,22;
+  background: #f3ead7 !important;
+  border: 1px solid rgba(var(--theme),0.75) !important;
+  box-shadow: 0 0 40px rgba(var(--theme),0.18), 0 18px 50px rgba(0,0,0,0.45);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  color: rgb(var(--ink));
 }
-.card:first-of-type { margin-top: 30px !important; }
-.card::before {
-  content: ''; position: absolute; top: 0; inset-inline: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(var(--theme),0.85) 20%, rgba(var(--theme),0.85) 80%, transparent);
-}
-.card[hidden] { display: none !important; }
-.card-label { font-family: var(--display); font-size: 0.8rem; letter-spacing: 0.16em; }
-.lede { font-family: var(--serif); font-weight: 400; font-size: clamp(1.2rem, 3.8vw, 1.5rem); line-height: 1.4; text-shadow: none; }
-.text { font-size: 1rem; line-height: 1.75; color: rgba(255,255,255,0.8); }
-.text p + p { margin-top: 14px; }
-.rules { margin-top: 30px; gap: 0; grid-template-columns: repeat(3, 1fr); }
-.rules li {
-  padding: 4px 18px; background: none; border: 0; border-radius: 0;
-  border-inline-start: 1px solid rgba(var(--theme),0.45);
-  font-size: 0.95rem; line-height: 1.55; color: rgba(255,255,255,0.82);
-}
-.rules li:first-child { padding-inline-start: 0; border-inline-start: 0; }
-.rules li strong { font-family: var(--display); font-size: 0.78rem; letter-spacing: 0.14em; color: rgb(var(--theme)); margin-bottom: 6px; }
-@media (max-width: 600px) {
-  .rules { grid-template-columns: 1fr; }
-  .rules li, .rules li:first-child { padding: 14px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.1); }
-  .rules li:first-child { border-top: 0; padding-top: 0; }
-  .card, .card:first-of-type { padding: 36px 0 !important; }
-  .view { padding-left: 22px !important; padding-right: 22px !important; }
-}
-.ig-link { font-family: var(--display); background: transparent; border-radius: 0; border-width: 1px 0 !important; }
-.fine { font-size: 0.85rem; letter-spacing: 0.01em; }
-.fan-field { font-family: var(--display); font-size: 0.74rem; letter-spacing: 0.12em; }
-.fan-field input, .fan-field textarea { font-family: var(--serif); font-size: 16px; background: transparent; border-radius: 0; border-width: 0 0 1px; padding-inline: 0; }
-.fan-drop { font-family: var(--display); font-weight: 400; letter-spacing: 0.06em; background: transparent; border-radius: 0; }
-.fan-consent { font-size: 0.92rem; }
-.back { font-family: var(--display); background: none; border: 0; border-radius: 0; padding: 12px 0; margin-top: 8px; }
-.back:hover { background: none; }
-/* Text eases in as it scrolls into view (only once the script below runs). */
-.reveal-on .rv { animation: none !important; opacity: 0; transform: translateY(26px); filter: blur(6px); transition: opacity 0.9s cubic-bezier(0.2,0.7,0.2,1), transform 0.9s cubic-bezier(0.2,0.7,0.2,1), filter 0.9s cubic-bezier(0.2,0.7,0.2,1); transition-delay: var(--rv-delay, 0s); }
-.reveal-on .rv.in { opacity: 1; transform: none; filter: none; }
-.reveal-on .card.rv-line::before { transform: scaleX(0); transition: transform 1.2s cubic-bezier(0.2,0.7,0.2,1); }
-.reveal-on .card.rv-line.in::before { transform: scaleX(1); }
-@media (prefers-reduced-motion: reduce) {
-  .reveal-on .rv, .reveal-on .card.rv-line::before { opacity: 1; transform: none; filter: none; transition: none; }
-}
+.card .card-label { color: #8a6410 !important; filter: none; }
+.card .lede { color: rgb(var(--ink)); text-shadow: none; }
+.card .text { color: rgba(var(--ink),0.82); }
+.card .rules li { background: #fbf6ea; color: rgba(var(--ink),0.88); border: 1px solid rgba(var(--ink),0.12); border-left: 2px solid rgba(var(--theme),0.9); }
+.card .rules li strong { color: #8a6410; }
+.card .fine { color: rgba(var(--ink),0.6); }
+.card .fine.err { color: #a12a2a; }
+.card .ig-link { color: #fff; background: #111; }
+.card .fan-drop { background: #fbf6ea; color: rgb(var(--ink)); border-color: rgba(var(--theme),0.9); }
+.card .fan-drop:hover, .card .fan-drop:focus-within { background: #f7efdc; }
+.card .fan-drop small, .card .fan-muted { color: rgba(var(--ink),0.6); }
+.card .fan-field { color: rgba(var(--ink),0.7); }
+.card .fan-field input, .card .fan-field textarea { color: rgb(var(--ink)); background: #fffdf7; border-color: rgba(var(--ink),0.22); }
+.card .fan-field input::placeholder, .card .fan-field textarea::placeholder { color: rgba(var(--ink),0.42); }
+.card .fan-consent { color: rgba(var(--ink),0.88); }
+.card .fan-done button { color: rgb(var(--ink)); border-color: rgba(var(--ink),0.3); }
+.card .fan-sub { background: #fbf6ea; border-color: rgba(var(--ink),0.14); }
+.card .fan-credit, .card .fan-caption, .card .fan-head { color: rgba(var(--ink),0.88); }
+.card .fan-credit a { color: rgb(var(--ink)); }
+.card .fan-badge { border-color: rgba(var(--ink),0.3); }
+.card .fan-file .fan-fname { color: rgb(var(--ink)); border-color: rgba(var(--ink),0.2); }
+.card .fan-actions button { color: rgb(var(--ink)); border-color: rgba(var(--ink),0.3); }
+.card .fan-actions .fan-del { color: #8b1f1f; border-color: #c98a8a; }
+.card .fan-dl { color: #8a6410; }
 </style>
-<script>
-(function () {
-  if (!('IntersectionObserver' in window)) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  document.documentElement.classList.add('reveal-on');
-  function start() {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
-    var cards = document.querySelectorAll('.wrap .card');
-    for (var i = 0; i < cards.length; i++) {
-      cards[i].classList.add('rv-line');
-      io.observe(cards[i]);
-      var kids = cards[i].querySelectorAll(':scope > *:not(script), :scope .rules > li, :scope .fan-form > *');
-      var n = 0;
-      for (var j = 0; j < kids.length; j++) {
-        var k = kids[j];
-        if (k.matches('.rules, .fan-form')) continue;
-        k.classList.add('rv');
-        k.style.setProperty('--rv-delay', Math.min(n++ * 0.08, 0.4) + 's');
-        io.observe(k);
-      }
-    }
-    var top = document.querySelectorAll('.wrap > h1, .wrap > .rule, .wrap > .tagline, .wrap > .disclaimer, .wrap > .back');
-    for (var t = 0; t < top.length; t++) {
-      top[t].classList.add('rv');
-      if (top[t].className.indexOf('back') < 0) top[t].style.setProperty('--rv-delay', t * 0.1 + 's');
-      io.observe(top[t]);
-    }
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-})();
-</script>
 <style id="arch-hero-style">
 /* Animated hero at the top of the Archives page: the @javiarchives.jp building,
    a slow push into its doorway, a walk through a gallery of pieces on display,
