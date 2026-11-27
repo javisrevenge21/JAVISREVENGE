@@ -107,6 +107,12 @@
       document.body.appendChild(bar);
       syncLanguage(u.language);
       if (!data.notificationsAsked) askForNotifications(data.user.email);
+      // "Ask Ryan" voice chat for members (not on the admin and settings pages).
+      if (!/^\/(admin|account)(\/|$)/.test(location.pathname)) {
+        window.JR_THEME_RGB = rgb;
+        var vc = document.createElement('script'); vc.src = '/assets/voice-chat.js'; vc.defer = true;
+        document.body.appendChild(vc);
+      }
     })
     .catch(function () {
       var returnTo = encodeURIComponent(location.pathname + location.search);
