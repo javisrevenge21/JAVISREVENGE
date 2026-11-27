@@ -5,7 +5,7 @@
   var isPublic = !!(script && script.hasAttribute('data-public'));
   var style = document.createElement('style');
   style.textContent = [
-    '.jr-account{position:fixed;z-index:50;top:16px;right:16px;display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(8,8,10,.82);border:1px solid rgba(255,255,255,.16);border-radius:999px;backdrop-filter:blur(14px);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff}',
+    '.jr-account{position:fixed;z-index:50;top:calc(16px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(8,8,10,.82);border:1px solid rgba(255,255,255,.16);border-radius:999px;backdrop-filter:blur(14px);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff}',
     '.jr-emoji{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:17px}',
     '.jr-account img{width:30px;height:30px;border-radius:50%;object-fit:cover;background:#222}',
     '.jr-account a{color:#fff;text-decoration:none}.jr-account a:hover{text-decoration:underline}',
@@ -29,9 +29,37 @@
     '.jr-mini-txt em{font-style:normal;align-self:flex-start;margin-top:4px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;padding:2px 6px;border-radius:5px;background:rgb(var(--t));color:#000}',
     '.jr-mini-txt small{font-size:12px;color:rgba(255,255,255,.75);margin-top:3px}',
     '.jr-menu a.jr-out{color:#fca5a5;border-top:1px solid rgba(255,255,255,.08);border-radius:0 0 10px 10px;margin-top:4px}',
-    '@media(max-width:600px){.jr-account-name{display:none}.jr-menu{width:min(290px,calc(100vw - 24px))}}'
+    '@media(max-width:600px){.jr-account-name{display:none}.jr-menu{width:min(290px,calc(100vw - 24px))}}',
+    // Top-left twin of the bottom <a class="back"> link. Same look, fixed so it
+    // sits with the account chip and respects device safe-area insets.
+    'a.jr-back-top{position:fixed;z-index:50;top:calc(16px + env(safe-area-inset-top,0px));left:calc(16px + env(safe-area-inset-left,0px));margin-top:0;animation:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(8,8,10,.82);max-width:calc(100vw - 160px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px))}',
+    'a.jr-back-top:hover{background:rgba(255,255,255,.10)}'
   ].join('');
   document.head.appendChild(style);
+
+  (function placeTopBack() {
+    if (document.querySelector('a.jr-back-top')) return;
+    var sources = document.querySelectorAll('a.back');
+    var source = null;
+    for (var i = 0; i < sources.length; i++) {
+      if (!sources[i].classList.contains('jr-back-top')) { source = sources[i]; break; }
+    }
+    if (!source) return;
+    var top = source.cloneNode(true);
+    top.classList.add('jr-back-top');
+    document.body.appendChild(top);
+    function clearHeader() {
+      var btn = document.querySelector('a.jr-back-top');
+      var view = document.querySelector('main.view') || document.querySelector('.view');
+      if (!btn || !view) return;
+      var need = Math.ceil(btn.getBoundingClientRect().bottom - view.getBoundingClientRect().top + 16);
+      var current = parseFloat(window.getComputedStyle(view).paddingTop) || 0;
+      if (need > current) view.style.paddingTop = need + 'px';
+    }
+    clearHeader();
+    window.addEventListener('resize', clearHeader);
+    setTimeout(clearHeader, 0);
+  })();
 
   fetch('/api/auth/session', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
     .then(function (response) {
