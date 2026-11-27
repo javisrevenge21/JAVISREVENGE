@@ -13,8 +13,8 @@ are those photos cut out of their backdrops by `scripts/archives-cutout.py`.
 | fr_reliquary | Reliquary bust of Saint Yrieix, Limoges | 464333 |
 | fr_sevres | Potpourri vase, Sèvres, 1757 | 202192 |
 | is_bottle | Bottle, Israelite, Iron Age II, from Lachish | 323144 |
-| is_hanukkah | Hanukkah lamp, silver, late 17th century | 192064 |
-| is_ossuary | Limestone ossuary with lid, 1st century BCE to 1st century CE | 256777 |
+| is_jug | Jug with strainer, Israelite, Iron Age II, from Lachish | 323145 |
+| is_seal | Jar handle with a seal impression, Israelite, Iron Age II, from Lachish | 323177 |
 | it_augustus | Marble portrait of the emperor Augustus | 247993 |
 | it_bowl | Maiolica bowl with the Virgin and a unicorn | 199737 |
 | it_helmet | Burgonet by Filippo Negroli, Milan, 1543 | 22634 |

@@ -517,7 +517,7 @@ PIECES = [
     ('fr_armor', 560, 760, 0, False),
     ('it_augustus', 400, 440, 170, False),
     ('pe_lion', 540, 420, 120, False),
-    ('is_hanukkah', 470, 560, 60, False),
+    ('is_jug', 520, 520, 70, False),
     ('eg_hippo', 560, 360, 140, False),
     ('fr_reliquary', 500, 540, 80, False),
     ('it_bowl', 520, 520, 0, True),
@@ -527,7 +527,7 @@ PIECES = [
     ('fr_sevres', 540, 440, 110, False),
     ('it_helmet', 540, 470, 130, False),
     ('pe_rhyton', 420, 620, 40, False),
-    ('is_ossuary', 600, 400, 70, False),
+    ('is_seal', 500, 360, 150, False),
 ]
 
 _ARCH = None

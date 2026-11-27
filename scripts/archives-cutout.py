@@ -67,7 +67,7 @@ def smooth01(x, a, b):
 def lum(x):
     return x[..., 0] * 0.3 + x[..., 1] * 0.59 + x[..., 2] * 0.11
 
-def cut(path, out_dir, grad_t=0.010, chroma_t=0.03, deg=5, ratio_hi=1.12, extra_seeds=(), no_top=False, crop_bottom=None, hole_res=0.06, force=None, holes=False, luma=None, erode=0, hole_box=None):
+def cut(path, out_dir, grad_t=0.010, chroma_t=0.03, deg=5, ratio_hi=1.12, extra_seeds=(), no_top=False, crop_bottom=None, hole_res=0.06, force=None, holes=False, luma=None, erode=0, hole_box=None, grey=None):
     im = np.asarray(Image.open(path).convert('RGB')).astype(np.float32) / 255
     if crop_bottom:
         im = im[:crop_bottom]
@@ -82,6 +82,11 @@ def cut(path, out_dir, grad_t=0.010, chroma_t=0.03, deg=5, ratio_hi=1.12, extra_
     ratio = L / Lb
     dark_bg = (L < 0.07) & (np.abs(im - bg).max(-1) < 0.05)
     cand = ((gradb < grad_t) & (chroma < chroma_t) & (ratio < ratio_hi) & (ratio > 0.15)) | (dark_bg & (gradb < grad_t * 1.5))
+    if grey:
+        # warm pieces on a grey backdrop: anything no warmer than the backdrop
+        # (its cooler shadows included) is backdrop
+        warm = (ch[..., 0] - ch[..., 2]) * np.clip(L / 0.12, 0, 1)
+        cand |= (warm < grey) & (ratio > 0.1)
     if luma:
         # dark backdrops: anything not clearly brighter than the backdrop is backdrop
         cand |= ((L - Lb) < luma) & (L < 0.4)
@@ -149,13 +154,13 @@ def cut(path, out_dir, grad_t=0.010, chroma_t=0.03, deg=5, ratio_hi=1.12, extra_
 
 PARAMS = {
     'is_bottle.png': {'holes': True},
-    'is_hanukkah.png': {'holes': True, 'ratio_hi': 2.0, 'chroma_t': 0.06, 'hole_res': 0.2, 'grad_t': 0.014,
-                        'hole_box': (0, 0.72, 1, 1)},
     'pe_lion.png': {'ratio_hi': 1.5, 'grad_t': 0.014, 'chroma_t': 0.09},
     'fr_reliquary.png': {'grad_t': 0.014, 'chroma_t': 0.2, 'ratio_hi': 3.0},
     'it_augustus.png': {'chroma_t': 0.15, 'luma': 0.05, 'erode': 1},
     'eg_canopic.png': {'luma': 0.06, 'erode': 1},
     'it_bowl.png': {'luma': 0.04},
+    'is_jug.png': {'grey': 0.15, 'holes': True, 'hole_res': 0.12},
+    'is_seal.png': {'grey': 0.12},
     'eg_cat.png': {'force': [(93, 905), (575, 866), (812, 948), (815, 1082), (430, 1198), (95, 1046)]},
 }
 
