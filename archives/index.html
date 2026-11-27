@@ -238,16 +238,18 @@ background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.18); border-ra
 </style>
 <style id="archives-plain">
 /* Plain, open layout: no boxes, sections split by a thin gold line, text
-   set in classical faces that match the museum hero (Cinzel and Cormorant
-   Garamond, both SIL Open Font License, served from /assets/fonts). */
-@font-face { font-family: 'Cinzel'; font-style: normal; font-weight: 400 900; font-display: swap; src: url(/assets/fonts/cinzel-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
-@font-face { font-family: 'Cormorant Garamond'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/assets/fonts/cormorant-garamond-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
-:root { --display: 'Cinzel', Georgia, 'Times New Roman', serif; --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; }
+   set in a collegiate style: Graduate (varsity block) for headings and
+   labels, Libre Caslon Text for reading. Both SIL Open Font License,
+   served from /assets/fonts. */
+@font-face { font-family: 'Graduate'; font-style: normal; font-weight: 400; font-display: swap; src: url(/assets/fonts/graduate-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: 'Libre Caslon Text'; font-style: normal; font-weight: 400; font-display: swap; src: url(/assets/fonts/libre-caslon-text-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: 'Libre Caslon Text'; font-style: italic; font-weight: 400; font-display: swap; src: url(/assets/fonts/libre-caslon-text-italic-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+:root { --display: 'Graduate', 'Rockwell', Georgia, serif; --serif: 'Libre Caslon Text', Georgia, 'Times New Roman', serif; }
 .wrap, .wrap.wide { max-width: 720px !important; }
 body { font-family: var(--serif); }
-h1 { font-family: var(--display); font-weight: 600; letter-spacing: 0.2em; }
-.tagline { font-family: var(--display); font-size: 0.8rem; letter-spacing: 0.3em; color: rgba(var(--theme),0.95); }
-.disclaimer { font-size: 1.02rem; letter-spacing: 0.01em; font-style: italic; }
+h1 { font-family: var(--display); font-weight: 400; letter-spacing: 0.12em; }
+.tagline { font-family: var(--display); font-size: 0.82rem; letter-spacing: 0.2em; color: rgba(var(--theme),0.95); }
+.disclaimer { font-size: 0.92rem; letter-spacing: 0.01em; font-style: italic; }
 .card, .card:first-of-type {
   position: relative; margin: 0 !important; padding: 44px 0 !important;
   background: none !important; border: 0 !important; border-radius: 0 !important;
@@ -260,18 +262,18 @@ h1 { font-family: var(--display); font-weight: 600; letter-spacing: 0.2em; }
   background: linear-gradient(90deg, transparent, rgba(var(--theme),0.85) 20%, rgba(var(--theme),0.85) 80%, transparent);
 }
 .card[hidden] { display: none !important; }
-.card-label { font-family: var(--display); font-size: 0.74rem; letter-spacing: 0.26em; }
-.lede { font-family: var(--serif); font-weight: 500; font-size: clamp(1.45rem, 4.6vw, 1.85rem); line-height: 1.3; text-shadow: none; }
-.text { font-size: 1.16rem; line-height: 1.65; color: rgba(255,255,255,0.8); }
+.card-label { font-family: var(--display); font-size: 0.8rem; letter-spacing: 0.16em; }
+.lede { font-family: var(--serif); font-weight: 400; font-size: clamp(1.2rem, 3.8vw, 1.5rem); line-height: 1.4; text-shadow: none; }
+.text { font-size: 1rem; line-height: 1.75; color: rgba(255,255,255,0.8); }
 .text p + p { margin-top: 14px; }
 .rules { margin-top: 30px; gap: 0; grid-template-columns: repeat(3, 1fr); }
 .rules li {
   padding: 4px 18px; background: none; border: 0; border-radius: 0;
   border-inline-start: 1px solid rgba(var(--theme),0.45);
-  font-size: 1.08rem; line-height: 1.45; color: rgba(255,255,255,0.82);
+  font-size: 0.95rem; line-height: 1.55; color: rgba(255,255,255,0.82);
 }
 .rules li:first-child { padding-inline-start: 0; border-inline-start: 0; }
-.rules li strong { font-family: var(--display); font-size: 0.72rem; color: rgb(var(--theme)); margin-bottom: 6px; }
+.rules li strong { font-family: var(--display); font-size: 0.78rem; letter-spacing: 0.14em; color: rgb(var(--theme)); margin-bottom: 6px; }
 @media (max-width: 600px) {
   .rules { grid-template-columns: 1fr; }
   .rules li, .rules li:first-child { padding: 14px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.1); }
@@ -280,11 +282,11 @@ h1 { font-family: var(--display); font-weight: 600; letter-spacing: 0.2em; }
   .view { padding-left: 22px !important; padding-right: 22px !important; }
 }
 .ig-link { font-family: var(--display); background: transparent; border-radius: 0; border-width: 1px 0 !important; }
-.fine { font-size: 0.95rem; letter-spacing: 0.01em; }
-.fan-field { font-family: var(--display); font-size: 0.7rem; letter-spacing: 0.2em; }
-.fan-field input, .fan-field textarea { font-family: var(--serif); font-size: 17px; background: transparent; border-radius: 0; border-width: 0 0 1px; padding-inline: 0; }
-.fan-drop { font-family: var(--display); font-weight: 500; background: transparent; border-radius: 0; }
-.fan-consent { font-size: 1.02rem; }
+.fine { font-size: 0.85rem; letter-spacing: 0.01em; }
+.fan-field { font-family: var(--display); font-size: 0.74rem; letter-spacing: 0.12em; }
+.fan-field input, .fan-field textarea { font-family: var(--serif); font-size: 16px; background: transparent; border-radius: 0; border-width: 0 0 1px; padding-inline: 0; }
+.fan-drop { font-family: var(--display); font-weight: 400; letter-spacing: 0.06em; background: transparent; border-radius: 0; }
+.fan-consent { font-size: 0.92rem; }
 .back { font-family: var(--display); background: none; border: 0; border-radius: 0; padding: 12px 0; margin-top: 8px; }
 .back:hover { background: none; }
 /* Text eases in as it scrolls into view (only once the script below runs). */
