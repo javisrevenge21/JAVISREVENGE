@@ -236,10 +236,139 @@ background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.18); border-ra
 .fan-actions button { padding: 8px 14px; font: inherit; font-size: 0.8rem; letter-spacing: 0.08em; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,0.28); border-radius: 8px; cursor: pointer; }
 .fan-actions .fan-del { border-color: #713232; color: #ffdede; }
 </style>
+<style id="arch-hero-style">
+/* Animated hero at the top of the Archives page: the @javiarchives.jp building,
+   a slow push into its doorway, a run of exhibits inside, then back out. One
+   22s loop; every layer shares the duration so they stay in step. */
+.arch-hero {
+--hh: 100vh;
+--door-x: 49.5%; --door-y: 77.5%;
+--loop: 22s;
+position: relative; z-index: 2;
+height: var(--hh);
+overflow: hidden;
+background: #000;
+-webkit-mask-image: linear-gradient(#000 84%, transparent);
+mask-image: linear-gradient(#000 84%, transparent);
+}
+@supports (height: 100svh) { .arch-hero { --hh: 100svh; } }
+/* Portrait screens: keep the whole @javiarchives.jp line in frame. */
+@media (max-aspect-ratio: 1/1) {
+.arch-hero { --hh: min(100vh, 120vw); }
+@supports (height: 100svh) { .arch-hero { --hh: min(100svh, 120vw); } }
+}
+.arch-ext {
+--side: max(100vw, var(--hh));
+position: absolute;
+width: var(--side); height: var(--side);
+left: 50%; margin-left: calc(var(--side) / -2);
+top: calc((var(--hh) - var(--side)) * 0.58);
+transform-origin: var(--door-x) var(--door-y);
+will-change: transform, opacity;
+}
+.arch-ext img { display: block; width: 100%; height: 100%; }
+.arch-inside {
+position: absolute; inset: 0;
+display: grid; place-items: center;
+background: radial-gradient(ellipse 70% 60% at 50% 46%, rgba(70,48,12,0.55) 0%, rgba(14,10,4,0.9) 55%, #000 100%);
+opacity: 0;
+will-change: opacity;
+}
+.arch-inside::before {
+content: ''; position: absolute; inset: 0; pointer-events: none;
+background: radial-gradient(ellipse 34% 75% at 50% -8%, rgba(255,214,140,0.24), rgba(255,214,140,0) 70%);
+}
+.arch-ex {
+grid-area: 1 / 1;
+position: relative;
+width: min(80vw, 680px, calc(var(--hh) * 1.25));
+padding: 6px;
+background: linear-gradient(160deg, rgba(212,160,23,0.35), rgba(212,160,23,0.08));
+border: 1px solid rgba(212,160,23,0.6);
+border-radius: 4px;
+box-shadow: 0 0 70px rgba(212,160,23,0.22), 0 30px 80px rgba(0,0,0,0.8);
+opacity: 0;
+will-change: transform, opacity;
+}
+.arch-ex.tall { width: min(46vw, 380px, calc(var(--hh) * 0.6)); }
+.arch-ex img { display: block; width: 100%; height: auto; border-radius: 2px; }
+.arch-ex::after {
+content: ''; position: absolute; inset: 6px; border-radius: 2px; pointer-events: none;
+background: radial-gradient(ellipse at 50% 35%, transparent 45%, rgba(0,0,0,0.55) 100%);
+}
+.arch-ex::before {
+content: ''; position: absolute; left: 12%; right: 12%; bottom: -26px; height: 1px;
+background: linear-gradient(90deg, transparent, rgba(212,160,23,0.9), transparent);
+}
+.arch-cue {
+position: absolute; left: 50%; bottom: 9%; width: 28px; height: 28px; margin-left: -14px;
+fill: none; stroke: rgba(255,255,255,0.75); stroke-width: 2;
+filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));
+animation: archCue 2.4s ease-in-out infinite;
+}
+@keyframes archCue { 0%, 100% { transform: translateY(0); opacity: 0.55; } 50% { transform: translateY(7px); opacity: 1; } }
+
+.arch-hero.is-ready .arch-ext { animation: archExt var(--loop) infinite; }
+.arch-hero.is-ready .arch-inside { animation: archInside var(--loop) linear infinite; }
+.arch-hero.is-ready .arch-ex { animation: archEx var(--loop) linear infinite; animation-delay: calc(var(--k) * var(--loop) / 10); }
+.arch-hero.is-paused .arch-ext, .arch-hero.is-paused .arch-inside, .arch-hero.is-paused .arch-ex, .arch-hero.is-paused .arch-cue { animation-play-state: paused; }
+
+/* Outside: a slow push in, then a fast dive through the doorway. */
+@keyframes archExt {
+0% { transform: scale(1); opacity: 1; animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); }
+20% { transform: scale(1.1); opacity: 1; animation-timing-function: cubic-bezier(0.6, 0, 0.95, 0.5); }
+34% { transform: scale(11); opacity: 1; }
+35% { transform: scale(12); opacity: 0; }
+86% { transform: scale(1.5); opacity: 0; animation-timing-function: cubic-bezier(0.15, 0.6, 0.25, 1); }
+100% { transform: scale(1); opacity: 1; }
+}
+/* Inside: the hall lights up as the doorway fills the screen. */
+@keyframes archInside {
+0%, 29% { opacity: 0; }
+34%, 85% { opacity: 1; }
+90%, 100% { opacity: 0; }
+}
+/* Each exhibit: fade in, drift and settle, crossfade to the next. */
+@keyframes archEx {
+0%, 35% { opacity: 0; transform: translateX(var(--dx)) scale(1.1); }
+37.5% { opacity: 1; }
+45% { opacity: 1; }
+47% { opacity: 0; transform: translateX(0) scale(1); }
+100% { opacity: 0; transform: translateX(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+.arch-hero .arch-ext, .arch-hero .arch-inside, .arch-hero .arch-ex, .arch-cue { animation: none !important; }
+.arch-hero .arch-ext { transform: none; opacity: 1; }
+.arch-hero .arch-inside { display: none; }
+}
+</style>
 <link rel="manifest" href="/assets/app.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="REVENGE"><meta name="apple-mobile-web-app-status-bar-style" content="black"></head>
 <body>
 <canvas id="bg"></canvas>
 <div class="glow"></div>
+<header class="arch-hero" id="archHero" role="img" aria-label="@javiarchives.jp" translate="no">
+<div class="arch-ext"><img id="archExtImg" src="/assets/archives/building-1254.webp" srcset="/assets/archives/building-1254.webp 1254w, /assets/archives/building-2048.webp 2048w" sizes="(max-aspect-ratio: 1/1) 120vw, 100vw" width="1254" height="1254" alt="" fetchpriority="high" decoding="async"></div>
+<div class="arch-inside" aria-hidden="true">
+<figure class="arch-ex" style="--k:0;--dx:-3%"><img src="/assets/archives/exhibit-1.webp" width="780" height="396" alt="" decoding="async"></figure>
+<figure class="arch-ex" style="--k:1;--dx:3%"><img src="/assets/archives/exhibit-2.webp" width="960" height="405" alt="" decoding="async"></figure>
+<figure class="arch-ex tall" style="--k:2;--dx:-4%"><img src="/assets/archives/exhibit-3.webp" width="405" height="420" alt="" decoding="async"></figure>
+<figure class="arch-ex" style="--k:3;--dx:3%"><img src="/assets/archives/exhibit-4.webp" width="810" height="375" alt="" decoding="async"></figure>
+<figure class="arch-ex tall" style="--k:4;--dx:4%"><img src="/assets/archives/exhibit-5.webp" width="360" height="330" alt="" decoding="async"></figure>
+</div>
+<svg class="arch-cue" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</header>
+<script>
+(function () {
+var hero = document.getElementById('archHero');
+var img = document.getElementById('archExtImg');
+if (!hero || !img) return;
+function ready() { hero.classList.add('is-ready'); }
+if (img.complete && img.naturalWidth) ready(); else { img.addEventListener('load', ready); img.addEventListener('error', ready); }
+if ('IntersectionObserver' in window) {
+new IntersectionObserver(function (e) { hero.classList.toggle('is-paused', !e[0].isIntersecting); }).observe(hero);
+}
+})();
+</script>
 
 <main class="view">
 <div class="wrap">
