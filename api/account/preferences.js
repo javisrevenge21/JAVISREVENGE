@@ -1,15 +1,35 @@
-import { updateNotifications, updateProfile, claimUsername, normalizeUsername, usernameProblem, usernameTaken } from '../../lib/accounts.js';
+import { updateNotifications, updateLanguage, updateProfile, claimUsername, normalizeUsername, usernameProblem, usernameTaken } from '../../lib/accounts.js';
 import { blocklistHit } from '../../lib/moderation.js';
 import { isPlus } from '../../lib/billing.js';
 import { getAccount } from '../../lib/accounts.js';
+import { isLanguage, languageCookie, autoTranslateOn, translateTexts } from '../../lib/translate.js';
 import { isAdmin, requireSameOrigin, sessionFromRequest, createSession, sessionCookie } from '../../lib/session.js';
 
-// POST { notifications: true|false }  or  POST { profile: { displayName, bio, ... } }
+// POST { notifications: true|false }, { profile: { displayName, bio, ... } } or { language: 'es' }
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!requireSameOrigin(req)) return res.status(403).json({ error: 'Invalid origin' });
   const session = sessionFromRequest(req);
   if (!session) return res.status(401).json({ error: 'Authentication required' });
+
+  // On-the-fly translation of text with no ready-made translation:
+  // POST { translate: ["..."], language: "es" }. Off unless AUTO_TRANSLATE=on.
+  if (Array.isArray(req.body?.translate)) {
+    if (!autoTranslateOn()) return res.status(200).json({ off: true });
+    if (!isLanguage(req.body.language)) return res.status(400).json({ error: 'Unknown language' });
+    const translations = await translateTexts(req.body.translate, req.body.language, { oidc: req.headers['x-vercel-oidc-token'] || '' });
+    return res.status(200).json({ translations });
+  }
+
+  // Site language: POST { language: "es" }. Saved on the account and in a
+  // cookie so every page shows in it straight away.
+  if (typeof req.body?.language === 'string') {
+    if (!isLanguage(req.body.language)) return res.status(400).json({ error: 'Unknown language' });
+    const account = await updateLanguage(session.email, req.body.language);
+    if (!account) return res.status(404).json({ error: 'Account not found' });
+    res.setHeader('Set-Cookie', languageCookie(account.language));
+    return res.status(200).json({ language: account.language });
+  }
 
   // Check availability as the person types: POST { checkUsername: "name" }
   if (typeof req.body?.checkUsername === 'string') {
@@ -24,9 +44,11 @@ export default async function handler(req, res) {
   // stops asking for a username.
   if (typeof req.body?.username === 'string') {
     if (blocklistHit(req.body.username)) return res.status(409).json({ error: 'That username is not available.' });
-    const result = await claimUsername(session.email, req.body.username, req.body.agree === true);
+    const result = await claimUsername(session.email, req.body.username, req.body.agree === true, req.body.lang);
     if (result.error) return res.status(409).json({ error: result.error });
-    res.setHeader('Set-Cookie', sessionCookie(createSession(result.account, process.env.SESSION_SECRET)));
+    const cookies = [sessionCookie(createSession(result.account, process.env.SESSION_SECRET))];
+    if (result.account.language) cookies.push(languageCookie(result.account.language));
+    res.setHeader('Set-Cookie', cookies);
     return res.status(200).json({ username: result.account.username });
   }
 

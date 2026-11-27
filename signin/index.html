@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta name="robots" content="index, follow" />
-<meta charset="utf-8">
+<meta charset="utf-8"><script src="/assets/i18n.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Sign in to JAVISREVENGE, Ryan Javi's official site since November 2021, now JAVISREVENGEPT2: LA political commentary, a private archive and merch." />
 <link rel="canonical" href="https://www.javisrevenge.com/signin" />
@@ -74,6 +74,9 @@
 .more-providers:empty { display: none; }
 .provider-icon { width: 20px; height: 20px; flex: none; }
 .signin-shell .contact-line { margin-top: 18px; max-width: 560px; }
+.signin-shell .lang-line { margin-top: 26px; max-width: 560px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.signin-shell .lang-line label { margin: 0; color: rgba(255,255,255,.62); font-size: 13px; }
+.signin-shell .lang-line select { width: auto; min-width: 160px; padding: 10px 12px; }
 .signin-shell .error { margin-top: 18px; } .signin-shell img.google { width: 20px; height: 20px; display: block; flex: none; }
 @media (prefers-reduced-motion: reduce) {
   .caret { animation: none; }
@@ -85,7 +88,7 @@
 <main class="shell signin-shell">
 <a class="brand" href="/">JAVISREVENGE</a>
 
-<h1 aria-label="Members only."><span id="typed"></span><span class="caret" aria-hidden="true"></span></h1>
+<h1 aria-label="Members only."><span id="typed" translate="no"></span><span class="caret" aria-hidden="true"></span></h1>
 
 <p class="lede">Sign in or create an account to enter. No password is created or stored by this website.</p>
 
@@ -102,7 +105,16 @@
 <p class="muted contact-line">Can't sign in, or rather not? <a href="mailto:contact@javisrevenge.com">Contact us at contact@javisrevenge.com</a></p>
 
 <p id="error" class="error" hidden>Sign-in could not be completed. Please try again.</p>
+
+<p class="lang-line"><label for="lang">Language</label> <select id="lang"></select></p>
 </main>
+<script>
+(function () {
+  // Signed out, the choice is kept in this browser; it's saved to the account
+  // when the username is picked.
+  if (window.JRI18N && JRI18N.picker) JRI18N.picker(document.getElementById('lang'), function (code) { JRI18N.remember(code); location.reload(); });
+})();
+</script>
 
 <script>
 (function () {
@@ -121,12 +133,15 @@
   var el = document.getElementById('typed');
   var text = 'Members only.';
   if (!el) return;
+  // Typed out in the member's language (JRI18N.t translates it).
+  var say = function () { return window.JRI18N ? JRI18N.t(text) : text; };
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    el.textContent = text;
+    setTimeout(function () { el.textContent = say(); }, 0);
     return;
   }
   var i = 0;
   setTimeout(function tick() {
+    if (i === 0) text = say();
     i++;
     el.textContent = text.slice(0, i);
     if (i < text.length) {

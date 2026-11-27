@@ -17,6 +17,7 @@ a { color: #fff; }
 label { display:block;margin:18px 0 7px;color:rgba(255,255,255,.68);font-size:13px; }
 input,textarea { width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#fff;font:inherit; }
 textarea { min-height:150px;resize:vertical; }
+select { width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:#111;color:#fff;font:inherit; }
 .row { display:flex;align-items:center;gap:12px;padding:16px 0; }
 .row input { width:auto; }
 .status { min-height:24px;color:#9fe8b5; }

@@ -85,11 +85,11 @@
       var bigPic = u.avatar ? escapeHtml(u.avatar) : (u.picture ? '<img src="' + escapeAttribute(u.picture) + '" alt="">' : escapeHtml((u.name || '?').charAt(0).toUpperCase()));
       bar.innerHTML =
         '<button class="jr-trigger" type="button" aria-haspopup="true" aria-expanded="false">' + (picture || '<span class="jr-emoji" style="background:rgba(' + rgb + ',.3)">' + escapeHtml((u.name || '?').charAt(0).toUpperCase()) + '</span>') +
-        '<span class="jr-account-name">' + escapeHtml(handle) + '</span><svg class="jr-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
+        '<span class="jr-account-name" translate="no">' + escapeHtml(handle) + '</span><svg class="jr-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
         '<div class="jr-menu" role="menu" hidden style="--t:' + rgb + '">' +
           '<a class="jr-mini" href="' + profileUrl + '" role="menuitem">' +
             '<span class="jr-mini-av">' + bigPic + '</span>' +
-            '<span class="jr-mini-txt"><b>' + escapeHtml(u.name) + '</b><span>' + escapeHtml(u.username ? '@' + u.username : '') + '</span>' +
+            '<span class="jr-mini-txt"><b translate="no">' + escapeHtml(u.name) + '</b><span translate="no">' + escapeHtml(u.username ? '@' + u.username : '') + '</span>' +
             (u.title && u.title !== 'Member' ? '<em>' + escapeHtml(u.title) + '</em>' : '') + (u.mood ? '<small>' + escapeHtml(u.mood) + '</small>' : '') + '</span></a>' +
           (wall ? '<a href="' + profileUrl + '" role="menuitem">👤 View my profile</a>' : '') +
           '<a href="/account" role="menuitem">🎨 Edit profile &amp; settings</a>' +
@@ -105,6 +105,7 @@
       document.addEventListener('click', function (e) { if (!bar.contains(e.target)) setOpen(false); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
       document.body.appendChild(bar);
+      syncLanguage(u.language);
       if (!data.notificationsAsked) askForNotifications(data.user.email);
     })
     .catch(function () {
@@ -125,12 +126,27 @@
   footer.innerHTML = '<a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/cookies">Cookies</a><a href="/account">Account &amp; notifications</a>';
   document.body.appendChild(footer);
 
+  // The account's language wins on every device. An account with no language
+  // yet takes the one picked in this browser (on the sign-in page).
+  function syncLanguage(saved) {
+    var i18n = window.JRI18N;
+    if (!i18n || !i18n.remember) return;
+    if (saved && saved !== i18n.lang) {
+      var key = 'jr_lang_sync_' + saved;
+      try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) { return; }
+      i18n.remember(saved);
+      location.reload();
+    } else if (!saved && i18n.lang !== 'en') {
+      fetch('/api/account/preferences', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: i18n.lang }) }).catch(function () {});
+    }
+  }
+
   function askForNotifications(email) {
     var overlay = document.createElement('div');
     overlay.className = 'jr-optin';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.innerHTML = '<div class="jr-optin-card"><h2>STAY IN THE LOOP</h2><p>Can we send email notifications about JAVISREVENGE updates to <strong>' + escapeHtml(email) + '</strong>? You can turn this off any time.</p><button class="yes" type="button">Yes, email me</button><button class="no" type="button">No thanks</button></div>';
+    overlay.innerHTML = '<div class="jr-optin-card"><h2>STAY IN THE LOOP</h2><p>Can we send email notifications about JAVISREVENGE updates to <strong class="jr-ltr" translate="no">' + escapeHtml(email) + '</strong>? You can turn this off any time.</p><button class="yes" type="button">Yes, email me</button><button class="no" type="button">No thanks</button></div>';
     document.body.appendChild(overlay);
     function choose(value) {
       overlay.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
