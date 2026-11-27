@@ -519,7 +519,10 @@ def wall_and_floor(seed):
     # floor: dark polished stone with a light pool and horizontal joints
     f = ys >= FLOOR
     fy = (ys - FLOOR) / (H - FLOOR)
-    grain = fbm(H, W, 60, 4, seed=2)
+    # noise that wraps left to right, so neighbouring bays meet without a seam
+    g2 = fbm(H, 2 * W, 60, 4, seed=2)
+    t = np.linspace(0, 1, W, endpoint=False)[None, :]
+    grain = g2[:, :W] * t + g2[:, W:] * (1 - t)
     stone = np.array([0.13, 0.095, 0.065])[None, None, :] * (0.75 + 0.45 * grain)[..., None]
     fpool = np.exp(-(((xs - cx) / (W * 0.34)) ** 2 + ((ys - (FLOOR + 150)) / 190) ** 2))
     floor = stone * (0.4 + 1.7 * fpool)[..., None]

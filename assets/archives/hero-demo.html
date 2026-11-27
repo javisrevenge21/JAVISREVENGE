@@ -842,5 +842,9 @@ raf = requestAnimationFrame(frame);
 })();
 </script>
 
+<script>
+(function(){var m=/[?&]t=(\d+)/.exec(location.search);if(!m)return;var t=-m[1]+'s';
+document.querySelectorAll('.arch-ext,.arch-inside,.arch-gallery,.arch-bay').forEach(function(e){e.style.animationDelay=t;});})();
+</script>
 </body>
 </html>
